@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>crossblocks</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="themes.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<header>
+<img src="logo.svg" height="50">
+<h1>crossblocks</h1>
+</header>
+
+<div class="editor">
+
+<div id="card" class="card theme-metal">
+
+<h2 contenteditable="true">Nom unité</h2>
+Faction: <input id="faction">
+
+<div class="stat">
+<img src="icons/points.svg"> 
+<input type="number" id="points">
+</div>
+
+<div class="stat">
+<img src="icons/hp.svg"> 
+<input type="number" id="hp">
+</div>
+
+<div class="stat">
+<img src="icons/move.svg"> 
+<input type="number" id="move">
+</div>
+
+<div class="stat">
+<img src="icons/armor.svg"> 
+<input type="number" id="armor">
+</div>
+
+<div id="weapons"></div>
+<button onclick="addWeapon()">Ajouter arme</button>
+
+</div>
+
+<div class="controls">
+<h3>Thèmes</h3>
+<button onclick="setTheme('metal')">Métal</button>
+<button onclick="setTheme('clone')">Clone</button>
+<button onclick="setTheme('empire')">Empire</button>
+<button onclick="setTheme('neon')">Cyber</button>
+<button onclick="setTheme('parchment')">Parchemin</button>
+
+<h3>Export</h3>
+<button onclick="addCardToSheet()">Ajouter à la planche</button>
+<button onclick="exportSheet()">Exporter planche PDF</button>
+</div>
+
+</div>
+
+<div id="sheet" class="sheet"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
