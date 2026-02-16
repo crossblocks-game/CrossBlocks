@@ -6,15 +6,24 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="admin.js"></script>
+<script src="script.js"></script>
 </head>
 
 <body>
 
-<header>
-  <img src="logo.svg" class="logo">
-  <h1>CrossBlocks – Éditeur de cartes</h1>
-</header>
+<!-- PAGE D’ACCUEIL -->
+<div id="home" style="background:white; padding:50px; text-align:center;">
+  <img src="logo.svg" class="logo" style="height:100px;">
+  <h1 style="font-size:48px; margin:20px 0;">CrossBlocks</h1>
+  <p style="font-size:18px; max-width:600px; margin:auto;">
+    CrossBlocks est un générateur de cartes et d’unités pour vos jeux de stratégie ou wargames LEGO. Créez vos unités, choisissez leurs caractéristiques, appliquez un thème et exportez vos cartes en PDF.
+  </p>
+  <p style="margin-top:30px; font-weight:bold;">Éditeur de fiches personnages :</p>
+</div>
 
+<hr style="margin:30px 0;">
+
+<!-- ÉDITEUR -->
 <div class="controls">
 
   <label>Nom :</label>
@@ -34,7 +43,7 @@
 
   <label>Thème :</label>
   <select id="theme" onchange="setTheme(this.value)">
-    <!-- Options générées automatiquement depuis CONFIG -->
+    <!-- Options générées dynamiquement depuis CONFIG -->
   </select>
 
   <br><br>
@@ -43,33 +52,31 @@
 
   <!-- Bouton admin secret -->
   <button onclick="promptAdmin()">🔒 Admin</button>
-
 </div>
 
 <hr>
 
-<div id="cards-container"></div>
+<!-- Conteneur des cartes générées -->
+<div id="cards-container" style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px;"></div>
 
-<!-- Panneau Admin -->
-<div id="adminPanel" style="display:none;position:fixed;top:5%;left:5%;width:90%;height:90%;background:white;color:black;z-index:9999;overflow:auto;padding:20px;">
+<!-- PANNEAU ADMIN -->
+<div id="adminPanel" style="display:none; position:fixed;top:5%;left:5%; width:90%;height:90%; background:white;color:black; z-index:9999; overflow:auto;padding:20px;">
   <h2>Panneau Admin</h2>
   <button onclick="closeAdmin()">Fermer</button>
   <hr>
-
   <h3>Modifier les thèmes</h3>
   <div id="adminThemes"></div>
-
   <h3>Modifier les armes</h3>
   <div id="adminWeapons"></div>
 </div>
 
-<script src="script.js"></script>
+<!-- SCRIPT DE DÉMARRAGE -->
 <script>
-// Génération dynamique des options de thème depuis CONFIG
+// Génération automatique des options de thème depuis CONFIG
 const themeSelect = document.getElementById("theme");
 function populateThemeOptions(){
   themeSelect.innerHTML = "";
-  CONFIG.themes.forEach((t, i)=>{
+  CONFIG.themes.forEach(t=>{
     const opt = document.createElement("option");
     opt.value = t;
     opt.text = t;
