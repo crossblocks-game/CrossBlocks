@@ -1,0 +1,2462 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrossBlock — Wargame LEGO Star Wars</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d1117; overflow-x: hidden; }
+    #root { min-height: 100vh; }
+    /* Hide Babel warning */
+    .babel-repl-error { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React 18 via CDN -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Babel standalone for JSX transpilation -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+  <script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ═══ CONSTANTS ═══ */
+const SPX=2.8, SEG=13, SEG_PX=SEG*SPX, RS=6;
+const BW=Math.round(2*RS*SEG_PX), BH=Math.round(3*RS*SEG_PX);
+const HALF=BH/2, BASE=Math.round(4*SPX), BR=BASE/2, PAD=6;
+const C1=12, C2=24;
+
+const WEAPS={
+  fusil_b:{n:"Fusil bleu",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:5,dmg:1},
+  fusil_r:{n:"Fusil rouge",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
+  blast_b:{n:"Blaster bleu",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:5,dmg:1},
+  blast_r:{n:"Blaster rouge",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:4,dmg:1},
+  pist_b:{n:"Pistolet bleu",melee:17,cat1:17,cat2:0,catP:0,mun:5,pen:4,dmg:1},
+  pist_r:{n:"Pistolet rouge",melee:17,cat1:17,cat2:0,catP:0,mun:5,pen:3,dmg:1},
+  sniper:{n:"Sniper bleu",melee:0,cat1:0,cat2:13,catP:15,mun:1,pen:7,dmg:2},
+  dbl_f:{n:"Dbl fusil",melee:0,cat1:13,cat2:16,catP:0,mun:2,pen:6,dmg:1},
+  pist_a:{n:"Pist.auto",melee:15,cat1:15,cat2:0,catP:0,mun:5,pen:4,dmg:2},
+  f_poing:{n:"Fusil poing",melee:0,cat1:16,cat2:16,catP:0,mun:2,pen:3,dmg:1},
+  f_poing_x2:{n:"×2 Fusils poing",melee:0,cat1:16,cat2:16,catP:0,mun:4,pen:3,dmg:1},
+  tourelle_x3:{n:"×3 Tourelles",melee:0,cat1:14,cat2:14,catP:0,mun:12,pen:3,dmg:1},
+  rocket_x3:{n:"×3 Rockets",melee:0,cat1:0,cat2:11,catP:11,mun:3,pen:10,dmg:0,dMax:4,once:true},
+};
+
+const UDEFS={
+  clone:{n:"Clone Ph.2",pts:200,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#3366CC"},
+  clone_geo:{n:"Clone Geonosis",pts:230,act:5,mm:0,arm:15,hp:2,w:["blast_b"],ic:"🌍",fac:"cl",co:"#558844"},
+  sniper:{n:"Clone Sniper",pts:260,act:5,mm:0,arm:15,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#1a4488"},
+  spec:{n:"Clone Spéc.",pts:250,act:5,mm:0,arm:15,hp:2,w:["dbl_f"],ic:"💪",fac:"cl",co:"#2255AA"},
+  officer:{n:"Clone Officier",pts:270,act:5,mm:0,arm:15,hp:2,w:["pist_b"],ic:"⭐",fac:"cl",co:"#4477DD"},
+  airborne:{n:"Clone Airborne",pts:270,act:5,mm:0,arm:15,hp:2,w:["blast_b"],ic:"🪂",fac:"cl",co:"#CC6633",air:1},
+  fives:{n:"Cmdt Fives",pts:430,act:5,mm:0,arm:13,hp:2,w:["pist_a"],ic:"🎖",fac:"cl",co:"#FFD700"},
+  rex:{n:"Cmdt Rex",pts:400,act:5,mm:0,arm:12,hp:2,w:["pist_a"],ic:"👑",fac:"cl",co:"#DAA520"},
+  b1:{n:"Droïde B1",pts:170,act:4,mm:0,arm:18,hp:2,w:["fusil_r"],ic:"🤖",fac:"sep",co:"#CC9966"},
+  b2:{n:"Droïde B2",pts:300,act:4,mm:-2,arm:11,hp:3,w:["f_poing_x2"],ic:"🦾",fac:"sep",co:"#888"},
+  tri_droid:{n:"Tri-Droïde",pts:1800,act:4,mm:2,arm:6,hp:10,w:["tourelle_x3","rocket_x3"],ic:"🕷",fac:"sep",co:"#556677"},
+  rebel:{n:"Rebelle",pts:180,act:5,mm:0,arm:17,hp:2,w:["blast_r"],ic:"✊",fac:"reb",co:"#CC4444"},
+  rebel_f:{n:"Rebelle Fusil",pts:180,act:5,mm:0,arm:17,hp:2,w:["fusil_r"],ic:"🔫",fac:"reb",co:"#BB3333"},
+  rebel_p:{n:"Rebelle Pistol.",pts:150,act:5,mm:0,arm:17,hp:2,w:["pist_r"],ic:"🫡",fac:"reb",co:"#993333"},
+  rebel_jet:{n:"Rebelle Jetpack",pts:240,act:5,mm:2,arm:17,hp:2,w:["blast_r"],ic:"🚀",fac:"reb",co:"#DD5555",air:1,fly:true},
+  guard:{n:"Garde Reb.",pts:200,act:5,mm:0,arm:16,hp:2,w:["blast_b"],ic:"🛡",fac:"reb",co:"#884422"},
+};
+
+/* ═══ VEHICLE WEAPONS ═══ */
+const VWEAPS={
+  stap_laser_x2:{n:"×2 Canons STAP",melee:0,cat1:12,cat2:14,catP:0,mun:8,pen:5,dmg:1},
+  av7_cannon:{n:"Canon AV-7",melee:0,cat1:0,cat2:10,catP:10,mun:1,pen:10,dmg:4},
+  cram_fusil_x2:{n:"×2 Fusils Motojet",melee:0,cat1:15,cat2:15,catP:0,mun:6,pen:4,dmg:1},
+  cram_sniper_x2:{n:"×2 Snipers montés",melee:0,cat1:0,cat2:13,catP:15,mun:2,pen:7,dmg:2},
+  trtt_blaster:{n:"Blaster rép.",melee:0,cat1:14,cat2:17,catP:0,mun:6,pen:6,dmg:1},
+  trtt_cannon:{n:"Canon monté",melee:0,cat1:12,cat2:14,catP:0,mun:2,pen:7,dmg:2},
+};
+
+/* ═══ VEHICLE DEFINITIONS ═══ */
+const VDEFS={
+  stap:{n:"STAP",pts:650,mm:3,arm:12,hp:5,
+    pw:["stap_laser_x2"],gw:[],
+    seats:{p:1,g:0,t:0},ic:"🏍",fac:"sep",fly:true,co:"#AA7733"},
+  av7:{n:"Canon AV-7",pts:1600,mm:-3,arm:12,hp:6,
+    pw:["av7_cannon"],gw:[],
+    seats:{p:1,g:0,t:0},ic:"💥",fac:"cl",fly:false,co:"#5577AA"},
+  cram:{n:"Motojet CRAM",pts:1000,mm:4,arm:12,hp:6,
+    pw:["cram_fusil_x2"],gw:["cram_sniper_x2"],
+    seats:{p:1,g:1,t:0},ic:"🚁",fac:"cl",fly:true,co:"#4488CC"},
+  trtt:{n:"TR-TT",pts:1800,mm:1,arm:10,hp:8,
+    pw:["trtt_blaster"],gw:["trtt_cannon"],
+    seats:{p:1,g:1,t:0},ic:"🦏",fac:"cl",fly:false,co:"#667788"},
+};
+
+const TERRK=[
+  {n:"Ruines",e:"🏚",c:"#8B8682",a:2,b:4},{n:"Rochers",e:"🪨",c:"#696969",a:2,b:3},
+  {n:"Maison",e:"🏠",c:"#CD853F",a:3,b:5},{n:"Mur",e:"🧱",c:"#A0522D",a:5,b:8,wall:1},
+  {n:"Tour",e:"🏰",c:"#708090",a:2,b:3},{n:"Forêt",e:"🌲",c:"#228B22",a:2,b:4},
+];
+
+const SQC=["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#F7DC6F","#98D8C8"];
+const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const d20=()=>ri(1,20);
+const uid=()=>Math.random().toString(36).slice(2,9);
+const clamp=(x,y)=>({x:Math.max(PAD,Math.min(BW-BASE-PAD,x)),y:Math.max(PAD,Math.min(BH-BASE-PAD,y))});
+const clampH=(x,y,p)=>({x:Math.max(PAD,Math.min(BW-BASE-PAD,x)),y:Math.max(p===1?HALF+PAD:PAD,Math.min(p===1?BH-BASE-PAD:HALF-BASE-PAD,y))});
+const edgeY=(p)=>p===1?BH-BASE-PAD:PAD;
+
+/* ═══ BALANCE ANALYSIS FUNCTIONS ═══ */
+const balSaveProb=(arm,pen)=>Math.max(0,(21-(arm+pen))/20);
+// Damage of 1 weapon at best range vs target armor
+const balWeaponDmg=(wk,tArm)=>{
+  const w=WEAPS[wk]||VWEAPS[wk];if(!w)return 0;
+  let best=0;
+  for(const b of["melee","cat1","cat2","catP"]){
+    const diff=w[b];if(!diff)continue;
+    const hitP=Math.max(0,(21-diff)/20);
+    const failS=1-balSaveProb(tArm,w.pen);
+    const dmg=w.dMax?(1+w.dMax)/2:w.dmg;
+    const exp=w.mun*hitP*failS*dmg;
+    if(exp>best)best=exp;
+  }
+  return best;
+};
+const balUnitData=(tArm=15)=>Object.entries(UDEFS).map(([k,u])=>{
+  // Each weapon costs 2PA to fire, each can fire once/turn
+  const nWeapons=u.w.length;
+  const maxFires=Math.floor(u.act/2); // max weapon uses per turn
+  const nFires=Math.min(nWeapons,maxFires); // actual fires per turn
+  // Sort weapons by damage, take the best nFires
+  const wDmgs=u.w.map(wk=>({key:wk,dmg:balWeaponDmg(wk,tArm)})).sort((a,b)=>b.dmg-a.dmg);
+  const dpt=wDmgs.slice(0,nFires).reduce((s,w)=>s+w.dmg,0); // damage per turn
+  const paAfterFire=u.act-nFires*2; // PA left for movement
+  // Survivability
+  const parade=balSaveProb(u.arm,5);
+  const effHP=parade<1?u.hp/(1-parade):u.hp*20;
+  // Lifetime damage = dpt × turns alive (effHP ≈ turns survived)
+  const lifetime=dpt*effHP;
+  // Mobility bonus: more moves after fire = more tactical value
+  const mobBonus=1+paAfterFire*0.05; // +5% per move remaining
+  const value=(lifetime*mobBonus)/u.pts*1000;
+  return{key:k,...u,nFires,dpt,paAfterFire,parade,effHP,lifetime,value,
+    wDmgs:wDmgs.map(w=>({...w,dmg:+w.dmg.toFixed(2)}))};
+}).sort((a,b)=>b.value-a.value);
+const balVehData=(tArm=15)=>Object.entries(VDEFS).map(([k,v])=>{
+  // Pilot fires pw (2PA each), gunner fires gw (2PA each, separate PA pool)
+  const pDmgs=v.pw.map(wk=>({key:wk,dmg:balWeaponDmg(wk,tArm)}));
+  const gDmgs=v.gw.map(wk=>({key:wk,dmg:balWeaponDmg(wk,tArm)}));
+  const pilotDpt=pDmgs.reduce((s,w)=>s+w.dmg,0);
+  const gunnerDpt=gDmgs.reduce((s,w)=>s+w.dmg,0);
+  const totalDpt=pilotDpt+gunnerDpt;
+  const parade=balSaveProb(v.arm,5);
+  const effHP=parade<1?(v.hp+2)/(1-parade):(v.hp+2)*20;
+  const lifetime=totalDpt*effHP;
+  const value=(lifetime)/v.pts*1000;
+  return{key:k,...v,pilotDpt,gunnerDpt,totalDpt,parade,effHP,lifetime,value};
+}).sort((a,b)=>b.value-a.value);
+/* ═══ BALANCE STATIC DATA ═══ */
+const BAL_LANC=[];for(let n=1;n<=20;n++)BAL_LANC.push([n,n*n]);
+const BAL_MID=[];for(let n=1;n<=20;n++)BAL_MID.push([n,Math.pow(n,1.5)]);
+const BAL_LIN=[];for(let n=1;n<=20;n++)BAL_LIN.push([n,n]);
+const BAL_HPE=[];for(let h=1;h<=12;h++)BAL_HPE.push([h,Math.round(100*Math.pow(h,1.5))]);
+const BAL_HPA=[];for(let h=1;h<=12;h++)BAL_HPA.push([h,Math.round(100*Math.pow(h,1.7))]);
+const BAL_HPL=[];for(let h=1;h<=12;h++)BAL_HPL.push([h,h*100]);
+const BAL_PROPOSED=[
+  {n:"Clone Ph.2",o:200,p:200,r:"Référence"},{n:"Clone Geo",o:230,p:210,r:"Quasi = Clone"},
+  {n:"Sniper",o:260,p:220,r:"1 dé = aléatoire"},{n:"Clone Spéc.",o:250,p:210,r:"dbl_f sous-performe"},
+  {n:"Officier",o:270,p:240,r:"Pistolet moyen"},{n:"Airborne",o:270,p:280,r:"Parachutage fort"},
+  {n:"Fives",o:430,p:"500*",r:"arm→11, hp→3"},{n:"Rex",o:400,p:400,r:"Inchangé"},
+  {n:"B1",o:170,p:"120*",r:"5PA, chair à canon"},{n:"B2",o:300,p:320,r:"Bon arm"},
+  {n:"Tri-Droïde",o:1800,p:"3000*",r:"Lanchester HP^1.5"},
+  {n:"Rebelle",o:180,p:130,r:"0% parade"},{n:"Reb. Fusil",o:180,p:130,r:"Idem"},
+  {n:"Reb. Pistol.",o:150,p:100,r:"Arme faible"},{n:"Reb. Jetpack",o:240,p:200,r:"Vol mais fragile"},
+  {n:"Garde Reb.",o:200,p:170,r:"arm=16"},
+];
+const balS={fontSize:10,color:"#e6edf3"};
+const balH={fontSize:11,color:"#f0c040",margin:"0 0 6px",fontWeight:700};
+const balC={background:"#161b22",border:"1px solid #30363d",borderRadius:6,padding:10,marginBottom:10};
+
+function hitLine(x1,y1,x2,y2,rx,ry,rw,rh){
+  const E=[[rx,ry,rx+rw,ry],[rx+rw,ry,rx+rw,ry+rh],[rx+rw,ry+rh,rx,ry+rh],[rx,ry+rh,rx,ry]];
+  for(const[a,b,c,d]of E){const D=(x2-x1)*(d-b)-(y2-y1)*(c-a);if(Math.abs(D)<1e-6)continue;
+    const t=((a-x1)*(d-b)-(b-y1)*(c-a))/D,u=((a-x1)*(y2-y1)-(b-y1)*(x2-x1))/D;
+    if(t>=0&&t<=1&&u>=0&&u<=1)return true;}return false;
+}
+function blocked(x1,y1,x2,y2,T){for(const t of T)if(hitLine(x1,y1,x2,y2,t.x,t.y,t.w,t.h))return true;return false;}
+function onTerr(x,y,T){for(const t of T)if(x+BASE>t.x&&x<t.x+t.w&&y+BASE>t.y&&y<t.y+t.h)return true;return false;}
+function overlap(x,y,us,sk){for(const u of us){if(u.id===sk||!u.dep||u.hp<=0)continue;if(Math.abs(u.x-x)<BASE+2&&Math.abs(u.y-y)<BASE+2)return true;}return false;}
+function rCat(px){const s=px/SEG_PX;if(s<=0.5)return"melee";if(s<=C1)return"cat1";if(s<=C2)return"cat2";return"catP";}
+function rCol(px){const c=rCat(px);return c==="melee"||c==="cat1"?"#0f0":c==="cat2"?"#fd0":"#f44";}
+function wDiff(k,cat){const w=WEAPS[k]||VWEAPS[k];return w?w[cat]||0:0;}
+function mkUnit(type,pl){const d=UDEFS[type];return{id:uid(),type,pl,name:d.n,pts:d.pts,mAct:d.act,act:d.act,mm:d.mm,arm:d.arm,mHp:d.hp,hp:d.hp,ws:d.w.map(k=>({key:k,...WEAPS[k],cur:WEAPS[k].mun})),ic:d.ic,fac:d.fac,co:d.co,air:!!d.air,fly:!!d.fly,dep:!d.air,done:false,sqId:null,prone:false,origUnit:null,x:-999,y:-999};}
+function mkVeh(vtype,pl){const vd=VDEFS[vtype];return{id:uid(),type:`v_${vtype}`,vtype,pl,name:vd.n,pts:vd.pts,
+  mAct:5,act:5,mm:vd.mm,arm:vd.arm,
+  mHp:2,hp:2,vHp:vd.hp,vMHp:vd.hp,
+  ws:vd.pw.map(k=>({key:k,...VWEAPS[k],cur:VWEAPS[k].mun})),
+  gw:vd.gw.map(k=>({key:k,...VWEAPS[k],cur:VWEAPS[k].mun})),
+  hasGunner:vd.gw.length>0,gunDone:false,gunAct:vd.gw.length>0?5:0,mGunAct:vd.gw.length>0?5:0,
+  ic:vd.ic,fac:vd.fac,co:vd.co,isVeh:true,fly:!!vd.fly,
+  air:false,dep:false,done:false,sqId:null,prone:false,origUnit:null,x:-999,y:-999};}
+/* Empty vehicle on the field (no pilot) */
+function mkEmptyVeh(vtype,pl,x,y){const vd=VDEFS[vtype];return{id:uid(),vtype,pl,name:vd.n,pts:vd.pts,ic:vd.ic,co:vd.co,fly:!!vd.fly,x,y};}
+/* Board: infantry enters empty vehicle, returns transformed unit */
+function boardVehUnit(unit,vtype){
+  const vd=VDEFS[vtype];
+  return{...unit,
+    origUnit:{type:unit.type,name:unit.name,mm:unit.mm,arm:unit.arm,mHp:unit.mHp,hp:unit.hp,
+      ws:unit.ws.map(w=>({key:w.key,n:w.n,mun:w.mun,once:w.once})),ic:unit.ic,co:unit.co,fly:unit.fly,fac:unit.fac,prone:false},
+    type:`v_${vtype}`,vtype,name:`${vd.n}(${unit.name})`,
+    mm:vd.mm,arm:vd.arm,vHp:vd.hp,vMHp:vd.hp,
+    ws:vd.pw.map(k=>({key:k,...VWEAPS[k],cur:VWEAPS[k].mun})),
+    gw:vd.gw.map(k=>({key:k,...VWEAPS[k],cur:VWEAPS[k].mun})),
+    hasGunner:vd.gw.length>0,gunDone:true,gunAct:0,mGunAct:vd.gw.length>0?unit.mAct:0,
+    ic:vd.ic,co:vd.co,isVeh:true,fly:!!vd.fly,prone:false,
+    act:0,done:true};
+}
+/* Dismount: vehicle unit ejects pilot, returns {pilot, emptyVeh} */
+function dismountVehUnit(vU){
+  const o=vU.origUnit||{type:vU.fac==="sep"?"b1":vU.fac==="reb"?"rebel":"clone"};
+  const bd=UDEFS[o.type]||UDEFS.clone;
+  const pilot={...vU,origUnit:null,
+    type:o.type,vtype:null,name:o.name||bd.n,mm:o.mm??bd.mm,arm:o.arm??bd.arm,
+    hp:Math.min(vU.hp,o.mHp||bd.hp),mHp:o.mHp||bd.hp,vHp:0,vMHp:0,
+    ws:bd.w.map(k=>({key:k,...WEAPS[k],cur:WEAPS[k].mun})),
+    gw:[],hasGunner:false,gunDone:true,gunAct:0,mGunAct:0,
+    ic:o.ic||bd.ic,co:o.co||bd.co,isVeh:false,fly:o.fly||false,prone:false,
+    act:vU.act-1};
+  return pilot;
+}
+/* Weapon droppability: B2 fpoing, tri-droid turrets/rockets = not pickable */
+const NOT_PICKABLE=["f_poing_x2","tourelle_x3","rocket_x3"];
+function mkTerr(cx,cy,half){const k=TERRK[ri(0,TERRK.length-1)];const w=ri(k.a,k.b)*SEG_PX;const h=(k.wall?ri(1,2):ri(k.a,k.b))*SEG_PX*0.6;const mY=half===1?HALF+6:6;const xY=half===1?BH-h-6:HALF-h-6;return{id:uid(),x:Math.max(6,Math.min(BW-w-6,cx-w/2)),y:Math.max(mY,Math.min(xY,cy-h/2)),w,h,kind:k.n,color:k.c,emoji:k.e};}
+function sqAssign(army){const g={};army.forEach(u=>{if(!g[u.type])g[u.type]=[];g[u.type].push(u.id);});return army.map(u=>({...u,sqId:g[u.type]&&g[u.type].length>=2?`sq_${u.type}`:null}));}
+function sqColor(s){if(!s)return null;return SQC[Array.from(s).reduce((a,c)=>a+c.charCodeAt(0),0)%SQC.length];}
+
+/* ═══ HEADLESS SIMULATION ENGINE ═══ */
+function simBattle(army1Defs,army2Defs){
+  // Create units or vehicles
+  const mkU=(t,pl)=>{
+    if(t.startsWith("v_")){const vt=t.slice(2);return mkVeh(vt,pl);}
+    const d=UDEFS[t];return{id:uid(),type:t,pl,n:d.n,pts:d.pts,mAct:d.act,act:d.act,mm:d.mm,arm:d.arm,mHp:d.hp,hp:d.hp,ws:d.w.map(k=>({key:k,...WEAPS[k],cur:WEAPS[k].mun})),ic:d.ic,fac:d.fac,co:d.co,air:!!d.air,fly:!!d.fly,dep:!d.air,done:false,x:-99,y:-99};
+  };
+  let u1=army1Defs.map(t=>mkU(t,1));
+  let u2=army2Defs.map(t=>mkU(t,2));
+
+  // Generate terrain for simulation
+  const simTerr=[];
+  for(let i=0;i<4;i++)simTerr.push(mkTerr(ri(30,BW-30),ri(HALF+30,BH-60),1));
+  for(let i=0;i<4;i++)simTerr.push(mkTerr(ri(30,BW-30),ri(60,HALF-30),2));
+
+  // Deploy — edge line spread (avoid terrain)
+  const deploy=(army,pl)=>{
+    const placed=[];const yBase=pl===1?BH-BASE-PAD:PAD;
+    for(const u of army){
+      if(u.air){placed.push({...u,dep:false,x:-999,y:-999});continue;}
+      let ok=false;
+      for(let i=0;i<100;i++){
+        const px=PAD+BASE+ri(0,Math.floor(BW-PAD*2-BASE*3));
+        if(!onTerr(px,yBase,simTerr)&&!placed.some(p=>p.dep&&Math.abs(p.x-px)<BASE+3)){
+          placed.push({...u,x:px,y:yBase,dep:true});ok=true;break;}}
+      if(!ok)placed.push({...u,x:ri(PAD,BW-BASE-PAD),y:yBase,dep:true});
+    }return placed;
+  };
+  u1=deploy(u1,1);u2=deploy(u2,2);
+  const all=()=>[...u1,...u2];
+
+  // Deploy airborne (avoid terrain)
+  const deployAir=(u,units)=>{
+    const en=units.filter(e=>e.pl!==u.pl&&e.hp>0&&e.dep);if(!en.length)return u;
+    for(let i=0;i<60;i++){
+      const p={x:ri(PAD+BASE,BW-BASE*2),y:ri(PAD+BASE,BH-BASE*2)};
+      if(onTerr(p.x,p.y,simTerr))continue;
+      if(units.some(a=>a.dep&&a.hp>0&&a.id!==u.id&&Math.abs(a.x-p.x)<BASE+3&&Math.abs(a.y-p.y)<BASE+3))continue;
+      let sc=0;for(const e of en){const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<C1*SEG_PX&&!blocked(p.x+BR,p.y+BR,e.x+BR,e.y+BR,simTerr))sc++;}
+      if(sc>0)return{...u,x:p.x,y:p.y,dep:true};
+    }return u;
+  };
+
+  // Sim combat
+  let turns=0,maxTurns=40;
+  const simFire=(att,bT,weaponList)=>{
+    const d2=Math.hypot(att.x+BR-(bT.x+BR),att.y+BR-(bT.y+BR));
+    const cat=rCat(d2);let bW=null,bD=0;
+    for(const w of weaponList){if(w.cur<=0)continue;const df=wDiff(w.key,cat);if(df>0&&(!bW||df<bD)){bW=w;bD=df;}}
+    if(!bW)return null;
+    const rolls=[];for(let i=0;i<bW.cur;i++)rolls.push(d20());
+    const hits=rolls.filter(r=>r>=bD);
+    let totD=0;
+    for(const h of hits){const sr=d20();if(sr<bT.arm+bW.pen)totD+=(bW.dMax?ri(1,bW.dMax):bW.dmg);}
+    // Apply to vehicle HP first
+    if(bT.isVeh&&bT.vHp>0){
+      const nVHp=Math.max(0,bT.vHp-totD);
+      if(bT.pl===1)u1=u1.map(a=>a.id===bT.id?{...a,vHp:nVHp}:a);
+      else u2=u2.map(a=>a.id===bT.id?{...a,vHp:nVHp}:a);
+      if(nVHp<=0){
+        // Vehicle destruction
+        const boom=d20()<=10;const pHp=boom?Math.max(0,bT.hp-2):bT.hp;
+        if(pHp<=0){if(bT.pl===1)u1=u1.map(a=>a.id===bT.id?{...a,vHp:0,hp:0,isVeh:false}:a);else u2=u2.map(a=>a.id===bT.id?{...a,vHp:0,hp:0,isVeh:false}:a);}
+        else{
+          const bt=bT.fac==="sep"?"b1":bT.fac==="reb"?"rebel":"clone";const bd=UDEFS[bt];
+          const eject={...bT,isVeh:false,vHp:0,fly:false,type:bt,mm:bd.mm,arm:bd.arm,hp:pHp,mHp:bd.hp,ws:bd.w.map(k=>({key:k,...WEAPS[k],cur:WEAPS[k].mun})),gw:[],hasGunner:false};
+          if(bT.pl===1)u1=u1.map(a=>a.id===bT.id?eject:a);else u2=u2.map(a=>a.id===bT.id?eject:a);
+        }
+      }
+    } else {
+      const nHp=Math.max(0,bT.hp-totD);
+      if(bT.pl===1)u1=u1.map(a=>a.id===bT.id?{...a,hp:nHp}:a);
+      else u2=u2.map(a=>a.id===bT.id?{...a,hp:nHp}:a);
+    }
+    return bW;
+  };
+
+  while(turns<maxTurns){
+    turns++;
+    // Reset acts & ammo
+    const resetSim=u=>{
+      const rw=u.ws.map(w=>{if(w.once&&w.cur<=0)return w;const s=WEAPS[w.key]||VWEAPS[w.key];return{...w,cur:s?.mun||w.mun};});
+      const rgw=u.gw?u.gw.map(w=>{if(w.once&&w.cur<=0)return w;const s=VWEAPS[w.key];return{...w,cur:s?.mun||w.mun};}):[];
+      return{...u,act:u.mAct,done:false,ws:rw,gw:rgw,gunDone:false,gunAct:u.mGunAct||0};
+    };
+    u1=u1.map(resetSim);u2=u2.map(resetSim);
+
+    // Initiative
+    let r1=d20(),r2=d20();while(r1===r2){r1=d20();r2=d20();}
+    let curP=r1>r2?1:2;
+
+    // Airborne deploy
+    for(let i=0;i<u1.length;i++)if(u1[i].air&&!u1[i].dep&&u1[i].hp>0)u1[i]=deployAir(u1[i],all());
+    for(let i=0;i<u2.length;i++)if(u2[i].air&&!u2[i].dep&&u2[i].hp>0)u2[i]=deployAir(u2[i],all());
+
+    let safety=0;
+    while(safety<80){
+      safety++;
+      const army=curP===1?u1:u2;
+      const active=army.filter(u=>u.hp>0&&!u.done&&u.dep);
+      if(!active.length){
+        const other=curP===1?2:1;
+        const oA=(other===1?u1:u2).filter(u=>u.hp>0&&!u.done&&u.dep);
+        if(!oA.length)break; // turn over
+        curP=other;continue;
+      }
+
+      // Pick unit (fire-capable first, but everyone gets activated)
+      let best=active[0],bs=-1e9;
+      for(const u of active){let sc=0;let canFire=false;
+        for(const e of all().filter(e=>e.pl!==u.pl&&e.hp>0&&e.dep)){
+          const d=Math.hypot(u.x+BR-(e.x+BR),u.y+BR-(e.y+BR));
+          if(!blocked(u.x+BR,u.y+BR,e.x+BR,e.y+BR,simTerr)){const cat=rCat(d);for(const w of u.ws)if(w.cur>0&&wDiff(w.key,cat)>0){canFire=true;sc+=80;}}
+        }
+        if(canFire)sc+=200;
+        else sc+=50; // still worth activating to advance
+        if(sc>bs){bs=sc;best=u;}}
+
+      let cur={...best};const sA=cur.pl===1?v=>{u1=u1.map(a=>a.id===cur.id?v:a);}:v=>{u2=u2.map(a=>a.id===cur.id?v:a);};
+
+      const canFireFrom=(px,py,ws)=>{
+        for(const e of all().filter(e=>e.pl!==cur.pl&&e.hp>0&&e.dep)){
+          const d=Math.hypot(px-(e.x+BR),py-(e.y+BR));
+          if(blocked(px,py,e.x+BR,e.y+BR,simTerr))continue;
+          const cat=rCat(d);for(const w of ws){if(w.cur>0&&wDiff(w.key,cat)>0)return true;}
+        }return false;
+      };
+      let hasFired=false;
+
+      // AI actions (pilot) — aggressive: always advance toward optimal range
+      // Calculate optimal range for this unit's weapons
+      let simOptRange=C1*SEG_PX*0.7,simBestD=99;
+      for(const w of cur.ws){const src=WEAPS[w.key]||VWEAPS[w.key];if(!src)continue;
+        const cats=[{d:src.melee,r:BASE*4},{d:src.cat1,r:C1*SEG_PX*0.7},{d:src.cat2,r:(C1+C2)/2*SEG_PX*0.5},{d:src.catP,r:C2*SEG_PX*0.9}];
+        for(const c of cats){if(c.d>0&&c.d<simBestD){simBestD=c.d;simOptRange=c.r;}}
+      }
+
+      for(let step=0;step<8&&cur.act>0;step++){
+        const en=all().filter(e=>e.pl!==cur.pl&&e.hp>0&&e.dep);if(!en.length)break;
+
+        // Try attack (2PA) — ALWAYS PRIORITY
+        if(cur.act>=2){
+          let bT=null,bS=-1e9;
+          for(const e of en){
+            const d=Math.hypot(cur.x+BR-(e.x+BR),cur.y+BR-(e.y+BR));
+            if(blocked(cur.x+BR,cur.y+BR,e.x+BR,e.y+BR,simTerr))continue;
+            const cat=rCat(d);
+            for(const w of cur.ws){if(w.cur<=0)continue;const df=wDiff(w.key,cat);
+              if(df>0){const sc=(21-df)*w.cur*(w.dMax||w.dmg)+(e.hp<=(w.dMax||w.dmg)?80:0);if(sc>bS){bS=sc;bT=e;}}}
+          }
+          if(bT){
+            const usedW=simFire(cur,bT,cur.ws);
+            if(usedW){hasFired=true;cur={...cur,act:cur.act-2,ws:cur.ws.map(w=>w===usedW?{...w,cur:0}:w)};sA(cur);continue;}
+          }
+        }
+
+        // ALWAYS move toward optimal range if can't fire or not at optimal
+        if(cur.act>=1){
+          const ceDist=en.reduce((m,e)=>Math.min(m,Math.hypot(cur.x+BR-(e.x+BR),cur.y+BR-(e.y+BR))),1e9);
+          const atOptimal=Math.abs(ceDist-simOptRange)<SEG_PX*2;
+          const canFireHere=canFireFrom(cur.x+BR,cur.y+BR,cur.ws);
+
+          // Only stay if at optimal range AND can fire
+          if(canFireHere&&atOptimal)break;
+
+          // Move toward closest enemy
+          let closest=null,closestD=1e9;
+          for(const e of en){const d=Math.hypot(e.x-cur.x,e.y-cur.y);if(d<closestD){closestD=d;closest=e;}}
+          if(closest){
+            const ag=Math.atan2(closest.y-cur.y,closest.x-cur.x);
+            const ms=(2+cur.mm)*SEG_PX;
+            let nx=Math.max(PAD,Math.min(BW-BASE-PAD,cur.x+Math.cos(ag)*ms));
+            let ny=Math.max(PAD,Math.min(BH-BASE-PAD,cur.y+Math.sin(ag)*ms));
+            if(!cur.fly&&(onTerr(nx,ny,simTerr)||blocked(cur.x+BR,cur.y+BR,nx+BR,ny+BR,simTerr))){
+              let found=false;
+              for(let t=0.8;t>=0.2;t-=0.2){
+                const sx=Math.max(PAD,Math.min(BW-BASE-PAD,cur.x+Math.cos(ag)*ms*t));
+                const sy=Math.max(PAD,Math.min(BH-BASE-PAD,cur.y+Math.sin(ag)*ms*t));
+                if(!onTerr(sx,sy,simTerr)&&!blocked(cur.x+BR,cur.y+BR,sx+BR,sy+BR,simTerr)){
+                  nx=sx;ny=sy;found=true;break;}
+              }
+              if(!found)break;
+            }
+            cur={...cur,x:nx,y:ny,act:cur.act-1};sA(cur);continue;
+          }
+          break;
+        }
+        break;
+      }
+
+      // Gunner attacks (vehicle only)
+      if(cur.isVeh&&cur.hasGunner&&cur.gw){
+        let gAct=cur.gunAct||0;
+        for(let gs=0;gs<4&&gAct>=2;gs++){
+          const en=all().filter(e=>e.pl!==cur.pl&&e.hp>0&&e.dep);if(!en.length)break;
+          let bT=null,bS=-1e9;
+          for(const e of en){
+            const d=Math.hypot(cur.x+BR-(e.x+BR),cur.y+BR-(e.y+BR));
+            if(blocked(cur.x+BR,cur.y+BR,e.x+BR,e.y+BR,simTerr))continue;
+            const cat=rCat(d);for(const w of cur.gw){if(w.cur<=0)continue;const df=wDiff(w.key,cat);
+              if(df>0){const sc=(21-df)*w.cur*(w.dMax||w.dmg);if(sc>bS){bS=sc;bT=e;}}}
+          }
+          if(bT){const usedW=simFire(cur,bT,cur.gw);if(usedW){gAct-=2;cur={...cur,gunAct:gAct,gw:cur.gw.map(w=>w===usedW?{...w,cur:0}:w)};sA(cur);}else break;}
+          else break;
+        }
+      }
+
+      // End unit turn
+      cur={...cur,done:true,act:0,gunDone:true};sA(cur);
+      if(cur.pl===1)u1=u1.map(a=>a.id===cur.id?cur:a);else u2=u2.map(a=>a.id===cur.id?cur:a);
+
+      // Check win
+      if(u1.filter(u=>u.hp>0||(u.air&&!u.dep)).length===0)return{winner:2,turns,surv1:0,surv2:u2.filter(u=>u.hp>0).length,
+        detail1:u1.map(u=>({type:u.type,alive:u.hp>0})),detail2:u2.map(u=>({type:u.type,alive:u.hp>0}))};
+      if(u2.filter(u=>u.hp>0||(u.air&&!u.dep)).length===0)return{winner:1,turns,surv1:u1.filter(u=>u.hp>0).length,surv2:0,
+        detail1:u1.map(u=>({type:u.type,alive:u.hp>0})),detail2:u2.map(u=>({type:u.type,alive:u.hp>0}))};
+
+      // Switch player
+      const o=curP===1?2:1;
+      const oA=(o===1?u1:u2).filter(u=>u.hp>0&&!u.done&&u.dep);
+      if(oA.length>0)curP=o;
+    }
+
+    // Check end of turn
+    if(u1.filter(u=>u.hp>0).length===0)return{winner:2,turns,surv1:0,surv2:u2.filter(u=>u.hp>0).length,
+      detail1:u1.map(u=>({type:u.type,alive:u.hp>0})),detail2:u2.map(u=>({type:u.type,alive:u.hp>0}))};
+    if(u2.filter(u=>u.hp>0).length===0)return{winner:1,turns,surv1:u1.filter(u=>u.hp>0).length,surv2:0,
+      detail1:u1.map(u=>({type:u.type,alive:u.hp>0})),detail2:u2.map(u=>({type:u.type,alive:u.hp>0}))};
+  }
+  // Timeout → whoever has more hp wins
+  const hp1=u1.reduce((s,u)=>s+Math.max(0,u.hp),0),hp2=u2.reduce((s,u)=>s+Math.max(0,u.hp),0);
+  return{winner:hp1>=hp2?1:2,turns,surv1:u1.filter(u=>u.hp>0).length,surv2:u2.filter(u=>u.hp>0).length,
+    detail1:u1.map(u=>({type:u.type,alive:u.hp>0})),detail2:u2.map(u=>({type:u.type,alive:u.hp>0}))};
+}
+
+function runSimulations(n,a1Defs,a2Defs){
+  const results={n,w1:0,w2:0,totalTurns:0,survJ1:[],survJ2:[],unitStats:{}};
+  for(let i=0;i<n;i++){
+    const r=simBattle(a1Defs,a2Defs);
+    if(r.winner===1)results.w1++;else results.w2++;
+    results.totalTurns+=r.turns;
+    results.survJ1.push(r.surv1);results.survJ2.push(r.surv2);
+    for(const d of r.detail1){if(!results.unitStats[d.type])results.unitStats[d.type]={total:0,alive:0};results.unitStats[d.type].total++;if(d.alive)results.unitStats[d.type].alive++;}
+    for(const d of r.detail2){if(!results.unitStats[d.type])results.unitStats[d.type]={total:0,alive:0};results.unitStats[d.type].total++;if(d.alive)results.unitStats[d.type].alive++;}
+  }
+  return results;
+}
+
+/* Learning */
+function getBalanceTips(L){
+  const tips=[];
+  if(L.g<2)return["Jouez 2+ parties pour les conseils."];
+  const w1=L.w1/L.g,w2=L.w2/L.g;
+  if(w1>0.65)tips.push("⚠ J1 domine — réduisez -50pts ou ajoutez 1 unité J2.");
+  if(w2>0.65)tips.push("⚠ J2 domine — ajoutez 1 unité J1.");
+  for(const[t,s]of Object.entries(L.us||{})){
+    if(s.n>=3&&UDEFS[t]){const sr=s.s/s.n;
+      if(sr>0.8)tips.push(`📈 ${UDEFS[t].ic}${UDEFS[t].n} survit ${Math.round(sr*100)}% → +30pts`);
+      if(sr<0.2)tips.push(`📉 ${UDEFS[t].ic}${UDEFS[t].n} meurt ${Math.round((1-sr)*100)}% → -30pts`);
+    }}
+  if(!tips.length)tips.push("✓ Équilibrage correct.");
+  return tips;
+}
+
+/* ═══ COMPONENT ═══ */
+function CrossBlock(){
+  const[phase,setPhase]=useState("setup");
+  const[tab,setTab]=useState("army");
+  const[a1,sA1]=useState([]);const[a2,sA2]=useState([]);
+  const[terr,sTerr]=useState([]);
+  const[sel,sSel]=useState(null);
+  const[curP,sCP]=useState(1);const[turn,sTurn]=useState(1);
+  const[ini,sIni]=useState({p1:0,p2:0});
+  const[log,sLog]=useState(["🧱 Bienvenue dans CrossBlock !"]);
+  const[bul,sBul]=useState([]);const[los,sLos]=useState([]);
+  const[winner,sWin]=useState(null);
+  const[p1,sP1]=useState(0);const[p2,sP2]=useState(0);
+  const[dQ1,sDQ1]=useState([]);const[dQ2,sDQ2]=useState([]);
+  const[dTn,sDTn]=useState(1);const[tSel,sTSel]=useState(null);
+  const[paused,sPau]=useState(false);
+  const[mU,sMU]=useState(null);const[mW,sMW]=useState(null);
+  const[animating,sAnimating]=useState(false);
+  const[learn,sLearn]=useState({g:0,w1:0,w2:0,us:{}});
+  const[simN,sSimN]=useState(100);
+  const[simRes,sSimRes]=useState(null);
+  const[simRunning,sSimRunning]=useState(false);
+  const[simA1,sSimA1]=useState([]);
+  const[simA2,sSimA2]=useState([]);
+  const[balArm,sBalArm]=useState(15);
+  const[balTab,sBalTab]=useState("theory");
+  const[ev1,sEv1]=useState([]);const[ev2,sEv2]=useState([]); // empty vehicles on field
+  const[drops,sDrops]=useState([]); // dropped weapons [{id,x,y,key,pickable}]
+  const bRef=useRef(null);const lRef=useRef(null);const aiRef=useRef(null);
+
+  const all=useMemo(()=>[...a1,...a2],[a1,a2]);
+  const balUD=useMemo(()=>balUnitData(balArm),[balArm]);
+  const balVD=useMemo(()=>balVehData(balArm),[balArm]);
+  const balMaxV=useMemo(()=>Math.max(...balUD.map(u=>u.value),1),[balUD]);
+  const aL=useCallback(m=>sLog(p=>[...p.slice(-120),m]),[]);
+  useEffect(()=>{if(lRef.current)lRef.current.scrollTop=9999;},[log]);
+
+  /* Army building */
+  const addU=(pl,t)=>{(pl===1?sA1:sA2)(a=>[...a,mkUnit(t,pl)]);(pl===1?sP1:sP2)(v=>v+UDEFS[t].pts);};
+  const remU=(pl,id)=>{const a=pl===1?a1:a2;const u=a.find(x=>x.id===id);if(!u)return;(pl===1?sA1:sA2)(a=>a.filter(x=>x.id!==id));(pl===1?sP1:sP2)(v=>v-u.pts);};
+  const addV=(pl,vt)=>{(pl===1?sA1:sA2)(a=>[...a,mkVeh(vt,pl)]);(pl===1?sP1:sP2)(v=>v+VDEFS[vt].pts);};
+  const remV=(pl,id)=>{const a=pl===1?a1:a2;const u=a.find(x=>x.id===id);if(!u)return;(pl===1?sA1:sA2)(a=>a.filter(x=>x.id!==id));(pl===1?sP1:sP2)(v=>v-u.pts);};
+  const preset=(pl)=>{const ts=pl===1?["clone","clone","clone","sniper","spec","officer","airborne","fives"]:["b1","b1","b1","b1","b1","b1","b1","b1","b2","b2","b2"];
+    const us=ts.map(t=>mkUnit(t,pl));(pl===1?sA1:sA2)(us);(pl===1?sP1:sP2)(us.reduce((s,u)=>s+u.pts,0));};
+
+  /* ═══ DEPLOY ═══ */
+  const startDeploy=(mode)=>{
+    let na1=a1,na2=a2;
+    if(!a1.length){preset(1);na1=null;}
+    if(!a2.length){preset(2);na2=null;}
+    if(mode==="auto"){setTimeout(()=>autoDeploy(),50);return;}
+    setPhase("terr_p1");sTSel(null);setTab("battle");
+    aL("━━ J1: Placez décors (moitié basse). Cliquez ✓ quand fini. ━━");
+  };
+
+  const autoDeploy=()=>{
+    const t=[];
+    for(let i=0;i<4;i++)t.push(mkTerr(ri(30,BW-30),ri(HALF+30,BH-60),1));
+    for(let i=0;i<4;i++)t.push(mkTerr(ri(30,BW-30),ri(60,HALF-30),2));
+    sTerr(t);
+
+    const deployOneSide=(army,pl)=>{
+      const inf=[],vehs=[];
+      for(const u of army){if(u.isVeh)vehs.push(u);else inf.push(u);}
+      // Sort infantry by pts ascending (cheapest first = weakest)
+      const boardable=inf.filter(u=>!u.air).sort((a,b)=>a.pts-b.pts);
+      const airUnits=inf.filter(u=>u.air);
+      const boarded=[];const emptyVehs=[];const usedInf=new Set();
+      // Auto-board weakest into each vehicle
+      for(const v of vehs){
+        const pilot=boardable.find(u=>!usedInf.has(u.id));
+        if(pilot){
+          usedInf.add(pilot.id);
+          // Find position for vehicle
+          let pos=null;
+          for(let i=0;i<50;i++){
+            const px=ri(PAD+BASE,BW-BASE*2-PAD);const py=edgeY(pl)+((pl===1?-1:1)*ri(BASE*2,SEG_PX*3));
+            const p=clamp(px,py);
+            if(!onTerr(p.x,p.y,t)){pos=p;break;}
+          }
+          if(!pos)pos=clamp(BW/2+ri(-30,30),edgeY(pl)+((pl===1?-1:1)*SEG_PX*2));
+          const bu=boardVehUnit(pilot,v.vtype);
+          bu.x=pos.x;bu.y=pos.y;bu.dep=true;bu.done=false;bu.act=pilot.mAct;
+          bu.gunAct=bu.hasGunner?pilot.mAct:0;bu.mGunAct=bu.hasGunner?pilot.mAct:0;bu.gunDone=false;
+          boarded.push(bu);
+          aL(`🚗 ${pilot.ic}${pilot.name}(J${pl}) embarque → ${v.name}`);
+        } else {
+          let pos=null;
+          for(let i=0;i<50;i++){
+            const px=ri(PAD+BASE,BW-BASE*2-PAD);const py=edgeY(pl)+((pl===1?-1:1)*ri(BASE*2,SEG_PX*3));
+            const p=clamp(px,py);
+            if(!onTerr(p.x,p.y,t)){pos=p;break;}
+          }
+          if(!pos)pos=clamp(BW/2+ri(-30,30),edgeY(pl)+((pl===1?-1:1)*SEG_PX*2));
+          emptyVehs.push(mkEmptyVeh(v.vtype,pl,pos.x,pos.y));
+        }
+      }
+      // Place remaining infantry at edge
+      const remainInf=boardable.filter(u=>!usedInf.has(u.id));
+      const placed=[...boarded];
+      for(const u of [...remainInf,...airUnits]){
+        if(u.air){placed.push({...u,dep:false,x:-999,y:-999});continue;}
+        let best=null;
+        for(let i=0;i<80;i++){
+          const px=ri(PAD+BASE,BW-BASE*2-PAD);const py=edgeY(pl);
+          const p={x:px,y:py};
+          if(!onTerr(p.x,p.y,t)&&!overlap(p.x,p.y,placed,null)){best=p;break;}
+        }
+        if(!best)best={x:BW/2+ri(-30,30),y:edgeY(pl)};
+        placed.push({...u,x:best.x,y:best.y,dep:true});
+      }
+      return{units:sqAssign(placed),emptyVehs};
+    };
+    const r1=deployOneSide(a1,1),r2=deployOneSide(a2,2);
+    sA1(()=>r1.units);sA2(()=>r2.units);
+    sEv1(r1.emptyVehs);sEv2(r2.emptyVehs);
+    setPhase("battle");setTab("battle");aL("🤖 Déploiement auto terminé !");
+    setTimeout(()=>rollInit(),300);
+  };
+
+  const nextTerr=()=>{
+    if(phase==="terr_p1"){setPhase("terr_p2");sTSel(null);aL("━━ J2: Placez décors (moitié haute). ━━");}
+    else if(phase==="terr_p2"){
+      sTSel(null);
+      // Separate vehicles: deploy them as empty immediately at edges
+      const veh1=a1.filter(u=>u.isVeh),veh2=a2.filter(u=>u.isVeh);
+      const inf1=a1.filter(u=>!u.isVeh&&!u.air),inf2=a2.filter(u=>!u.isVeh&&!u.air);
+      // Remove vehicles from armies, place as empties
+      if(veh1.length||veh2.length){
+        const eV1=[],eV2=[];
+        for(const v of veh1){
+          const px=ri(PAD+BASE,BW-BASE*2-PAD);const py=edgeY(1)-SEG_PX*2;
+          const p=clamp(px,py);eV1.push(mkEmptyVeh(v.vtype,1,p.x,p.y));
+        }
+        for(const v of veh2){
+          const px=ri(PAD+BASE,BW-BASE*2-PAD);const py=edgeY(2)+SEG_PX*2;
+          const p=clamp(px,py);eV2.push(mkEmptyVeh(v.vtype,2,p.x,p.y));
+        }
+        sEv1(eV1);sEv2(eV2);
+        sA1(p=>p.filter(u=>!u.isVeh));sA2(p=>p.filter(u=>!u.isVeh));
+        if(eV1.length)aL(`🚗 J1: ${eV1.length} véhicule(s) placé(s) — cliquez dessus pour embarquer`);
+        if(eV2.length)aL(`🚗 J2: ${eV2.length} véhicule(s) placé(s) — cliquez dessus pour embarquer`);
+      }
+      const q1=a1.filter(u=>!u.isVeh&&!u.air).map(u=>u.id);
+      const q2=a2.filter(u=>!u.isVeh&&!u.air).map(u=>u.id);
+      sDQ1(q1);sDQ2(q2);sDTn(1);setPhase("dep_units");
+      aL("━━ PLACEMENT: Unités au bord ou dans véhicule ━━");
+      if(q1.length>0){const u=a1.find(x=>x.id===q1[0]);if(u)aL(`→ J1: placez ${u.ic} ${u.name} (bord ou cliquez véhicule)`);}
+    }
+  };
+
+  const delTerr=()=>{if(!tSel)return;sTerr(p=>p.filter(t=>t.id!==tSel));sTSel(null);aL("🗑 Supprimé");};
+
+  const getCurDU=()=>{if(phase!=="dep_units")return null;const q=dTn===1?dQ1:dQ2;if(!q.length)return null;return(dTn===1?a1:a2).find(u=>u.id===q[0])||null;};
+
+  const placeDU=(x,y)=>{
+    const cu=getCurDU();if(!cu)return;
+    
+    // Check if click is on an empty vehicle of this player → board it
+    const evs=dTn===1?ev1:ev2;const sEv=dTn===1?sEv1:sEv2;
+    const clickedVeh=evs.find(v=>x>=v.x-BASE&&x<=v.x+BASE*3&&y>=v.y-BASE&&y<=v.y+BASE*3);
+    if(clickedVeh){
+      const sA=dTn===1?sA1:sA2;
+      const boarded=boardVehUnit(cu,clickedVeh.vtype);
+      boarded.x=clickedVeh.x;boarded.y=clickedVeh.y;boarded.dep=true;boarded.done=false;
+      boarded.act=cu.mAct;boarded.gunAct=boarded.hasGunner?cu.mAct:0;boarded.mGunAct=boarded.hasGunner?cu.mAct:0;boarded.gunDone=false;
+      sA(prev=>prev.map(u=>u.id===cu.id?boarded:u));
+      sEv(p=>p.filter(v=>v.id!==clickedVeh.id));
+      aL(`🚗 ${cu.ic} ${cu.name}(J${dTn}) embarque → ${clickedVeh.name} ✓`);
+      advanceDepQueue();
+      return;
+    }
+    
+    const nx=Math.max(PAD,Math.min(BW-BASE-PAD,x-BR));
+    const ny=edgeY(dTn);
+    if(onTerr(nx,ny,terr)){aL("⚠ Décor !");return;}
+    if(overlap(nx,ny,all,cu.id)){aL("⚠ Occupé !");return;}
+    (dTn===1?sA1:sA2)(prev=>prev.map(u=>u.id===cu.id?{...u,x:nx,y:ny,dep:true}:u));
+    aL(`${cu.ic} ${cu.name}(J${dTn}) placé ✓`);
+    advanceDepQueue();
+  };
+
+  const advanceDepQueue=()=>{
+    if(dTn===1){
+      const nQ=dQ1.slice(1);sDQ1(nQ);
+      if(dQ2.length>0){sDTn(2);const nu=a2.find(u=>u.id===dQ2[0]);if(nu)aL(`→ J2: ${nu.ic} ${nu.name}`);}
+      else if(nQ.length>0){const nu=a1.find(u=>u.id===nQ[0]);if(nu)aL(`→ J1: ${nu.ic} ${nu.name}`);}
+      else finishDeploy();
+    } else {
+      const nQ=dQ2.slice(1);sDQ2(nQ);
+      if(dQ1.length>0){sDTn(1);const nu=a1.find(u=>u.id===dQ1[0]);if(nu)aL(`→ J1: ${nu.ic} ${nu.name}`);}
+      else if(nQ.length>0){const nu=a2.find(u=>u.id===nQ[0]);if(nu)aL(`→ J2: ${nu.ic} ${nu.name}`);}
+      else finishDeploy();
+    }
+  };
+
+  const finishDeploy=()=>{sA1(p=>sqAssign(p));sA2(p=>sqAssign(p));setPhase("battle");aL("━━━ BATAILLE ! ━━━");setTimeout(()=>rollInit(),300);};
+
+  /* ═══ INITIATIVE ═══ */
+  const rollInit=()=>{
+    let r1=d20(),r2=d20();while(r1===r2){r1=d20();r2=d20();}
+    const f=r1>r2?1:2;sIni({p1:r1,p2:r2});sCP(f);
+    const resetU=u=>({...u,act:u.mAct,done:false,
+      ws:u.ws.map(w=>{if(w.once&&w.cur<=0)return w;const src=WEAPS[w.key]||VWEAPS[w.key];return{...w,cur:src?.mun||w.mun};}),
+      ...(u.isVeh?{gw:u.gw.map(w=>{if(w.once&&w.cur<=0)return w;const src=VWEAPS[w.key];return{...w,cur:src?.mun||w.mun};}),gunDone:false,gunAct:u.mGunAct}:{})
+    });
+    sA1(p=>p.map(resetU));sA2(p=>p.map(resetU));
+    aL(`🎲 Tour ${turn}: J1=${r1} J2=${r2} → J${f}`);
+  };
+
+  /* ═══ LOS ═══ */
+  const showLos=(u)=>{
+    if(!u){sLos([]);return;}sSel(u);
+    const cx=u.x+BR,cy=u.y+BR;
+    const allW=[...u.ws,...(u.gw||[])];
+    sLos(all.filter(e=>e.pl!==u.pl&&e.hp>0&&e.dep).map(e=>{
+      const ex=e.x+BR,ey=e.y+BR,d=Math.hypot(cx-ex,cy-ey);
+      const bl=blocked(cx,cy,ex,ey,terr),col=bl?"#555":rCol(d),cat=rCat(d);
+      let cf=false;for(const w of allW)if(wDiff(w.key,cat)>0&&!bl)cf=true;
+      return{x1:cx,y1:cy,x2:ex,y2:ey,color:col,blocked:bl,canFire:cf};
+    }));
+  };
+
+  /* ═══ ANIMATED MOVE ═══ */
+  const doAnimMove=(u,nx,ny,sA,cb)=>{
+    sAnimating(true);
+    const dx=nx-u.x,dy=ny-u.y,d=Math.hypot(dx,dy);
+    const pts=[{x:u.x,y:u.y}];
+    if(d>SEG_PX*1.5){
+      const mx=u.x+dx*0.5+(Math.random()-0.5)*SEG_PX*0.7;
+      const my=u.y+dy*0.5+(Math.random()-0.5)*SEG_PX*0.7;
+      const mc=clamp(mx,my);
+      if(!onTerr(mc.x,mc.y,terr))pts.push(mc);
+    }
+    pts.push({x:nx,y:ny});
+    let fr=0;const totalFr=18;
+    const iv=setInterval(()=>{
+      fr++;const t=Math.min(fr/totalFr,1);
+      const totalD=pts.reduce((s,p,i)=>i>0?s+Math.hypot(p.x-pts[i-1].x,p.y-pts[i-1].y):s,0);
+      let walked=t*totalD,cx2=pts[0].x,cy2=pts[0].y;
+      for(let i=1;i<pts.length;i++){
+        const segD=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);
+        if(walked<=segD){const r=segD>0?walked/segD:0;cx2=pts[i-1].x+(pts[i].x-pts[i-1].x)*r;cy2=pts[i-1].y+(pts[i].y-pts[i-1].y)*r;break;}
+        walked-=segD;cx2=pts[i].x;cy2=pts[i].y;
+      }
+      sA(p=>p.map(a=>a.id===u.id?{...a,x:cx2,y:cy2}:a));
+      if(fr>=totalFr){clearInterval(iv);sA(p=>p.map(a=>a.id===u.id?{...a,x:nx,y:ny}:a));sAnimating(false);cb();}
+    },22);
+  };
+
+  /* ═══ MOVE UNIT ═══ */
+  const moveUnit=(u,tx,ty,sA,cb)=>{
+    const pronePen=u.prone?-4:0;
+    const ms=2+u.mm+pronePen;if(ms<=0){aL("⚠ MM trop bas"+(u.prone?" (couché!)":""));cb?.(null);return;}
+    const mx=ms*SEG_PX,dx=tx-u.x,dy=ty-u.y,d=Math.hypot(dx,dy);
+    let nx,ny;if(d<=mx){nx=tx;ny=ty;}else{const r=mx/d;nx=u.x+dx*r;ny=u.y+dy*r;}
+    const c=clamp(nx,ny);nx=c.x;ny=c.y;
+    // Flying units ignore terrain entirely
+    if(!u.fly){
+      // Check if DESTINATION is on terrain
+      if(onTerr(nx,ny,terr)){aL("⚠ Décor bloque la destination !");cb?.(null);return;}
+      // Check if PATH crosses any terrain (wall blocking)
+      if(blocked(u.x+BR,u.y+BR,nx+BR,ny+BR,terr)){
+        // Try to find last valid position before terrain
+        let bestD=0,bestX=u.x,bestY=u.y;
+        const steps=12;
+        for(let i=1;i<=steps;i++){
+          const t=i/steps;
+          const px=u.x+((nx-u.x)*t),py=u.y+((ny-u.y)*t);
+          if(onTerr(px,py,terr)||blocked(u.x+BR,u.y+BR,px+BR,py+BR,terr))break;
+          bestD=t;bestX=px;bestY=py;
+        }
+        if(bestD<=0.1){aL("⚠ Décor bloque le passage !");cb?.(null);return;}
+        const bc=clamp(bestX,bestY);nx=bc.x;ny=bc.y;
+        aL(`⚠ Arrêté par décor — déplacement partiel`);
+      }
+    }
+    if(overlap(nx,ny,all,u.id)){aL("⚠ Occupé !");cb?.(null);return;}
+    const up={...u,x:nx,y:ny,act:u.act-1};
+    aL(`${u.ic}${u.name} déplace${u.fly?" ✈":""}(PA:${up.act})`);
+    doAnimMove(u,nx,ny,sA,()=>{sA(p=>p.map(a=>a.id===u.id?up:a));cb?.(up);});
+  };
+
+  /* ═══ VEHICLE DESTRUCTION ═══ */
+  const vehicleDestroy=(def,sDf)=>{
+    const expl=d20();
+    const boom=expl<=10;
+    aL(boom?`💥 ${def.ic}${def.name} EXPLOSE! (🎲${expl}≤10) — Équipage: 2 dégâts!`:`🔥 ${def.ic}${def.name} détruit (🎲${expl}>10) — Pas d'explosion`);
+    const pilotHp=boom?Math.max(0,def.hp-2):def.hp;
+    const o=def.origUnit;
+    const baseType=o?.type||(def.fac==="sep"?"b1":def.fac==="reb"?"rebel":"clone");
+    const bd=UDEFS[baseType];
+    if(pilotHp<=0){
+      aL(`  💀 Pilote tué dans l'explosion!`);
+      sDf(p=>p.map(u=>u.id===def.id?{...u,vHp:0,hp:0,isVeh:false,name:"Épave "+def.name,ic:"🔥",done:true}:u));
+      sTerr(t=>[...t,{id:uid(),x:def.x-2,y:def.y-2,w:BASE+4,h:BASE+4,kind:"Épave",color:"#333",emoji:"🔥"}]);
+      // Drop pilot weapons on death
+      for(const wk of bd.w){const pick=!NOT_PICKABLE.includes(wk);const wn=WEAPS[wk]?.n||"Arme";
+        sDrops(p=>[...p,{id:uid(),x:def.x+ri(-3,3),y:def.y+ri(-3,3),key:wk,pickable:pick,name:wn}]);
+      }
+      checkWin(def.pl);
+    } else {
+      aL(`  🏃 Pilote éjecté! PV:${pilotHp}`);
+      sDf(p=>p.map(u=>u.id===def.id?{...u,
+        origUnit:null,isVeh:false,vHp:0,vMHp:0,fly:o?.fly||false,prone:false,
+        type:baseType,name:(o?.name||bd.n)+"(éjecté)",ic:o?.ic||bd.ic,co:o?.co||bd.co,
+        mm:o?.mm??bd.mm,arm:o?.arm??bd.arm,hp:pilotHp,mHp:o?.mHp||bd.hp,
+        ws:bd.w.map(k=>({key:k,...WEAPS[k],cur:WEAPS[k].mun})),
+        gw:[],hasGunner:false,gunDone:true,gunAct:0,
+        done:true
+      }:u));
+      sTerr(t=>[...t,{id:uid(),x:def.x-2,y:def.y-2,w:BASE+4,h:BASE+4,kind:"Épave",color:"#333",emoji:"🔥"}]);
+    }
+  };
+
+  /* ═══ ATTACK — DETAILED (with vehicle HP) ═══ */
+  const attackUnit=(att,def,sAt,sDf,cb2,useGw)=>{
+    const actCost=2;
+    // Check action source: pilot ws or gunner gw
+    const isGunnerFiring=!!useGw;
+    if(!isGunnerFiring&&att.act<actCost){aL("⚠ 2PA requis");cb2?.(null);return;}
+    if(isGunnerFiring&&att.gunAct<actCost){aL("⚠ Canonnier: 2PA requis");cb2?.(null);return;}
+    const ax=att.x+BR,ay=att.y+BR,dx2=def.x+BR,dy2=def.y+BR,d=Math.hypot(ax-dx2,ay-dy2);
+    if(blocked(ax,ay,dx2,dy2,terr)){aL("⚠ Ligne bloquée");cb2?.(null);return;}
+    const cat=rCat(d);let bW=null,bD=0;
+    const weaponList=isGunnerFiring?att.gw:att.ws;
+    for(const w of weaponList){if(w.cur<=0)continue;const df=wDiff(w.key,cat);if(df>0&&(!bW||df<bD)){bW=w;bD=df;}}
+    if(!bW){aL("⚠ Pas d'arme à portée");cb2?.(null);return;}
+    // Prone bonus: melee attacker gets -1 to hit difficulty vs prone target
+    let hitDiff=bD;
+    if(def.prone&&cat==="melee")hitDiff=Math.max(1,bD-1);
+    const bid=uid();sBul(p=>[...p,{id:bid,x1:ax,y1:ay,x2:dx2,y2:dy2,t:0}]);
+    const rolls=[];for(let i=0;i<bW.cur;i++)rolls.push(d20());
+    const hits=rolls.filter(r=>r>=hitDiff);
+    // Use vehicle armor if target is vehicle
+    const defArm=def.isVeh&&def.vHp>0?def.arm:def.arm;
+    let totD=0;const saveDetails=[];
+    for(const h of hits){
+      const sr=d20();const thresh=defArm+bW.pen;const ok=sr>=thresh;
+      saveDetails.push({sr,thresh,ok});
+      if(!ok){const d1=bW.dMax?ri(1,bW.dMax):bW.dmg;totD+=d1;saveDetails[saveDetails.length-1].d1=d1;}
+    }
+    // Apply damage to vehicle HP or unit HP
+    const isVehTarget=def.isVeh&&def.vHp>0;
+    const nVHp=isVehTarget?Math.max(0,def.vHp-totD):0;
+    const nHp=isVehTarget?def.hp:Math.max(0,def.hp-totD);
+    setTimeout(()=>{
+      sBul(p=>p.filter(b=>b.id!==bid));
+      if(isVehTarget){
+        sDf(p=>p.map(u=>u.id===def.id?{...u,vHp:nVHp}:u));
+      } else {
+        sDf(p=>p.map(u=>u.id===def.id?{...u,hp:nHp}:u));
+      }
+      const nW=isGunnerFiring?att.ws:att.ws.map(w=>w===bW?{...w,cur:0}:w);
+      const nGW=isGunnerFiring?att.gw.map(w=>w===bW?{...w,cur:0}:w):att.gw||[];
+      const uA=isGunnerFiring?
+        {...att,gunAct:att.gunAct-actCost,gw:nGW}:
+        {...att,act:att.act-actCost,ws:nW};
+      sAt(p=>p.map(u=>u.id===att.id?uA:u));
+      const src=isGunnerFiring?"🎯Canonnier":"⚔";
+      aL(`${src} ${att.ic}${att.name}→${def.ic}${def.name} [${bW.n}]`);
+      aL(`  Touche: 🎲${rolls.join(",")} (≥${hitDiff}${def.prone&&cat==="melee"?" couché!":""}) → ${hits.length}/${rolls.length}`);
+      for(const s of saveDetails)
+        aL(`  Armure(${defArm})+Pén(${bW.pen})=${s.thresh}: 🎲${s.sr} ${s.ok?"✓Paré":"✗"+(s.d1||bW.dmg)+"dmg"}`);
+      if(isVehTarget){
+        aL(totD>0?`  → ${totD}dégât(s)! Véhicule PV:${def.vHp}→${nVHp}`:`  → 0 dégât`);
+        if(nVHp<=0){
+          vehicleDestroy({...def,vHp:nVHp},sDf);
+        }
+      } else {
+        aL(totD>0?`  → ${totD}dégât(s)! PV:${def.hp}→${nHp}`:`  → 0 dégât`);
+        if(nHp<=0){
+          aL(`💀 ${def.ic}${def.name}(J${def.pl}) détruit!`);
+          // Drop weapons at death location
+          const dw=def.ws||[];
+          for(const w of dw){
+            const pick=!NOT_PICKABLE.includes(w.key);
+            sDrops(p=>[...p,{id:uid(),x:def.x+ri(-3,3),y:def.y+ri(-3,3),key:w.key,pickable:pick,name:w.n||WEAPS[w.key]?.n||"Arme"}]);
+            aL(`  🔫 ${w.n||"Arme"} tombée${!pick?" (non ramassable)":""}`);
+          }
+          checkWin(def.pl);
+        }
+      }
+      cb2?.(uA);
+    },500);
+  };
+
+  /* ═══ MANUAL CONTROL ═══ */
+  const takeCtrl=(u)=>{
+    if(!paused||u.done||u.hp<=0||!u.dep)return;
+    const fresh=all.find(x=>x.id===u.id)||u;
+    sMU(fresh);sMW(null);showLos(fresh);
+    const vInfo=fresh.isVeh&&fresh.vHp>0?` Véh:${fresh.vHp}/${fresh.vMHp}`:"";
+    const gInfo=fresh.isVeh&&fresh.hasGunner?` Canon:${fresh.gunAct}PA`:"";
+    aL(`🎮 ${fresh.ic}${fresh.name}(J${fresh.pl}) PA:${fresh.act}${vInfo}${gInfo}`);
+  };
+
+  const manAction=(a)=>{
+    if(!mU)return;
+    if(a==="move"){if(mU.act<1){aL("⚠ 0PA");return;}sMW("move");aL("➡ Cliquez destination");}
+    else if(a==="attack"){if(mU.act<2){aL("⚠ 2PA");return;}sMW("attack");aL("🎯 Cliquez ennemi");}
+    else if(a==="gunner"){if(!mU.isVeh||mU.gunAct<2){aL("⚠ Canonnier: 2PA requis");return;}sMW("gunner");aL("🎯 Canonnier: cliquez ennemi");}
+    else if(a==="prone"){
+      if(mU.isVeh){aL("⚠ Véhicule ne peut pas se coucher");return;}
+      if(mU.act<1){aL("⚠ 1PA requis");return;}
+      const sA=mU.pl===1?sA1:sA2;
+      const np=!mU.prone;
+      sA(p=>p.map(u=>u.id===mU.id?{...u,prone:np,act:u.act-1}:u));
+      const nu={...mU,prone:np,act:mU.act-1};sMU(nu);showLos(nu);
+      aL(np?`🛏 ${mU.ic}${mU.name} se couche (MM−4)`:`🧍 ${mU.ic}${mU.name} se relève`);
+      if(nu.act<=0)setTimeout(()=>endManual(nu),200);
+    }
+    else if(a==="board"){
+      if(mU.isVeh){aL("⚠ Déjà dans un véhicule");return;}
+      if(mU.act<1){aL("⚠ Pas assez d'actions");return;}
+      // Find nearby empty vehicle
+      const evs=mU.pl===1?ev1:ev2;const sEv=mU.pl===1?sEv1:sEv2;
+      const nearby=evs.find(v=>Math.hypot((v.x+BR)-(mU.x+BR),(v.y+BR)-(mU.y+BR))<=SEG_PX*1.5);
+      if(!nearby){aL("⚠ Pas de véhicule à portée (≤1 segment)");return;}
+      const sA=mU.pl===1?sA1:sA2;
+      const boarded=boardVehUnit(mU,nearby.vtype);
+      boarded.x=nearby.x;boarded.y=nearby.y;
+      sA(p=>p.map(u=>u.id===mU.id?boarded:u));
+      sEv(p=>p.filter(v=>v.id!==nearby.id));
+      aL(`🚗 ${mU.ic}${mU.name} embarque dans ${nearby.name}!`);
+      sMU(null);sMW(null);sLos([]);
+    }
+    else if(a==="dismount"){
+      if(!mU.isVeh){aL("⚠ Pas dans un véhicule");return;}
+      if(mU.act<1){aL("⚠ 1PA requis");return;}
+      const sA=mU.pl===1?sA1:sA2;const sEv=mU.pl===1?sEv1:sEv2;
+      const pilot=dismountVehUnit(mU);
+      // Place empty vehicle at current position
+      sEv(p=>[...p,mkEmptyVeh(mU.vtype,mU.pl,mU.x,mU.y)]);
+      // Place pilot next to vehicle
+      const px=mU.x+BASE+4,py=mU.y;
+      const cp=clamp(px,py);
+      sA(p=>p.map(u=>u.id===mU.id?{...pilot,x:cp.x,y:cp.y}:u));
+      aL(`🏃 ${pilot.ic}${pilot.name} débarque! PA:${pilot.act}`);
+      const nu={...pilot,x:cp.x,y:cp.y};sMU(nu);showLos(nu);
+      if(nu.act<=0)setTimeout(()=>endManual(nu),200);
+    }
+    else if(a==="pickup"){
+      if(mU.act<1){aL("⚠ Pas assez d'actions");return;}
+      const nearby=drops.find(d=>d.pickable&&Math.hypot((d.x+2)-(mU.x+BR),(d.y+2)-(mU.y+BR))<=SEG_PX);
+      if(!nearby){aL("⚠ Pas d'arme à portée");return;}
+      const wData=WEAPS[nearby.key];if(!wData){aL("⚠ Arme invalide");return;}
+      const sA=mU.pl===1?sA1:sA2;
+      sA(p=>p.map(u=>u.id===mU.id?{...u,ws:[...u.ws,{key:nearby.key,...wData,cur:wData.mun}],act:0,done:true}:u));
+      sDrops(p=>p.filter(d=>d.id!==nearby.id));
+      aL(`🔫 ${mU.ic}${mU.name} ramasse ${nearby.name}! (toutes actions consommées)`);
+      sMU(null);sMW(null);sLos([]);
+    }
+    else if(a==="squadfire"){
+      if(mU.act<2){aL("⚠ 2PA requis");return;}
+      if(!mU.sqId){aL("⚠ Pas dans une escouade");return;}
+      sMW("squadfire");aL("🎯 TIR GROUPÉ: cliquez l'ennemi cible");
+    }
+    else endManual(mU);
+  };
+
+  const doManMove=(u,tx,ty)=>{
+    moveUnit(u,tx-BR,ty-BR,u.pl===1?sA1:sA2,(r)=>{
+      if(r){sMU(r);showLos(r);if(r.act<=0&&!(r.isVeh&&r.hasGunner&&r.gunAct>=2))setTimeout(()=>endManual(r),200);}
+    });sMW(null);
+  };
+
+  const doManAttack=(att,def,isGunner)=>{
+    attackUnit(att,def,att.pl===1?sA1:sA2,def.pl===1?sA1:sA2,(uA)=>{
+      if(uA){sMU(uA);showLos(uA);
+        const canStillAct=uA.act>=1||(uA.isVeh&&uA.hasGunner&&uA.gunAct>=2);
+        if(!canStillAct)setTimeout(()=>endManual(uA),500);
+      }
+    },!!isGunner);sMW(null);
+  };
+
+  const endManual=(u)=>{
+    const uu=u||mU;if(!uu)return;
+    // Auto-pickup best nearby weapon if actions remaining
+    if(uu.act>=1&&!uu.isVeh&&uu.hp>0){
+      const nearby=drops.filter(d=>d.pickable&&Math.hypot((d.x+2)-(uu.x+BR),(d.y+2)-(uu.y+BR))<=BASE*2);
+      if(nearby.length>0){
+        let best=null,bs=-1;
+        for(const d of nearby){const w=WEAPS[d.key];if(!w)continue;const sc=w.mun*(w.dMax||w.dmg)*Math.max(w.pen,1);if(sc>bs){bs=sc;best=d;}}
+        if(best){
+          const wData=WEAPS[best.key];
+          (uu.pl===1?sA1:sA2)(p=>p.map(a=>a.id===uu.id?{...a,ws:[...a.ws,{key:best.key,...wData,cur:wData.mun}],done:true}:a));
+          sDrops(p=>p.filter(d=>d.id!==best.id));
+          aL(`🔫 ${uu.ic}${uu.name} ramasse ${best.name} en fin de tour!`);
+          sMU(null);sMW(null);sLos([]);return;
+        }
+      }
+    }
+    (uu.pl===1?sA1:sA2)(p=>p.map(a=>a.id===uu.id?{...a,done:true}:a));
+    aL(`${uu.ic}${uu.name} terminé`);sMU(null);sMW(null);sLos([]);
+    if(paused){
+      const oP=uu.pl===1?2:1;
+      const oLeft=(oP===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep);
+      const sLeft=(uu.pl===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep&&a.id!==uu.id);
+      if(oLeft.length>0)aL(`💡 J${oP} a ${oLeft.length} unité(s) — cliquez-en une`);
+      else if(sLeft.length>0)aL(`💡 J${uu.pl}: ${sLeft.length} unité(s) restante(s)`);
+      else aL("💡 Tour fini — cliquez ▶ pour continuer");
+    }
+  };
+
+  const togglePause=()=>{
+    if(!paused){sPau(true);if(aiRef.current){clearTimeout(aiRef.current);aiRef.current=null;}aL("⏸ PAUSE — Cliquez n'importe quelle unité");}
+    else{sPau(false);sMU(null);sMW(null);sLos([]);aL("▶ IA RELANCÉE");}
+  };
+
+  /* ═══ AI ═══ */
+  useEffect(()=>{
+    if(phase!=="battle"||winner||paused||animating)return;
+    aiRef.current=setTimeout(()=>{
+      const army=curP===1?a1:a2;
+      const air=army.find(u=>u.air&&!u.dep&&u.hp>0);
+      if(air){deployAir(air);return;}
+      // AI auto-board: if empty vehicles and nearby infantry, board them
+      const evs=curP===1?ev1:ev2;const sEv=curP===1?sEv1:sEv2;const sA=curP===1?sA1:sA2;
+      if(evs.length>0){
+        for(const v of evs){
+          const nearby=army.find(u=>u.hp>0&&!u.done&&u.dep&&!u.isVeh&&
+            Math.hypot((v.x+BR)-(u.x+BR),(v.y+BR)-(u.y+BR))<=SEG_PX*1.5);
+          if(nearby){
+            const boarded=boardVehUnit(nearby,v.vtype);
+            boarded.x=v.x;boarded.y=v.y;boarded.done=false;boarded.act=nearby.mAct;
+            sA(p=>p.map(u=>u.id===nearby.id?boarded:u));
+            sEv(p=>p.filter(e=>e.id!==v.id));
+            aL(`🤖 ${nearby.ic}${nearby.name}(J${curP}) embarque → ${v.name}`);
+            return; // re-trigger AI loop after state update
+          }
+        }
+      }
+      const active=army.filter(u=>u.hp>0&&!u.done&&u.dep);
+      if(!active.length){
+        const o=curP===1?2:1;
+        const oA=(o===1?a1:a2).filter(u=>u.hp>0&&!u.done&&u.dep);
+        if(!oA.length){sTurn(t=>t+1);aL("═══ NOUVEAU TOUR ═══");setTimeout(()=>rollInit(),400);}
+        else sCP(o);
+        return;
+      }
+      const u=pickBest(active);sSel(u);showLos(u);setTimeout(()=>aiPlay(u),500);
+    },900);
+    return()=>{if(aiRef.current)clearTimeout(aiRef.current);};
+  },[phase,curP,a1,a2,ev1,ev2,turn,winner,paused,animating]);
+
+  const pickBest=(active)=>{
+    let best=active[0],bs=-1e9;
+    const enemies=all.filter(e=>e.pl!==active[0]?.pl&&e.hp>0&&e.dep);
+    for(const u of active){let sc=0;const cx=u.x+BR,cy=u.y+BR;
+      let canFire=false;
+      for(const e of enemies){
+        const d=Math.hypot(cx-(e.x+BR),cy-(e.y+BR));
+        if(!blocked(cx,cy,e.x+BR,e.y+BR,terr)){
+          const cat=rCat(d);
+          for(const w of u.ws){if(w.cur>0&&wDiff(w.key,cat)>0){canFire=true;sc+=80+(e.hp<=1?30:0);}}
+        }
+      }
+      // Units that can fire go first
+      if(canFire)sc+=200;
+      else sc+=50; // still activate to advance toward enemies
+      const st=(learn.us||{})[u.type];if(st&&st.n>=2)sc+=(st.s/st.n-0.5)*15;
+      if(sc>bs){bs=sc;best=u;}}
+    return best;
+  };
+
+  const aiPlay=(u)=>{
+    const en=all.filter(e=>e.pl!==u.pl&&e.hp>0&&e.dep);
+    if(!en.length){endAi(u);return;}
+    let cur={...u};const sA=cur.pl===1?sA1:sA2;const sD=cur.pl===1?sA2:sA1;
+
+    // Helper: can fire from position?
+    const canFireFrom=(px,py,ws)=>{
+      for(const e of en.filter(e=>e.hp>0)){
+        const d=Math.hypot(px-(e.x+BR),py-(e.y+BR));
+        if(blocked(px,py,e.x+BR,e.y+BR,terr))continue;
+        const cat=rCat(d);for(const w of ws){if(w.cur>0&&wDiff(w.key,cat)>0)return true;}
+      }return false;
+    };
+
+    // Optimal range: distance where best weapon has lowest difficulty
+    const getOptRange=()=>{
+      let best=C1*SEG_PX*0.7,bestD=99;
+      for(const w of cur.ws){const src=WEAPS[w.key]||VWEAPS[w.key];if(!src)continue;
+        const cats=[{d:src.melee,r:BASE*4},{d:src.cat1,r:C1*SEG_PX*0.7},{d:src.cat2,r:(C1+C2)/2*SEG_PX*0.5},{d:src.catP,r:C2*SEG_PX*0.9}];
+        for(const c of cats){if(c.d>0&&c.d<bestD){bestD=c.d;best=c.r;}}
+      }return best;
+    };
+    const optRange=getOptRange();
+
+    // Closest enemy distance
+    const closestEnDist=()=>en.filter(e=>e.hp>0).reduce((m,e)=>Math.min(m,Math.hypot(cur.x+BR-(e.x+BR),cur.y+BR-(e.y+BR))),1e9);
+
+    const step=(n)=>{
+      if(n>10||cur.act<=0){
+        if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}
+        endAi(cur);return;
+      }
+
+      // ── PHASE 1: ATTACK (always try first if 2+ PA) ──
+      if(cur.act>=2){
+        const cx=cur.x+BR,cy=cur.y+BR;let bT=null,bS=-1e9;
+        for(const e of en.filter(e=>e.hp>0)){
+          const d=Math.hypot(cx-(e.x+BR),cy-(e.y+BR));
+          if(blocked(cx,cy,e.x+BR,e.y+BR,terr))continue;
+          const cat=rCat(d);for(const w of cur.ws){if(w.cur<=0)continue;const df=wDiff(w.key,cat);const wd=w.dMax||w.dmg;
+            if(df>0){const sc=(21-df)*w.cur*wd+(e.hp<=wd?80:0);if(sc>bS){bS=sc;bT=e;}}}
+        }
+        if(bT){
+          attackUnit(cur,bT,sA,sD,(uA)=>{if(uA){cur=uA;sSel(cur);showLos(cur);}setTimeout(()=>step(n+1),700);});
+          return;
+        }
+      }
+
+      // ── PHASE 2: ALWAYS ADVANCE toward optimal firing range ──
+      if(cur.act>=1){
+        const ceDist=closestEnDist();
+        const canFireHere=canFireFrom(cur.x+BR,cur.y+BR,cur.ws);
+        const atOptimal=Math.abs(ceDist-optRange)<SEG_PX*2;
+
+        // Only stay if: can fire AND roughly at optimal range
+        if(canFireHere&&atOptimal){
+          if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}
+          endAi(cur);return;
+        }
+
+        // ── Find best move position ──
+        let bDe=null,bDS=-1e9;
+        // Closest enemy for direct approach
+        let cl=null,clD=1e9;for(const e of en.filter(e=>e.hp>0)){const d=Math.hypot(e.x-cur.x,e.y-cur.y);if(d<clD){clD=d;cl=e;}}
+
+        const candidates=[];
+        // 30 random positions
+        for(let i=0;i<30;i++){
+          const a=Math.random()*Math.PI*2,mp=(2+cur.mm)*SEG_PX*(0.4+Math.random()*0.6);
+          const c2=clamp(cur.x+Math.cos(a)*mp,cur.y+Math.sin(a)*mp);
+          if((!cur.fly&&(onTerr(c2.x,c2.y,terr)||blocked(cur.x+BR,cur.y+BR,c2.x+BR,c2.y+BR,terr)))||overlap(c2.x,c2.y,all,cur.id))continue;
+          candidates.push(c2);
+        }
+        // Direct approach toward closest enemy — aim for optimal range distance
+        if(cl){
+          const ag=Math.atan2(cl.y-cur.y,cl.x-cur.x);
+          const ms=(2+cur.mm)*SEG_PX;
+          const c2=clamp(cur.x+Math.cos(ag)*ms,cur.y+Math.sin(ag)*ms);
+          if(!overlap(c2.x,c2.y,all,cur.id)&&(cur.fly||(!onTerr(c2.x,c2.y,terr)&&!blocked(cur.x+BR,cur.y+BR,c2.x+BR,c2.y+BR,terr))))
+            candidates.push(c2);
+          // Also try 80% and 60% of max speed
+          for(const f of [0.8,0.6]){
+            const c3=clamp(cur.x+Math.cos(ag)*ms*f,cur.y+Math.sin(ag)*ms*f);
+            if(!overlap(c3.x,c3.y,all,cur.id)&&(cur.fly||(!onTerr(c3.x,c3.y,terr)&&!blocked(cur.x+BR,cur.y+BR,c3.x+BR,c3.y+BR,terr))))
+              candidates.push(c3);
+          }
+        }
+
+        for(const c2 of candidates){
+          let sc=0;const px2=c2.x+BR,py2=c2.y+BR;
+          // Can fire from new position? Big bonus
+          for(const e of en.filter(e=>e.hp>0)){
+            const d=Math.hypot(px2-(e.x+BR),py2-(e.y+BR));
+            if(!blocked(px2,py2,e.x+BR,e.y+BR,terr)){
+              const cat=rCat(d);for(const w of cur.ws)if(w.cur>0&&wDiff(w.key,cat)>0)sc+=60;
+            }
+          }
+          // How close to optimal range? Strong bonus
+          const newDist=en.filter(e=>e.hp>0).reduce((m,e)=>Math.min(m,Math.hypot(px2-(e.x+BR),py2-(e.y+BR))),1e9);
+          const optDelta=Math.abs(newDist-optRange);
+          sc+=Math.max(0,40-optDelta/SEG_PX*5);
+          // Reward advancing toward enemy (very important — drives engagement)
+          if(newDist<ceDist)sc+=25;
+          // Small threat penalty (units accept risk to fight)
+          // sc-=threatAt(px2,py2)*5; // almost zero — fighting is the point
+          if(sc>bDS){bDS=sc;bDe=c2;}
+        }
+
+        // ALWAYS move if not at optimal range — even with negative score
+        if(bDe){
+          moveUnit(cur,bDe.x,bDe.y,sA,(r)=>{if(r){cur=r;sSel(cur);showLos(cur);setTimeout(()=>step(n+1),400);}else endAi(cur);});return;
+        }
+      }
+      if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}
+      endAi(cur);
+    };step(0);
+  };
+
+  /* Gunner AI — fires vehicle gunner weapons */
+  const aiGunner=(veh)=>{
+    const en=all.filter(e=>e.pl!==veh.pl&&e.hp>0&&e.dep);
+    if(!en.length||!veh.gw||veh.gunAct<2){endAi(veh);return;}
+    let cur={...veh};const sA=cur.pl===1?sA1:sA2;const sD=cur.pl===1?sA2:sA1;
+    const gStep=(n)=>{
+      if(n>5||cur.gunAct<2){endAi({...cur,gunDone:true});return;}
+      const cx=cur.x+BR,cy=cur.y+BR;let bT=null,bS=-1e9;
+      for(const e of en.filter(e=>e.hp>0)){
+        const d=Math.hypot(cx-(e.x+BR),cy-(e.y+BR));
+        if(blocked(cx,cy,e.x+BR,e.y+BR,terr))continue;
+        const cat=rCat(d);for(const w of cur.gw){if(w.cur<=0)continue;const df=wDiff(w.key,cat);
+          if(df>0){const sc=(21-df)*w.cur*(w.dMax||w.dmg)+(e.hp<=(w.dMax||w.dmg)?80:0);if(sc>bS){bS=sc;bT=e;}}}
+      }
+      if(bT){attackUnit(cur,bT,sA,sD,(uA)=>{if(uA){cur=uA;sSel(cur);showLos(cur);}setTimeout(()=>gStep(n+1),700);},true);return;}
+      endAi({...cur,gunDone:true});
+    };
+    aL(`🎯 ${veh.ic}${veh.name} — Canonnier ouvre le feu!`);
+    gStep(0);
+  };
+
+  const endAi=(u)=>{
+    // Auto-pickup: if unit has actions left and there's a pickable weapon at contact, grab the best one
+    if(u.act>=1&&!u.isVeh&&u.hp>0){
+      const nearby=drops.filter(d=>d.pickable&&Math.hypot((d.x+2)-(u.x+BR),(d.y+2)-(u.y+BR))<=BASE*2);
+      if(nearby.length>0){
+        // Score weapons: higher = better (mun * dmg * pen as rough power)
+        let best=null,bs=-1;
+        for(const d of nearby){
+          const w=WEAPS[d.key];if(!w)continue;
+          const sc=w.mun*(w.dMax||w.dmg)*Math.max(w.pen,1);
+          if(sc>bs){bs=sc;best=d;}
+        }
+        if(best){
+          const wData=WEAPS[best.key];
+          const sA=u.pl===1?sA1:sA2;
+          sA(p=>p.map(a=>a.id===u.id?{...a,ws:[...a.ws,{key:best.key,...wData,cur:wData.mun}],done:true,act:0,gunDone:true}:a));
+          sDrops(p=>p.filter(d=>d.id!==best.id));
+          aL(`🔫 ${u.ic}${u.name} ramasse ${best.name} en fin de tour!`);
+          sSel(null);sLos([]);
+          const o=curP===1?2:1;
+          const oA=(o===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep);
+          const cA=(curP===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep&&a.id!==u.id);
+          if(oA.length>0)sCP(o);
+          else if(!cA.length){sTurn(t=>t+1);aL("═══ NOUVEAU TOUR ═══");setTimeout(()=>rollInit(),400);}
+          return;
+        }
+      }
+    }
+    (u.pl===1?sA1:sA2)(p=>p.map(a=>a.id===u.id?{...a,done:true,act:0,gunDone:true}:a));
+    sSel(null);sLos([]);
+    const o=curP===1?2:1;
+    const oA=(o===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep);
+    const cA=(curP===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep&&a.id!==u.id);
+    if(oA.length>0)sCP(o);
+    else if(!cA.length){sTurn(t=>t+1);aL("═══ NOUVEAU TOUR ═══");setTimeout(()=>rollInit(),400);}
+  };
+
+  const checkWin=(loserPl)=>{setTimeout(()=>{
+    const a=loserPl===1?a1:a2;
+    if(a.filter(u=>u.hp>0||(u.air&&!u.dep)).length<=1){
+      const w=loserPl===1?2:1;sWin(w);setPhase("gameover");
+      if(aiRef.current)clearTimeout(aiRef.current);
+      aL(`🏆🏆🏆 JOUEUR ${w} GAGNE ! 🏆🏆🏆`);
+      sLearn(prev=>{const L={...prev,g:prev.g+1};L[`w${w}`]++;
+        const us={...prev.us};[...a1,...a2].forEach(u=>{if(!us[u.type])us[u.type]={n:0,s:0};us[u.type].n++;if(u.hp>0)us[u.type].s++;});
+        L.us=us;return L;});
+    }
+  },300);};
+
+  const deployAir=(u)=>{
+    const en=all.filter(e=>e.pl!==u.pl&&e.hp>0&&e.dep);if(!en.length)return;
+    let b=null,bs=-1e9;
+    for(let i=0;i<100;i++){
+      const p=clamp(ri(PAD+BASE,BW-BASE*2),ri(PAD+BASE,BH-BASE*2));
+      if(onTerr(p.x,p.y,terr)||overlap(p.x,p.y,all,null))continue;
+      let tooClose=false;for(const e of en)if(Math.hypot(e.x-p.x,e.y-p.y)<2*SEG_PX)tooClose=true;
+      if(tooClose)continue;
+      let sc=0;for(const e of en){const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<C1*SEG_PX&&!blocked(p.x+BR,p.y+BR,e.x+BR,e.y+BR,terr))sc+=30;}
+      if(sc>bs){bs=sc;b=p;}
+    }
+    if(b){(u.pl===1?sA1:sA2)(p=>p.map(a=>a.id===u.id?{...a,x:b.x,y:b.y,dep:true}:a));aL(`🪂 ${u.ic}${u.name} parachuté!`);}
+  };
+
+  const resetGame=()=>{
+    setPhase("setup");setTab("army");sA1([]);sA2([]);sTerr([]);sSel(null);sCP(1);sTurn(1);
+    sIni({p1:0,p2:0});sLog(["🧱 Bienvenue dans CrossBlock !"]);sBul([]);sLos([]);sWin(null);
+    sP1(0);sP2(0);sDQ1([]);sDQ2([]);sDTn(1);sTSel(null);sPau(false);sMU(null);sMW(null);
+    sAnimating(false);sDrops([]);sEv1([]);sEv2([]);if(aiRef.current)clearTimeout(aiRef.current);
+  };
+
+  /* Board click */
+  const onBoardClick=(e)=>{
+    if(animating)return;
+    // Use SVG coordinate transform to handle CSS 3D perspective correctly
+    const svg=bRef.current;
+    let x,y;
+    if(svg.createSVGPoint){
+      const pt=svg.createSVGPoint();
+      pt.x=e.clientX;pt.y=e.clientY;
+      const sp=pt.matrixTransform(svg.getScreenCTM().inverse());
+      x=sp.x;y=sp.y;
+    } else {
+      const r=svg.getBoundingClientRect();
+      x=(e.clientX-r.left)*(BW/r.width);y=(e.clientY-r.top)*(BH/r.height);
+    }
+    if(x<0||x>BW||y<0||y>BH)return;
+
+    if(phase==="terr_p1"||phase==="terr_p2"){
+      const pl=phase==="terr_p1"?1:2;
+      if(pl===1?y<HALF:y>HALF){aL("⚠ Votre moitié!");return;}
+      for(const t of terr){if(x>=t.x&&x<=t.x+t.w&&y>=t.y&&y<=t.y+t.h){sTSel(t.id);return;}}
+      sTSel(null);sTerr(p=>[...p,mkTerr(x,y,pl)]);aL("Décor ✓");return;
+    }
+    if(phase==="dep_units"){placeDU(x,y);return;}
+    if(phase==="battle"&&mU&&mW==="move"){doManMove(mU,x,y);return;}
+    if(phase==="battle"&&mU&&mW==="attack"){
+      for(const e2 of all.filter(u=>u.pl!==mU.pl&&u.hp>0&&u.dep))
+        if(x>=e2.x-BASE&&x<=e2.x+BASE*2&&y>=e2.y-BASE&&y<=e2.y+BASE*2){doManAttack(mU,e2,false);return;}
+      aL("⚠ Cliquez ennemi!");return;
+    }
+    if(phase==="battle"&&mU&&mW==="gunner"){
+      for(const e2 of all.filter(u=>u.pl!==mU.pl&&u.hp>0&&u.dep))
+        if(x>=e2.x-BASE&&x<=e2.x+BASE*2&&y>=e2.y-BASE&&y<=e2.y+BASE*2){doManAttack(mU,e2,true);return;}
+      aL("⚠ Cliquez ennemi!");return;
+    }
+    if(phase==="battle"&&mU&&mW==="squadfire"){
+      for(const e2 of all.filter(u=>u.pl!==mU.pl&&u.hp>0&&u.dep)){
+        if(x>=e2.x-BASE&&x<=e2.x+BASE*2&&y>=e2.y-BASE&&y<=e2.y+BASE*2){
+          // Find all squad members that can fire
+          const sqMates=all.filter(u=>u.pl===mU.pl&&u.sqId===mU.sqId&&u.hp>0&&u.dep&&u.act>=2&&u.id!==mU.id);
+          const tx=e2.x+BR,ty=e2.y+BR;
+          aL(`━━ 🎯 TIR GROUPÉ: escouade ${mU.sqId} → ${e2.ic}${e2.name} ━━`);
+          // Lead unit fires first
+          doManAttack(mU,e2,false);
+          // Each squad mate fires with delay
+          let delay=800;
+          for(const mate of sqMates){
+            const mx=mate.x+BR,my=mate.y+BR;
+            if(blocked(mx,my,tx,ty,terr)){aL(`  ${mate.ic}${mate.name} — pas de ligne de vue`);continue;}
+            setTimeout(()=>{
+              const freshMate=(mate.pl===1?a1:a2).find(u=>u.id===mate.id);
+              if(freshMate&&freshMate.hp>0&&freshMate.act>=2){
+                attackUnit(freshMate,e2,freshMate.pl===1?sA1:sA2,e2.pl===1?sA1:sA2,null,false);
+              }
+            },delay);
+            delay+=700;
+          }
+          sMW(null);return;
+        }
+      }
+      aL("⚠ Cliquez ennemi!");return;
+    }
+    if(phase==="battle"){
+      for(const u of all){
+        if(u.dep&&u.hp>0&&x>=u.x-2&&x<=u.x+BASE+2&&y>=u.y-2&&y<=u.y+BASE+2){
+          if(paused&&!u.done)takeCtrl(u);
+          else showLos(u);
+          return;
+        }
+      }
+    }
+  };
+
+  useEffect(()=>{if(!bul.length)return;const iv=setInterval(()=>sBul(p=>p.map(b=>({...b,t:b.t+0.12})).filter(b=>b.t<1)),30);return()=>clearInterval(iv);},[bul.length]);
+
+  const BS=(bg)=>({padding:"5px 12px",borderRadius:5,border:"1px solid #30363d",background:bg||"#21262d",color:"#e6edf3",cursor:"pointer",fontWeight:600,fontSize:11});
+  /* ═══ LEGO MINIFIGURE SVG RENDERER ═══ */
+  /* Each draws relative to (cx, y0) = center-top. Scale s~0.7 for board */
+  const drawFig=(type,cx,y0,s,pl)=>{
+    // Resolve base type for vehicle pilots
+    const bt=type.startsWith("v_")?null:type;
+    if(!bt)return drawVeh(type.slice(2),cx,y0,s,pl,1);
+    const el=[];const k=`${bt}_${cx}_${y0}`;
+    // ── LEGO stud on head ──
+    const stud=(sy)=><circle key={k+"st"} cx={cx} cy={y0+sy*s} r={0.8*s} fill="#ccc" stroke="#aaa" strokeWidth={0.15*s}/>;
+    // ── Helmet shapes ──
+    const cloneHelm=(c1,c2,vy)=>[
+      <rect key={k+"hb"} x={cx-2.2*s} y={y0+vy*s} width={4.4*s} height={3.2*s} rx={1.2*s} fill={c1} stroke={c2||"#bbb"} strokeWidth={0.2*s}/>,
+      <path key={k+"hv"} d={`M${cx-1.3*s},${y0+(vy+1.2)*s} L${cx},${y0+(vy+2.6)*s} L${cx+1.3*s},${y0+(vy+1.2)*s}`} fill="none" stroke="#111" strokeWidth={0.5*s}/>,
+      <rect key={k+"hvi"} x={cx-1.2*s} y={y0+(vy+1.1)*s} width={2.4*s} height={1.4*s} rx={0.3*s} fill="#0a0a1a" opacity={0.75}/>,
+    ];
+    const droidHead=(c1,vy)=>[
+      <circle key={k+"dh"} cx={cx} cy={y0+(vy+1.5)*s} r={1.6*s} fill={c1} stroke="#999" strokeWidth={0.2*s}/>,
+      <rect key={k+"dm"} x={cx-0.8*s} y={y0+(vy+1.8)*s} width={1.6*s} height={0.4*s} rx={0.15*s} fill="#222"/>,
+      <circle key={k+"de1"} cx={cx-0.5*s} cy={y0+(vy+1.2)*s} r={0.35*s} fill="#1a1a2e"/>,
+      <circle key={k+"de2"} cx={cx+0.5*s} cy={y0+(vy+1.2)*s} r={0.35*s} fill="#1a1a2e"/>,
+    ];
+    const humanHead=(skin,vy,hair)=>[
+      <circle key={k+"hh"} cx={cx} cy={y0+(vy+1.6)*s} r={1.7*s} fill={skin} stroke="#a87" strokeWidth={0.15*s}/>,
+      <circle key={k+"he1"} cx={cx-0.5*s} cy={y0+(vy+1.3)*s} r={0.25*s} fill="#222"/>,
+      <circle key={k+"he2"} cx={cx+0.5*s} cy={y0+(vy+1.3)*s} r={0.25*s} fill="#222"/>,
+      <ellipse key={k+"hmo"} cx={cx} cy={y0+(vy+2)*s} rx={0.4*s} ry={0.15*s} fill="#c97"/>,
+      hair&&<path key={k+"hhr"} d={`M${cx-1.7*s},${y0+(vy+1.2)*s} Q${cx},${y0+(vy-0.2)*s} ${cx+1.7*s},${y0+(vy+1.2)*s}`} fill={hair} stroke="none"/>,
+    ];
+    // ── Torso ──
+    const torso=(c1,c2,ty,details)=>{
+      const r=[
+        <rect key={k+"tb"} x={cx-2.8*s} y={y0+ty*s} width={5.6*s} height={3.8*s} rx={0.4*s} fill={c1} stroke="#222" strokeWidth={0.15*s}/>,
+      ];
+      if(c2)r.push(<line key={k+"tl"} x1={cx} y1={y0+ty*s} x2={cx} y2={y0+(ty+3.8)*s} stroke={c2} strokeWidth={0.35*s} opacity={0.4}/>);
+      if(details==="pauldron")r.push(<rect key={k+"pau"} x={cx-3.2*s} y={y0+ty*s} width={2*s} height={1.2*s} rx={0.3*s} fill="#DD8833" opacity={0.9}/>);
+      if(details==="arc")r.push(<circle key={k+"arc"} cx={cx} cy={y0+(ty+1.8)*s} r={0.8*s} fill="none" stroke="#FFD700" strokeWidth={0.4*s}/>);
+      if(details==="rex_mark"){r.push(<line key={k+"rxl"} x1={cx-1.2*s} y1={y0+(ty+0.5)*s} x2={cx-0.3*s} y2={y0+(ty+1.8)*s} stroke="#3366CC" strokeWidth={0.6*s}/>);
+        r.push(<line key={k+"rxr"} x1={cx+1.2*s} y1={y0+(ty+0.5)*s} x2={cx+0.3*s} y2={y0+(ty+1.8)*s} stroke="#3366CC" strokeWidth={0.6*s}/>);}
+      return r;
+    };
+    // ── Arms ──
+    const arms=(c1,ty)=>[
+      <rect key={k+"al"} x={cx-3.6*s} y={y0+(ty+0.3)*s} width={1.2*s} height={3*s} rx={0.4*s} fill={c1} stroke="#222" strokeWidth={0.1*s}/>,
+      <rect key={k+"ar"} x={cx+2.4*s} y={y0+(ty+0.3)*s} width={1.2*s} height={3*s} rx={0.4*s} fill={c1} stroke="#222" strokeWidth={0.1*s}/>,
+    ];
+    // ── Legs ──
+    const legs=(c1,c2,ly)=>[
+      <rect key={k+"ll"} x={cx-2.4*s} y={y0+ly*s} width={2.2*s} height={3*s} rx={0.3*s} fill={c1} stroke="#222" strokeWidth={0.12*s}/>,
+      <rect key={k+"lr"} x={cx+0.2*s} y={y0+ly*s} width={2.2*s} height={3*s} rx={0.3*s} fill={c2||c1} stroke="#222" strokeWidth={0.12*s}/>,
+    ];
+    // ── Weapons ──
+    const blaster=(wx,wy,len,col)=><line key={k+"w"+wx} x1={cx+wx*s} y1={y0+wy*s} x2={cx+(wx+len)*s} y2={y0+(wy-2)*s} stroke={col||"#555"} strokeWidth={0.6*s} strokeLinecap="round"/>;
+    const longRifle=(wx,wy,len,col)=>[<line key={k+"wr"+wx} x1={cx+wx*s} y1={y0+wy*s} x2={cx+(wx+len)*s} y2={y0+(wy-1.5)*s} stroke={col||"#445"} strokeWidth={0.7*s} strokeLinecap="round"/>,<circle key={k+"wrs"+wx} cx={cx+(wx+len)*s} cy={y0+(wy-1.5)*s} r={0.5*s} fill={col||"#445"} stroke="#333" strokeWidth={0.15*s}/>];
+    const jetpack=(jy)=>[<rect key={k+"jp"} x={cx+2.8*s} y={y0+jy*s} width={1.8*s} height={3*s} rx={0.4*s} fill="#666" stroke="#444" strokeWidth={0.15*s}/>,<line key={k+"jf1"} x1={cx+3.7*s} y1={y0+(jy+3)*s} x2={cx+3.5*s} y2={y0+(jy+5)*s} stroke="#f80" strokeWidth={0.5*s} opacity={0.7}/>,<line key={k+"jf2"} x1={cx+3.9*s} y1={y0+(jy+3)*s} x2={cx+4.2*s} y2={y0+(jy+5.5)*s} stroke="#fa0" strokeWidth={0.3*s} opacity={0.5}/>];
+
+    // ═══ UNIT-SPECIFIC BUILDS ═══
+    switch(bt){
+      case"clone":
+        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#bbb",-0.1),...torso("#e8e8e8","#3366CC",3.2),...arms("#e8e8e8",3.2),...legs("#e8e8e8",null,7.2),blaster(3,5.5,3,"#5588bb"));break;
+      case"clone_geo":
+        el.push(stud(-0.3),...cloneHelm("#d4c89a","#aa9964",-0.1),...torso("#d4c89a","#5a7a3a",3.2),...arms("#d4c89a",3.2),...legs("#7a6a3a",null,7.2),blaster(3,5.5,3,"#5588bb"));break;
+      case"sniper":
+        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#1a4488",-0.1),...torso("#e8e8e8","#1a4488",3.2),...arms("#e8e8e8",3.2),...legs("#e8e8e8",null,7.2),...longRifle(3,5,5,"#2a5a8a"));
+        el.push(<rect key={k+"sc"} x={cx+2.8*s} y={y0+3.5*s} width={1.5*s} height={2*s} rx={0.3*s} fill="#1a4488" stroke="#333" strokeWidth={0.1*s}/>);break;
+      case"spec":
+        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#2255AA",-0.1),...torso("#e8e8e8","#2255AA",3.2),...arms("#e8e8e8",3.2),...legs("#e8e8e8",null,7.2),blaster(-3.5,5.5,2,"#5588bb"),blaster(3,5.5,2,"#5588bb"));
+        el.push(<rect key={k+"rf"} x={cx+1.8*s} y={y0+0.4*s} width={0.6*s} height={2*s} rx={0.2*s} fill="#aaa" stroke="#888" strokeWidth={0.1*s}/>);break;
+      case"officer":
+        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#4477DD",-0.1),...torso("#e8e8e8","#4477DD",3.2,"pauldron"),...arms("#e8e8e8",3.2),...legs("#e8e8e8",null,7.2),blaster(3,5.5,2,"#5588bb"));
+        el.push(<rect key={k+"vis"} x={cx-2.5*s} y={y0-0.3*s} width={5*s} height={0.6*s} rx={0.2*s} fill="#4477DD"/>);break;
+      case"airborne":
+        el.push(stud(-0.3),...cloneHelm("#CC6633","#884422",-0.1),...torso("#CC6633","#884422",3.2),...arms("#CC6633",3.2),...legs("#885533",null,7.2),blaster(3,5.5,3,"#5588bb"),...jetpack(3.5));break;
+      case"fives":
+        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#2244aa",-0.1),...torso("#2244aa","#FFD700",3.2,"arc"),...arms("#2244aa",3.2),...legs("#1a3366",null,7.2),blaster(3,5.5,2.5,"#5a8aba"));
+        el.push(<circle key={k+"fst"} cx={cx} cy={y0+5*s} r={0.6*s} fill="#FFD700" stroke="#aa8800" strokeWidth={0.15*s}/>);break;
+      case"rex":
+        el.push(stud(-0.3),...cloneHelm("#6699CC","#446688",-0.1),...torso("#2244aa",null,3.2,"rex_mark"),...arms("#2244aa",3.2),...legs("#1a3366",null,7.2),blaster(-3.5,5.5,2,"#5a8aba"),blaster(3,5.5,2,"#5a8aba"));
+        el.push(<rect key={k+"rv"} x={cx-2.5*s} y={y0-0.3*s} width={5*s} height={0.5*s} rx={0.2*s} fill="#DAA520"/>);break;
+      case"b1":
+        el.push(...droidHead("#C4A65A",0));
+        el.push(<rect key={k+"bt"} x={cx-1.6*s} y={y0+3.2*s} width={3.2*s} height={3.5*s} rx={0.3*s} fill="#C4A65A" stroke="#aa8844" strokeWidth={0.15*s}/>);
+        el.push(<rect key={k+"ba1"} x={cx-2.5*s} y={y0+3.4*s} width={1.2*s} height={2.8*s} rx={0.3*s} fill="#B89A50" stroke="#998844" strokeWidth={0.1*s}/>);
+        el.push(<rect key={k+"ba2"} x={cx+1.3*s} y={y0+3.4*s} width={1.2*s} height={2.8*s} rx={0.3*s} fill="#B89A50" stroke="#998844" strokeWidth={0.1*s}/>);
+        el.push(<rect key={k+"bl1"} x={cx-1.8*s} y={y0+6.8*s} width={1.5*s} height={2.8*s} rx={0.2*s} fill="#B89A50" stroke="#887744" strokeWidth={0.1*s}/>);
+        el.push(<rect key={k+"bl2"} x={cx+0.3*s} y={y0+6.8*s} width={1.5*s} height={2.8*s} rx={0.2*s} fill="#B89A50" stroke="#887744" strokeWidth={0.1*s}/>);
+        el.push(blaster(2.5,5,2.5,"#777"));break;
+      case"b2":
+        el.push(<rect key={k+"b2h"} x={cx-2*s} y={y0+0.3*s} width={4*s} height={2.8*s} rx={0.8*s} fill="#6a6a6a" stroke="#555" strokeWidth={0.2*s}/>);
+        el.push(<rect key={k+"b2v"} x={cx-1.2*s} y={y0+1.2*s} width={2.4*s} height={0.8*s} rx={0.2*s} fill="#ff3333" opacity={0.4}/>);
+        el.push(<rect key={k+"b2t"} x={cx-3*s} y={y0+3*s} width={6*s} height={4*s} rx={0.8*s} fill="#6a6a6a" stroke="#555" strokeWidth={0.2*s}/>);
+        el.push(<rect key={k+"b2a1"} x={cx-4.2*s} y={y0+3.3*s} width={1.8*s} height={3.5*s} rx={0.5*s} fill="#555" stroke="#444" strokeWidth={0.15*s}/>);
+        el.push(<rect key={k+"b2a2"} x={cx+2.4*s} y={y0+3.3*s} width={1.8*s} height={3.5*s} rx={0.5*s} fill="#555" stroke="#444" strokeWidth={0.15*s}/>);
+        el.push(<circle key={k+"b2g1"} cx={cx-4.2*s} cy={y0+7*s} r={0.5*s} fill="#f44" opacity={0.5}/>);
+        el.push(<circle key={k+"b2g2"} cx={cx+4.2*s} cy={y0+7*s} r={0.5*s} fill="#f44" opacity={0.5}/>);
+        el.push(...legs("#555","#555",7.2));break;
+      case"tri_droid":
+        el.push(<polygon key={k+"trh"} points={`${cx},${y0} ${cx-3*s},${y0+3.5*s} ${cx+3*s},${y0+3.5*s}`} fill="#556677" stroke="#445566" strokeWidth={0.3*s}/>);
+        el.push(<circle key={k+"tre"} cx={cx} cy={y0+2*s} r={0.8*s} fill="#f44" stroke="#a22" strokeWidth={0.2*s}/>);
+        el.push(<rect key={k+"trb"} x={cx-2.2*s} y={y0+3.5*s} width={4.4*s} height={2.5*s} rx={0.5*s} fill="#556677" stroke="#445566" strokeWidth={0.2*s}/>);
+        el.push(<line key={k+"tl1"} x1={cx-2*s} y1={y0+6*s} x2={cx-4.5*s} y2={y0+10*s} stroke="#667788" strokeWidth={1*s} strokeLinecap="round"/>);
+        el.push(<line key={k+"tl2"} x1={cx} y1={y0+6*s} x2={cx} y2={y0+10*s} stroke="#667788" strokeWidth={1*s} strokeLinecap="round"/>);
+        el.push(<line key={k+"tl3"} x1={cx+2*s} y1={y0+6*s} x2={cx+4.5*s} y2={y0+10*s} stroke="#667788" strokeWidth={1*s} strokeLinecap="round"/>);
+        el.push(<circle key={k+"tlf1"} cx={cx-4.5*s} cy={y0+10*s} r={0.5*s} fill="#778899"/>);
+        el.push(<circle key={k+"tlf2"} cx={cx} cy={y0+10*s} r={0.5*s} fill="#778899"/>);
+        el.push(<circle key={k+"tlf3"} cx={cx+4.5*s} cy={y0+10*s} r={0.5*s} fill="#778899"/>);
+        el.push(<rect key={k+"trg1"} x={cx-3*s} y={y0+4*s} width={1.2*s} height={0.5*s} rx={0.1*s} fill="#f44" opacity={0.6}/>);
+        el.push(<rect key={k+"trg2"} x={cx+1.8*s} y={y0+4*s} width={1.2*s} height={0.5*s} rx={0.1*s} fill="#f44" opacity={0.6}/>);break;
+      case"rebel":case"rebel_f":
+        el.push(...humanHead("#FFCC88",0,"#553322"));
+        el.push(...torso("#8B6C42","#5B3C12",3.5),...arms("#8B6C42",3.5),...legs("#4a4a3a","#4a4a3a",7.5));
+        el.push(blaster(3,6,3,"#777"));
+        el.push(<rect key={k+"rhl"} x={cx-2*s} y={y0+0.2*s} width={4*s} height={1.2*s} rx={0.8*s} fill="#8B6C42" stroke="#6B4C22" strokeWidth={0.15*s}/>);break;
+      case"rebel_p":
+        el.push(...humanHead("#FFCC88",0,"#443322"));
+        el.push(...torso("#665544","#443322",3.5),...arms("#665544",3.5),...legs("#3a3a2a","#3a3a2a",7.5));
+        el.push(blaster(3,6,1.5,"#888"));
+        el.push(<rect key={k+"rph"} x={cx-1.8*s} y={y0+0.2*s} width={3.6*s} height={1*s} rx={0.6*s} fill="#554433" stroke="#443322" strokeWidth={0.1*s}/>);break;
+      case"rebel_jet":
+        el.push(...humanHead("#FFCC88",0,"#442211"));
+        el.push(<rect key={k+"rjh"} x={cx-2.2*s} y={y0-0.1*s} width={4.4*s} height={2.5*s} rx={0.8*s} fill="#aa4444" stroke="#883333" strokeWidth={0.2*s}/>);
+        el.push(<rect key={k+"rjv"} x={cx-1.2*s} y={y0+1*s} width={2.4*s} height={0.7*s} rx={0.2*s} fill="#1a1a2e" opacity={0.6}/>);
+        el.push(...torso("#aa4444","#882222",3.5),...arms("#aa4444",3.5),...legs("#553333","#553333",7.5));
+        el.push(blaster(3,6,2.5,"#777"),...jetpack(3.8));break;
+      case"guard":
+        el.push(stud(-0.3));
+        el.push(<rect key={k+"gh"} x={cx-2.2*s} y={y0-0.1*s} width={4.4*s} height={3.2*s} rx={1*s} fill="#556644" stroke="#445533" strokeWidth={0.2*s}/>);
+        el.push(<rect key={k+"gv"} x={cx-1.2*s} y={y0+1.2*s} width={2.4*s} height={1*s} rx={0.3*s} fill="#1a1a2e" opacity={0.6}/>);
+        el.push(...torso("#556644","#3a4a2a",3.2),...arms("#556644",3.2),...legs("#3a4a2a","#3a4a2a",7.2));
+        el.push(blaster(3,5.5,3,"#5588bb"));break;
+      default:
+        el.push(...humanHead("#FFCC88",0,null),...torso("#888","#555",3.5),...arms("#888",3.5),...legs("#555","#555",7.5),blaster(3,5.5,2,"#777"));
+    }
+    return <g key={k+"g"}>{el}</g>;
+  };
+
+  /* ─── Prone figure (flattened, seen from above) ─── */
+  const drawProne=(type,cx,y0,s,pl)=>{
+    const c=UDEFS[type]?.co||"#888";const fac=UDEFS[type]?.fac||"cl";
+    const bodyCol=fac==="cl"?"#e0e0e0":fac==="sep"?"#C4A65A":"#8B6C42";
+    const helmCol=fac==="cl"?"#ddd":fac==="sep"?(type==="b2"?"#6a6a6a":"#C4A65A"):"#775533";
+    return <g key={`pr_${cx}_${y0}`}>
+      <ellipse cx={cx} cy={y0+2*s} rx={3.5*s} ry={1.2*s} fill={bodyCol} stroke="#444" strokeWidth={0.2*s} opacity={0.85}/>
+      <ellipse cx={cx} cy={y0+0.6*s} rx={1.8*s} ry={1.2*s} fill={helmCol} stroke="#555" strokeWidth={0.2*s}/>
+      <ellipse cx={cx} cy={y0+0.6*s} rx={1*s} ry={0.7*s} fill="#1a1a2e" opacity={0.5}/>
+      <line x1={cx+2.5*s} y1={y0+1.5*s} x2={cx+5*s} y2={y0+0.5*s} stroke="#556" strokeWidth={0.5*s} strokeLinecap="round"/>
+    </g>;
+  };
+
+  /* ─── Vehicle SVG (STAP, AV-7, CRAM/BARC, TR-TT/AT-RT) ─── */
+  const drawVeh=(vt,cx,y0,s,pl,op)=>{
+    const o=op||1;const k=`v_${vt}_${cx}_${y0}`;
+    switch(vt){
+      case"stap": /* Separatist STAP — thin hovering platform, twin cannons */
+        return <g key={k} opacity={o}>
+          {/* Main body / spine */}
+          <rect x={cx-1.2*s} y={y0+1*s} width={2.4*s} height={8*s} rx={0.6*s} fill="#AA7733" stroke="#886622" strokeWidth={0.25*s}/>
+          {/* Front wing/handlebars */}
+          <ellipse cx={cx} cy={y0+1.5*s} rx={4*s} ry={1.2*s} fill="#997733" stroke="#886622" strokeWidth={0.2*s}/>
+          {/* Twin cannon pods */}
+          <rect x={cx-4.5*s} y={y0+0*s} width={1.5*s} height={2.5*s} rx={0.3*s} fill="#887744" stroke="#776633" strokeWidth={0.15*s}/>
+          <rect x={cx+3*s} y={y0+0*s} width={1.5*s} height={2.5*s} rx={0.3*s} fill="#887744" stroke="#776633" strokeWidth={0.15*s}/>
+          <circle cx={cx-3.75*s} cy={y0-0.2*s} r={0.4*s} fill="#f44"/>
+          <circle cx={cx+3.75*s} cy={y0-0.2*s} r={0.4*s} fill="#f44"/>
+          {/* Rear platform */}
+          <ellipse cx={cx} cy={y0+7.5*s} rx={2.5*s} ry={0.8*s} fill="#886622" stroke="#775511" strokeWidth={0.15*s}/>
+          {/* B1 droid pilot on top */}
+          <circle cx={cx} cy={y0+4.2*s} r={1.2*s} fill="#C4A65A" stroke="#aa8844" strokeWidth={0.15*s}/>
+          <circle cx={cx-0.3*s} cy={y0+4*s} r={0.2*s} fill="#111"/>
+          <circle cx={cx+0.3*s} cy={y0+4*s} r={0.2*s} fill="#111"/>
+          {/* Hover glow */}
+          <ellipse cx={cx} cy={y0+9.5*s} rx={3*s} ry={0.6*s} fill="#88ccff" opacity={0.2}/>
+        </g>;
+      case"av7": /* Republic AV-7 cannon — heavy artillery, tripod legs */
+        return <g key={k} opacity={o}>
+          {/* Cannon barrel */}
+          <rect x={cx-0.8*s} y={y0-2*s} width={1.6*s} height={5*s} rx={0.4*s} fill="#668899" stroke="#557788" strokeWidth={0.2*s}/>
+          <circle cx={cx} cy={y0-2*s} r={0.9*s} fill="#556677" stroke="#446666" strokeWidth={0.2*s}/>
+          {/* Turret housing */}
+          <rect x={cx-3*s} y={y0+2.5*s} width={6*s} height={3*s} rx={0.8*s} fill="#5577AA" stroke="#446699" strokeWidth={0.25*s}/>
+          {/* Tripod legs */}
+          <line x1={cx-2*s} y1={y0+5.5*s} x2={cx-4.5*s} y2={y0+10*s} stroke="#5577AA" strokeWidth={1.2*s} strokeLinecap="round"/>
+          <line x1={cx+2*s} y1={y0+5.5*s} x2={cx+4.5*s} y2={y0+10*s} stroke="#5577AA" strokeWidth={1.2*s} strokeLinecap="round"/>
+          <line x1={cx} y1={y0+5.5*s} x2={cx} y2={y0+10*s} stroke="#5577AA" strokeWidth={1.2*s} strokeLinecap="round"/>
+          {/* Feet */}
+          <ellipse cx={cx-4.5*s} cy={y0+10*s} rx={0.8*s} ry={0.4*s} fill="#446688"/>
+          <ellipse cx={cx+4.5*s} cy={y0+10*s} rx={0.8*s} ry={0.4*s} fill="#446688"/>
+          <ellipse cx={cx} cy={y0+10*s} rx={0.8*s} ry={0.4*s} fill="#446688"/>
+          {/* Clone pilot silhouette */}
+          <rect x={cx-1.5*s} y={y0+3*s} width={3*s} height={2.2*s} rx={0.8*s} fill="#e8e8e8" stroke="#bbb" strokeWidth={0.15*s}/>
+          <rect x={cx-0.8*s} y={y0+3.5*s} width={1.6*s} height={0.8*s} rx={0.2*s} fill="#1a1a2e" opacity={0.6}/>
+        </g>;
+      case"cram": /* BARC-type speeder (Motojet CRAM) — sleek flying speeder */
+        return <g key={k} opacity={o}>
+          {/* Nose / front */}
+          <ellipse cx={cx} cy={y0+1*s} rx={1.5*s} ry={2*s} fill="#5599DD" stroke="#4488CC" strokeWidth={0.2*s}/>
+          {/* Main body */}
+          <rect x={cx-2.5*s} y={y0+2*s} width={5*s} height={5*s} rx={1*s} fill="#4488CC" stroke="#3377BB" strokeWidth={0.25*s}/>
+          {/* Wings */}
+          <polygon points={`${cx-2.5*s},${y0+3.5*s} ${cx-6*s},${y0+2*s} ${cx-5*s},${y0+4*s}`} fill="#3377BB" stroke="#2266AA" strokeWidth={0.2*s}/>
+          <polygon points={`${cx+2.5*s},${y0+3.5*s} ${cx+6*s},${y0+2*s} ${cx+5*s},${y0+4*s}`} fill="#3377BB" stroke="#2266AA" strokeWidth={0.2*s}/>
+          {/* Engine pods on wings */}
+          <ellipse cx={cx-5.5*s} cy={y0+3*s} rx={1*s} ry={0.5*s} fill="#446699" stroke="#335588" strokeWidth={0.15*s}/>
+          <ellipse cx={cx+5.5*s} cy={y0+3*s} rx={1*s} ry={0.5*s} fill="#446699" stroke="#335588" strokeWidth={0.15*s}/>
+          {/* Rear section */}
+          <rect x={cx-1.5*s} y={y0+6.5*s} width={3*s} height={2.5*s} rx={0.5*s} fill="#3366AA" stroke="#2255AA" strokeWidth={0.15*s}/>
+          {/* Sniper mount (gunner) */}
+          <line x1={cx} y1={y0+7*s} x2={cx} y2={y0+10*s} stroke="#446688" strokeWidth={0.8*s} strokeLinecap="round"/>
+          {/* Clone pilot */}
+          <rect x={cx-1.2*s} y={y0+2.5*s} width={2.4*s} height={1.8*s} rx={0.6*s} fill="#e8e8e8" stroke="#bbb" strokeWidth={0.15*s}/>
+          <rect x={cx-0.7*s} y={y0+3*s} width={1.4*s} height={0.5*s} rx={0.15*s} fill="#1a1a2e" opacity={0.6}/>
+          {/* Hover glow */}
+          <ellipse cx={cx} cy={y0+10*s} rx={3.5*s} ry={0.5*s} fill="#88ccff" opacity={0.15}/>
+        </g>;
+      case"trtt": /* TR-TT / AT-RT walker — bipedal scout walker */
+        return <g key={k} opacity={o}>
+          {/* Head / cockpit */}
+          <rect x={cx-3*s} y={y0+0*s} width={6*s} height={3.5*s} rx={0.8*s} fill="#667788" stroke="#556677" strokeWidth={0.25*s}/>
+          {/* Main cannon (right side) */}
+          <rect x={cx+3*s} y={y0+0.5*s} width={4*s} height={1.2*s} rx={0.3*s} fill="#778899" stroke="#667788" strokeWidth={0.2*s}/>
+          <circle cx={cx+7*s} cy={y0+1.1*s} r={0.5*s} fill="#f44" opacity={0.6}/>
+          {/* Viewport */}
+          <rect x={cx-2*s} y={y0+1.2*s} width={4*s} height={1*s} rx={0.3*s} fill="#1a1a2e" opacity={0.6}/>
+          {/* Clone inside */}
+          <rect x={cx-1*s} y={y0+1.4*s} width={2*s} height={0.6*s} rx={0.3*s} fill="#e8e8e8" opacity={0.5}/>
+          {/* Body connector */}
+          <rect x={cx-1.5*s} y={y0+3.5*s} width={3*s} height={2*s} rx={0.5*s} fill="#778899" stroke="#667788" strokeWidth={0.2*s}/>
+          {/* Left leg */}
+          <line x1={cx-1.5*s} y1={y0+5*s} x2={cx-3.5*s} y2={y0+8*s} stroke="#778899" strokeWidth={1.5*s} strokeLinecap="round"/>
+          <line x1={cx-3.5*s} y1={y0+8*s} x2={cx-2*s} y2={y0+10.5*s} stroke="#778899" strokeWidth={1.2*s} strokeLinecap="round"/>
+          <ellipse cx={cx-2*s} cy={y0+10.5*s} rx={1.2*s} ry={0.5*s} fill="#667788"/>
+          {/* Right leg */}
+          <line x1={cx+1.5*s} y1={y0+5*s} x2={cx+3.5*s} y2={y0+8*s} stroke="#778899" strokeWidth={1.5*s} strokeLinecap="round"/>
+          <line x1={cx+3.5*s} y1={y0+8*s} x2={cx+2*s} y2={y0+10.5*s} stroke="#778899" strokeWidth={1.2*s} strokeLinecap="round"/>
+          <ellipse cx={cx+2*s} cy={y0+10.5*s} rx={1.2*s} ry={0.5*s} fill="#667788"/>
+        </g>;
+      default:return <rect key={k+"d"} x={cx-3*s} y={y0+1*s} width={6*s} height={6*s} rx={1*s} fill="#888" stroke="#666" strokeWidth={0.2*s}/>;
+    }
+  };
+
+  const showBoard=phase==="terr_p1"||phase==="terr_p2"||phase==="dep_units"||phase==="battle"||phase==="gameover";
+
+  /* ═══ RENDER ═══ */
+  return(
+    <div style={{minHeight:"100vh",background:"#0d1117",color:"#e6edf3",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+      {/* HEADER */}
+      <div style={{background:"#161b22",padding:"8px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"3px solid #f0c040",flexWrap:"wrap"}}>
+        <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}>🧱 CROSSBLOCK</span>
+        <div style={{display:"flex",gap:2}}>
+          {[["army","⚔ Armées"],["battle","💥 Bataille"],["sim","🔬 Simulation"],["tips","⚖ Balance"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setTab(k)} style={{padding:"4px 12px",border:"none",borderRadius:"5px 5px 0 0",fontWeight:700,cursor:"pointer",fontSize:10,background:tab===k?"#f0c040":"#21262d",color:tab===k?"#000":"#8b949e"}}>{l}</button>
+          ))}
+        </div>
+        <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+          {phase==="battle"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?"▶ RELANCER":"⏸ PAUSE"}</button>}
+          {phase!=="setup"&&<button onClick={resetGame} style={{...BS("#6e1010"),fontSize:13,padding:"6px 16px"}}>🔄 NOUVELLE PARTIE</button>}
+        </div>
+      </div>
+
+      {/* ═══ BALANCE TAB ═══ */}
+      {tab==="tips"&&(()=>{
+        const ud=balUnitData(balArm);
+        const vd=balVehData(balArm);
+        const maxVal=Math.max(...ud.map(u=>u.value),1);
+        /* SVG mini-chart */
+        const svgChart=(cw,ch,datasets,xMax,yMax,labels)=>{
+          const px2=(x)=>20+x/(xMax||1)*(cw-30);
+          const py2=(y)=>ch-18-y/(yMax||1)*(ch-28);
+          const cols=["#f0c040","#f85149","#888","#3fb950","#5588cc"];
+          return(<svg width={cw} height={ch} style={{background:"#0d1117",borderRadius:4}}>
+            {[0.25,0.5,0.75,1].map(f=><line key={"g"+f} x1={20} y1={py2(yMax*f)} x2={cw-4} y2={py2(yMax*f)} stroke="#222" strokeDasharray="3,3"/>)}
+            {[0.25,0.5,0.75,1].map(f=><text key={"t"+f} x={2} y={py2(yMax*f)+3} fill="#666" fontSize={7}>{Math.round(yMax*f)}</text>)}
+            <line x1={20} y1={ch-18} x2={cw-4} y2={ch-18} stroke="#444"/>
+            <line x1={20} y1={10} x2={20} y2={ch-18} stroke="#444"/>
+            {[0,0.25,0.5,0.75,1].map(f=><text key={"x"+f} x={px2(xMax*f)} y={ch-6} fill="#666" fontSize={7} textAnchor="middle">{Math.round(xMax*f)}</text>)}
+            {datasets.map((ds,di)=><polyline key={di} fill="none" stroke={cols[di%cols.length]} strokeWidth={di===0?2:1.5}
+              strokeDasharray={di>=2?"4,2":"none"}
+              points={ds.map(([x,y])=>`${px2(x)},${py2(y)}`).join(" ")}/>)}
+            {labels&&labels.map((l,i)=><g key={i}>
+              <line x1={cw-90} y1={8+i*10} x2={cw-78} y2={8+i*10} stroke={cols[i%cols.length]} strokeWidth={2} strokeDasharray={i>=2?"4,2":"none"}/>
+              <text x={cw-75} y={11+i*10} fill={cols[i%cols.length]} fontSize={7}>{l}</text>
+            </g>)}
+          </svg>);
+        };
+        // Lanchester curve data
+        const lancData=[];for(let n=1;n<=20;n++)lancData.push([n,n*n]);
+        const lancLin=[];for(let n=1;n<=20;n++)lancLin.push([n,n]);
+        const lancMid=[];for(let n=1;n<=20;n++)lancMid.push([n,Math.pow(n,1.5)]);
+        // HP cost curve
+        const hpLin=[];for(let h=1;h<=12;h++)hpLin.push([h,h*100]);
+        const hpExp=[];for(let h=1;h<=12;h++)hpExp.push([h,Math.round(100*Math.pow(h,1.5))]);
+        const hpArm=[];for(let h=1;h<=12;h++)hpArm.push([h,Math.round(100*Math.pow(h,1.7))]);
+        // Parade table
+        const paradeRows=[
+          {n:"Tri-Droïde",arm:6},{n:"TR-TT",arm:10},{n:"B2/Fives",arm:11},
+          {n:"Rex/Véh.",arm:12},{n:"Clones",arm:15},{n:"Garde",arm:16},
+          {n:"Rebelles",arm:17},{n:"B1",arm:18}
+        ];
+        const pens=[3,4,5,6,7,10];
+        // Proposed
+        const proposed=[
+          {n:"Clone Ph.2",o:200,p:200,r:"Référence"},
+          {n:"Clone Geo",o:230,p:210,r:"Quasi = Clone"},
+          {n:"Sniper",o:260,p:220,r:"1 dé = aléatoire"},
+          {n:"Clone Spéc.",o:250,p:210,r:"dbl_f sous-performe"},
+          {n:"Officier",o:270,p:240,r:"Pistolet moyen"},
+          {n:"Airborne",o:270,p:280,r:"Parachutage fort"},
+          {n:"Fives",o:430,p:"500★",r:"arm→11, hp→3"},
+          {n:"Rex",o:400,p:400,r:"Inchangé"},
+          {n:"B1",o:170,p:"120★",r:"5PA, chair à canon"},
+          {n:"B2",o:300,p:320,r:"Bon arm, légère ↑"},
+          {n:"Tri-Droïde",o:1800,p:"3000★",r:"Lanchester HP^1.5"},
+          {n:"Rebelle",o:180,p:130,r:"0% parade = pas cher"},
+          {n:"Reb. Fusil",o:180,p:130,r:"Idem"},
+          {n:"Reb. Pistol.",o:150,p:100,r:"Arme la + faible"},
+          {n:"Reb. Jetpack",o:240,p:200,r:"Vol mais fragile"},
+          {n:"Garde Reb.",o:200,p:170,r:"arm=16 correct"},
+        ];
+        const S={fontSize:10,color:"#e6edf3"};const H={fontSize:11,color:"#f0c040",margin:"0 0 6px",fontWeight:700};
+        const C={background:"#161b22",border:"1px solid #30363d",borderRadius:6,padding:10,marginBottom:10};
+        const subBS=(a)=>({padding:"3px 10px",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",
+          fontSize:9,background:balTab===a?"#f0c040":"#21262d",color:balTab===a?"#000":"#8b949e"});
+        return(
+        <div style={{padding:12,maxWidth:800,margin:"0 auto"}}>
+          <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
+            {[["theory","📐 Théorie"],["curves","📈 Courbes"],["parade","🛡 Parade"],["units","🪖 Valeur"],["propose","🔧 Rééquilibrage"]].map(([k,l])=>(
+              <button key={k} onClick={()=>sBalTab(k)} style={subBS(k)}>{l}</button>
+            ))}
+          </div>
+
+          {/* ── THEORY ── */}
+          {balTab==="theory"&&<div>
+            <div style={C}>
+              <p style={H}>🎯 Pourquoi 1000 soldats à 1PV battent 1 monstre à 1000PV ?</p>
+              <p style={S}>Imagine deux armées à coût égal :</p>
+              <p style={{...S,color:"#f85149",fontWeight:700}}>• Armée A : 1 monstre — 10 PV, 1 arme</p>
+              <p style={{...S,color:"#3fb950",fontWeight:700}}>• Armée B : 10 soldats — 1 PV, 1 arme chacun</p>
+              <div style={{background:"#0d1117",borderRadius:4,padding:8,margin:"8px 0",fontSize:10}}>
+                <p style={{color:"#f0c040",margin:"2px 0"}}>Tour 1 : Monstre tire 1× → tue 1 soldat. 10 soldats tirent 10× → ~5 dégâts au monstre.</p>
+                <p style={{color:"#f0c040",margin:"2px 0"}}>Tour 2 : Monstre (5PV) tire 1× → tue 1. Les 9 restants tirent 9× → tuent le monstre.</p>
+                <p style={{color:"#3fb950",fontWeight:700,margin:"4px 0 0"}}>→ Score : monstre tue 2 soldats. 8 survivants. Victoire écrasante de la masse.</p>
+              </div>
+            </div>
+            <div style={C}>
+              <p style={H}>📐 La Loi de Lanchester (1916)</p>
+              <p style={S}>Pour le combat à distance, la puissance de combat = <b style={{color:"#f0c040"}}>N² × P</b></p>
+              <p style={S}>(N = nombre d'unités, P = puissance individuelle)</p>
+              <p style={S}>Pourquoi le <b>carré</b> ? Chaque unité supplémentaire :</p>
+              <p style={S}>① <b>Ajoute</b> sa puissance de feu (×N)</p>
+              <p style={S}>② <b>Dilue</b> le feu ennemi (survie ×N)</p>
+              <p style={S}>→ N × N = <b>N²</b>. Doubler les unités <b>quadruple</b> la puissance.</p>
+            </div>
+            <div style={C}>
+              <p style={H}>💰 Conséquence pour les points</p>
+              <p style={S}>• 10 Clones (2PV chacun) = <b>100P</b> de puissance → 2000pts</p>
+              <p style={S}>• 1 unité à 20PV = seulement <b>~10-20P</b> (1 tir/tour !)</p>
+              <p style={{...S,color:"#f85149"}}>→ Le coût doit augmenter <b>exponentiellement</b> avec les PV :</p>
+              <div style={{background:"#0d1117",borderRadius:4,padding:8,margin:"4px 0",textAlign:"center"}}>
+                <span style={{color:"#f0c040",fontSize:14,fontWeight:900}}>Coût = Base × HP^1.5 × (1 + DPS) × (1 + Parade)</span>
+              </div>
+              <p style={{...S,color:"#888",fontSize:9}}>Le Tri-Droïde (10PV, 50% parade, 12 tourelles) devrait coûter ~3000-5000pts, pas 1800.</p>
+            </div>
+          </div>}
+
+          {/* ── CURVES ── */}
+          {balTab==="curves"&&<div>
+            <div style={C}>
+              <p style={H}>Puissance réelle vs Nombre d'unités</p>
+              <p style={{...S,color:"#888",fontSize:9}}>Rouge = Lanchester N² · Jaune = intermédiaire N^1.5 · Gris = linéaire (ce qu'on paye)</p>
+              {svgChart(380,200,[lancData,lancMid,lancLin],20,400,["N² (Lanchester)","N^1.5 (CrossBlock)","Linéaire"])}
+              <p style={{...S,color:"#5588cc",marginTop:6}}>→ 10 unités : le linéaire dit ×10, Lanchester dit <b>×100</b>. Écart 10:1.</p>
+            </div>
+            <div style={C}>
+              <p style={H}>Coût théorique selon les PV</p>
+              <p style={{...S,color:"#888",fontSize:9}}>Combien devrait coûter 1 unité avec X PV (base=100pts pour 1PV)</p>
+              {svgChart(380,200,[hpExp,hpArm,hpLin],12,5000,["HP^1.5 (Lanchester)","HP^1.7 (+ bonne armure)","Linéaire"])}
+              <div style={{background:"#0d1117",borderRadius:4,padding:6,margin:"6px 0",fontSize:9}}>
+                <p style={{color:"#888",margin:"2px 0"}}>À 10 PV : linéaire = 1000pts | Lanchester = <b style={{color:"#f0c040"}}>3162pts</b> | avec arm=6 : <b style={{color:"#f85149"}}>~5000pts</b></p>
+                <p style={{color:"#f85149",margin:"2px 0"}}>→ Tri-Droïde à 1800pts : sous-coûté d'un facteur 2-3×</p>
+              </div>
+            </div>
+          </div>}
+
+          {/* ── PARADE TABLE ── */}
+          {balTab==="parade"&&<div>
+            <div style={C}>
+              <p style={H}>🛡 Probabilité de parade (arm + pen → seuil d20)</p>
+              <p style={{...S,color:"#888",fontSize:9}}>Jet d20 ≥ arm+pen → dégât évité</p>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
+                  <thead><tr style={{borderBottom:"2px solid #444"}}>
+                    <th style={{padding:"4px",color:"#f0c040",textAlign:"left"}}>Défenseur</th>
+                    <th style={{padding:"4px",color:"#888"}}>arm</th>
+                    {pens.map(p=><th key={p} style={{padding:"4px",color:"#ccc"}}>pen={p}</th>)}
+                  </tr></thead>
+                  <tbody>{paradeRows.map(r=>(
+                    <tr key={r.n} style={{borderBottom:"1px solid #222"}}>
+                      <td style={{padding:"3px",fontWeight:700}}>{r.n}</td>
+                      <td style={{padding:"3px",color:"#f0c040"}}>{r.arm}</td>
+                      {pens.map(p=>{
+                        const v=Math.round(balSaveProb(r.arm,p)*100);
+                        const c=v>=40?"#3fb950":v>=15?"#f0c040":v>0?"#f09040":"#f85149";
+                        return<td key={p} style={{padding:"3px",color:c,fontWeight:v>0?700:400,textAlign:"center"}}>{v}%</td>;
+                      })}
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+              <div style={{background:"#0d1117",borderRadius:4,padding:6,margin:"8px 0",fontSize:9}}>
+                <p style={{color:"#f85149",margin:"2px 0"}}>• <b>B1 (arm=18)</b> : 0% parade vs TOUTE arme → meurt à chaque touche</p>
+                <p style={{color:"#f85149",margin:"2px 0"}}>• <b>Rebelles (arm=17)</b> : 0-5% → quasi aucune parade</p>
+                <p style={{color:"#f0c040",margin:"2px 0"}}>• <b>Clones (arm=15)</b> : 5-15% → parade rare</p>
+                <p style={{color:"#3fb950",margin:"2px 0"}}>• <b>Tri-Droïde (arm=6)</b> : 40-60% → TANK. Survit indéfiniment.</p>
+              </div>
+            </div>
+          </div>}
+
+          {/* ── UNIT VALUE ── */}
+          {balTab==="units"&&<div>
+            <div style={C}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <span style={{fontSize:10,color:"#888"}}>Armure cible :</span>
+                <input type="range" min={6} max={18} value={balArm} onChange={e=>sBalArm(+e.target.value)} style={{width:120}}/>
+                <span style={{color:"#f0c040",fontWeight:700,fontSize:13}}>{balArm}</span>
+              </div>
+              <p style={H}>Valeur par point d'armée (vs arm={balArm})</p>
+              <p style={{...S,color:"#888",fontSize:9}}>VALEUR = (DPT × PV eff. × mobilité) / coût. DPT = dégâts/tour (toutes armes tirées).</p>
+
+              {/* Bar chart via divs */}
+              <div style={{margin:"8px 0"}}>
+                {ud.map(u=>{
+                  const w=Math.max(2,u.value/maxVal*100);
+                  const c=u.value>15?"#3fb950":u.value>8?"#f0c040":u.value>5?"#f09040":"#f85149";
+                  return(<div key={u.key} style={{display:"flex",alignItems:"center",gap:4,marginBottom:2}}>
+                    <span style={{width:90,fontSize:9,textAlign:"right",color:u.co||"#ccc",fontWeight:700}}>{u.ic}{u.n}</span>
+                    <div style={{flex:1,height:12,background:"#0d1117",borderRadius:2,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${w}%`,background:c,borderRadius:2,transition:"width 0.3s"}}/>
+                    </div>
+                    <span style={{width:32,fontSize:9,color:c,fontWeight:700,textAlign:"right"}}>{u.value.toFixed(0)}</span>
+                  </div>);
+                })}
+              </div>
+
+              {/* Detail table */}
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:9}}>
+                  <thead><tr style={{borderBottom:"2px solid #444"}}>
+                    {["Unité","pts","arm","hp","PA","tirs/t","DPT","parade","PV eff.","PA mvt","vie","VALEUR"].map(h=>(
+                      <th key={h} style={{padding:"3px",color:"#f0c040",textAlign:"left"}}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>{ud.map(u=>{
+                    const vc=u.value>15?"#3fb950":u.value>8?"#f0c040":u.value>5?"#f09040":"#f85149";
+                    return(<tr key={u.key} style={{borderBottom:"1px solid #1a1a2a"}}>
+                      <td style={{padding:"2px",color:u.co,fontWeight:700}}>{u.ic}{u.n}</td>
+                      <td style={{padding:"2px"}}>{u.pts}</td>
+                      <td style={{padding:"2px"}}>{u.arm}</td>
+                      <td style={{padding:"2px"}}>{u.hp}</td>
+                      <td style={{padding:"2px"}}>{u.act}</td>
+                      <td style={{padding:"2px",color:"#d2a8ff"}}>{u.nFires}×</td>
+                      <td style={{padding:"2px",color:"#f85149",fontWeight:700}}>{u.dpt.toFixed(2)}</td>
+                      <td style={{padding:"2px",color:u.parade>0.2?"#3fb950":"#888"}}>{(u.parade*100).toFixed(0)}%</td>
+                      <td style={{padding:"2px"}}>{u.effHP.toFixed(1)}</td>
+                      <td style={{padding:"2px",color:"#5588cc"}}>{u.paAfterFire}PA</td>
+                      <td style={{padding:"2px",color:"#f0c040"}}>{u.lifetime.toFixed(1)}</td>
+                      <td style={{padding:"2px",color:vc,fontWeight:700}}>{u.value.toFixed(1)}</td>
+                    </tr>);
+                  })}</tbody>
+                </table>
+              </div>
+
+              {/* Weapon detail per unit */}
+              <p style={{...H,marginTop:10}}>Détail des armes par unité</p>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:4}}>
+                {ud.map(u=>(
+                  <div key={u.key} style={{background:"#0d1117",borderRadius:4,padding:6,border:`1px solid ${u.co||"#333"}33`}}>
+                    <span style={{color:u.co,fontWeight:700,fontSize:10}}>{u.ic}{u.n}</span>
+                    <span style={{color:"#888",fontSize:8,marginLeft:4}}>{u.act}PA → {u.nFires} tir(s) + {u.paAfterFire} mvt</span>
+                    {u.wDmgs.map((w,i)=>{
+                      const src=WEAPS[w.key]||VWEAPS[w.key];
+                      const fired=i<u.nFires;
+                      return(<div key={i} style={{fontSize:8,color:fired?"#e6edf3":"#555",margin:"1px 0"}}>
+                        {fired?"🔫":"⛔"} {src?.n||w.key} — {src?.mun}dés, pen={src?.pen} → <b style={{color:fired?"#f85149":"#555"}}>{w.dmg} dmg</b>
+                      </div>);
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              {/* Vehicles */}
+              <p style={{...H,marginTop:10}}>Véhicules (pilote + canonnier = PA séparés)</p>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:9}}>
+                  <thead><tr style={{borderBottom:"2px solid #444"}}>
+                    {["Véhicule","pts","arm","vHP","pilote DPT","canon. DPT","total DPT","parade","PV eff.","vie","VALEUR"].map(h=>(
+                      <th key={h} style={{padding:"3px",color:"#f0c040",textAlign:"left"}}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>{vd.map(v=>{
+                    const vc=v.value>15?"#3fb950":v.value>8?"#f0c040":"#f85149";
+                    return(<tr key={v.key} style={{borderBottom:"1px solid #1a1a2a"}}>
+                      <td style={{padding:"2px",color:v.co,fontWeight:700}}>{v.ic}{v.n}</td>
+                      <td style={{padding:"2px"}}>{v.pts}</td>
+                      <td style={{padding:"2px"}}>{v.arm}</td>
+                      <td style={{padding:"2px"}}>{v.hp}</td>
+                      <td style={{padding:"2px",color:"#5588cc"}}>{v.pilotDpt.toFixed(2)}</td>
+                      <td style={{padding:"2px",color:"#d2a8ff"}}>{v.gunnerDpt.toFixed(2)}</td>
+                      <td style={{padding:"2px",color:"#f85149",fontWeight:700}}>{v.totalDpt.toFixed(2)}</td>
+                      <td style={{padding:"2px",color:v.parade>0.2?"#3fb950":"#888"}}>{(v.parade*100).toFixed(0)}%</td>
+                      <td style={{padding:"2px"}}>{v.effHP.toFixed(1)}</td>
+                      <td style={{padding:"2px",color:"#f0c040"}}>{v.lifetime.toFixed(1)}</td>
+                      <td style={{padding:"2px",color:vc,fontWeight:700}}>{v.value.toFixed(1)}</td>
+                    </tr>);
+                  })}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>}
+
+          {/* ── REBALANCE ── */}
+          {balTab==="propose"&&<div>
+            <div style={C}>
+              <p style={H}>🔧 Proposition de rééquilibrage</p>
+              <div style={{background:"#0d1117",borderRadius:4,padding:6,margin:"0 0 8px",fontSize:9}}>
+                <p style={{color:"#f0c040",margin:"2px 0"}}>Principes :</p>
+                <p style={{color:"#ccc",margin:"1px 0"}}>① HP exponentiel : <b>HP^1.5 × base</b> (Lanchester)</p>
+                <p style={{color:"#ccc",margin:"1px 0"}}>② Armure amplifie les PV (bonne parade × HP = survie exponentielle)</p>
+                <p style={{color:"#ccc",margin:"1px 0"}}>③ Unités pas chères = masse compense la fragilité</p>
+                <p style={{color:"#ccc",margin:"1px 0"}}>④ 4PA vs 5PA ≈ -15% prix (1 mouvement en moins)</p>
+                <p style={{color:"#ccc",margin:"1px 0"}}>⑤ Vol/parachutage = +10-15% coût</p>
+              </div>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:9}}>
+                  <thead><tr style={{borderBottom:"2px solid #444"}}>
+                    {["Unité","Ancien","Proposé","Δ","Raison"].map(h=>(
+                      <th key={h} style={{padding:"3px",color:"#f0c040",textAlign:"left"}}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>{proposed.map(p=>{
+                    const isNum=typeof p.p==="number";
+                    const d=isNum?p.p-p.o:null;
+                    const dc=d===0?"#888":d>0?"#f85149":"#3fb950";
+                    return(<tr key={p.n} style={{borderBottom:"1px solid #1a1a2a"}}>
+                      <td style={{padding:"2px",fontWeight:700}}>{p.n}</td>
+                      <td style={{padding:"2px"}}>{p.o}</td>
+                      <td style={{padding:"2px",color:"#f0c040",fontWeight:700}}>{p.p}</td>
+                      <td style={{padding:"2px",color:dc}}>{isNum?(d>0?"+":"")+d:"★"}</td>
+                      <td style={{padding:"2px",color:"#888"}}>{p.r}</td>
+                    </tr>);
+                  })}</tbody>
+                </table>
+              </div>
+            </div>
+            <div style={C}>
+              <p style={H}>⚔ Armes à modifier</p>
+              <div style={{fontSize:10}}>
+                <p style={{color:"#f85149",margin:"2px 0"}}>tourelle_x3 mun: 12 → <b>8</b> (nerf Tri-Droïde)</p>
+                <p style={{color:"#f85149",margin:"2px 0"}}>rocket_x3 mun: 3 → <b>2</b> (nerf Tri-Droïde)</p>
+                <p style={{color:"#3fb950",margin:"2px 0"}}>av7_cannon mun: 1 → <b>2</b> (buff AV-7)</p>
+              </div>
+            </div>
+            <div style={C}>
+              <p style={H}>🎯 Armées à ~2000pts (proposé)</p>
+              <div style={{fontSize:10}}>
+                {[
+                  "10 Clones = 2000pts",
+                  "Rex + Sniper + 7 Clones = 400+220+1400 = 2020pts",
+                  "17 B1 (5PA) = 17×120 = 2040pts",
+                  "12 B1 + 2 B2 = 12×120+2×320 = 2080pts",
+                  "15 Rebelles = 15×130 = 1950pts",
+                  "12 Reb + 3 Gardes + Jetpack = 2150pts",
+                  "Tri-Droïde seul = 3000pts → trop cher seul!",
+                ].map((s,i)=><p key={i} style={{margin:"2px 0",color:"#ccc"}}>{s}</p>)}
+              </div>
+            </div>
+          </div>}
+        </div>);
+      })()}
+
+      {/* ═══ SIMULATION TAB ═══ */}
+      {tab==="sim"&&(
+        <div style={{padding:12}}>
+          <div style={{background:"#161b22",border:"1px solid #30363d",borderRadius:6,padding:12}}>
+            <h3 style={{color:"#f0c040",margin:"0 0 8px",fontSize:16}}>🔬 Simulateur de batailles</h3>
+            <p style={{color:"#8b949e",fontSize:10,margin:"0 0 10px"}}>Lance des batailles IA vs IA instantanément pour tester l'équilibre des armées.</p>
+
+            {/* Army builders */}
+            <div style={{display:"flex",gap:10,marginBottom:10,flexWrap:"wrap"}}>
+              {[1,2].map(pl=>{const sArmy=pl===1?simA1:simA2;const setSArmy=pl===1?sSimA1:sSimA2;
+                const c=pl===1?"#58a6ff":"#f85149";const fac=pl===1?["cl"]:["sep","reb"];const vFac=pl===1?"cl":"sep";
+                const getPts=(t)=>t.startsWith("v_")?VDEFS[t.slice(2)]?.pts||0:UDEFS[t]?.pts||0;
+                const getInfo=(t)=>t.startsWith("v_")?VDEFS[t.slice(2)]:UDEFS[t];
+                const pts=sArmy.reduce((s,t)=>getPts(t)+s,0);
+                const types={};sArmy.forEach(t=>{types[t]=(types[t]||0)+1;});
+                return(<div key={pl} style={{flex:1,minWidth:220,background:"#0d1117",border:`1px solid ${c}33`,borderRadius:5,padding:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                    <span style={{color:c,fontWeight:700,fontSize:12}}>J{pl} — {pts}pts ({sArmy.length}u)</span>
+                    <div style={{display:"flex",gap:3}}>
+                      <button onClick={()=>{const pr=pl===1?["clone","clone","clone","sniper","spec","officer","airborne","fives"]:["b1","b1","b1","b1","b1","b1","b1","b2","b2","b2"];setSArmy(pr);}} style={{...BS("#30363d"),fontSize:8,padding:"2px 6px"}}>🎲 Preset</button>
+                      <button onClick={()=>setSArmy([])} style={{...BS("#30363d"),fontSize:8,padding:"2px 6px"}}>🗑</button>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:2,marginBottom:3}}>
+                    {Object.entries(UDEFS).filter(([,v])=>fac.includes(v.fac)).map(([k,v])=>(
+                      <button key={k} onClick={()=>setSArmy(p=>[...p,k])} style={{...BS(),fontSize:8,padding:"2px 5px"}}>{v.ic}{v.n}({v.pts})</button>
+                    ))}
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:2,marginBottom:5}}>
+                    {Object.entries(VDEFS).filter(([,v])=>v.fac===vFac).map(([k,v])=>(
+                      <button key={k} onClick={()=>setSArmy(p=>[...p,`v_${k}`])} style={{...BS("#2a1f00"),fontSize:8,padding:"2px 5px",border:"1px solid #f0c04055"}}>{v.ic}{v.n}({v.pts})</button>
+                    ))}
+                  </div>
+                  {sArmy.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:2}}>
+                    {Object.entries(types).map(([t,n])=>{const info=getInfo(t);if(!info)return null;return(
+                      <span key={t} style={{background:t.startsWith("v_")?"#1a1500":"#161b22",borderRadius:3,padding:"1px 5px",fontSize:9,display:"inline-flex",alignItems:"center",gap:3,border:`1px solid ${info.co||"#555"}44`}}>
+                        {info.ic}{info.n}×{n}
+                        <span onClick={()=>{const i=sArmy.lastIndexOf(t);if(i>=0)setSArmy(p=>[...p.slice(0,i),...p.slice(i+1)]);}} style={{cursor:"pointer",color:"#f44",fontWeight:700,fontSize:10}}>−</span>
+                        <span onClick={()=>setSArmy(p=>[...p,t])} style={{cursor:"pointer",color:"#3fb950",fontWeight:700,fontSize:10}}>+</span>
+                      </span>);
+                    })}
+                  </div>}
+                  {sArmy.length===0&&<div style={{color:"#484f58",fontSize:9}}>Ajoutez des unités/véhicules ou cliquez Preset</div>}
+                </div>);
+              })}
+            </div>
+
+            {/* Points comparison */}
+            {(simA1.length>0||simA2.length>0)&&(()=>{
+              const gP=(t)=>t.startsWith("v_")?VDEFS[t.slice(2)]?.pts||0:UDEFS[t]?.pts||0;
+              const p1s=simA1.reduce((s,t)=>gP(t)+s,0);
+              const p2s=simA2.reduce((s,t)=>gP(t)+s,0);
+              const diff=Math.abs(p1s-p2s);
+              return <div style={{color:diff>100?"#f0c040":"#8b949e",fontSize:10,marginBottom:8}}>Écart: {diff}pts {diff>100?"⚠ Déséquilibré":diff>50?"⚠":"✓"} | J1:{p1s}pts vs J2:{p2s}pts</div>;
+            })()}
+
+            {/* Controls */}
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+              <span style={{color:"#e6edf3",fontSize:11}}>Nombre de batailles:</span>
+              {[10,50,100,500,1000].map(v=>(
+                <button key={v} onClick={()=>sSimN(v)} style={{...BS(simN===v?"#f0c040":"#21262d"),color:simN===v?"#000":"#e6edf3",fontSize:11,padding:"4px 10px"}}>{v}</button>
+              ))}
+              <button onClick={()=>{
+                if(simA1.length===0&&simA2.length===0){sSimA1(["clone","clone","clone","sniper","spec","officer","airborne","fives"]);sSimA2(["b1","b1","b1","b1","b1","b1","b1","b2","b2","b2"]);}
+                sSimRunning(true);sSimRes(null);
+                setTimeout(()=>{
+                  const a1d=simA1.length?[...simA1]:["clone","clone","clone","sniper","spec","officer","airborne","fives"];
+                  const a2d=simA2.length?[...simA2]:["b1","b1","b1","b1","b1","b1","b1","b2","b2","b2"];
+                  const res=runSimulations(simN,a1d,a2d);
+                  sSimRes(res);sSimRunning(false);
+                },50);
+              }} disabled={simRunning} style={{...BS(simRunning?"#333":"#238636"),fontSize:13,padding:"6px 20px",opacity:simRunning?0.5:1}}>
+                {simRunning?"⏳ Calcul...":"▶ LANCER"}
+              </button>
+            </div>
+
+            {/* Results */}
+            {simRes&&(
+              <div>
+                {/* Win rates */}
+                <div style={{background:"#0d1117",borderRadius:6,padding:10,marginBottom:10}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                    <span style={{color:"#f0c040",fontWeight:700,fontSize:14}}>Résultats: {simRes.n} batailles</span>
+                    <span style={{color:"#8b949e",fontSize:10}}>Moy: {(simRes.totalTurns/simRes.n).toFixed(1)} tours/bataille</span>
+                  </div>
+
+                  {/* Win bar */}
+                  <div style={{position:"relative",height:32,borderRadius:4,overflow:"hidden",marginBottom:6}}>
+                    <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${(simRes.w1/simRes.n*100)}%`,background:"linear-gradient(90deg,#1a4488,#58a6ff)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{color:"#fff",fontWeight:900,fontSize:13,textShadow:"0 1px 3px #000"}}>{simRes.w1>0?`J1: ${simRes.w1} (${(simRes.w1/simRes.n*100).toFixed(1)}%)`:""}</span>
+                    </div>
+                    <div style={{position:"absolute",right:0,top:0,height:"100%",width:`${(simRes.w2/simRes.n*100)}%`,background:"linear-gradient(90deg,#f85149,#7a1a1a)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{color:"#fff",fontWeight:900,fontSize:13,textShadow:"0 1px 3px #000"}}>{simRes.w2>0?`J2: ${simRes.w2} (${(simRes.w2/simRes.n*100).toFixed(1)}%)`:""}</span>
+                    </div>
+                  </div>
+
+                  {/* Balance verdict */}
+                  {(()=>{
+                    const r=simRes.w1/simRes.n;
+                    const verdict=r>0.6?"⚠️ J1 DOMINE":r<0.4?"⚠️ J2 DOMINE":"✅ ÉQUILIBRÉ";
+                    const vc=r>0.6?"#f0c040":r<0.4?"#f0c040":"#3fb950";
+                    return <div style={{textAlign:"center",color:vc,fontWeight:900,fontSize:14,padding:4}}>{verdict} ({(r*100).toFixed(1)}% / {((1-r)*100).toFixed(1)}%)</div>;
+                  })()}
+                </div>
+
+                {/* Survivors */}
+                <div style={{background:"#0d1117",borderRadius:6,padding:10,marginBottom:10}}>
+                  <div style={{color:"#e6edf3",fontWeight:700,fontSize:12,marginBottom:6}}>Survivants moyens par bataille</div>
+                  <div style={{display:"flex",gap:14}}>
+                    <div style={{flex:1}}>
+                      <div style={{color:"#58a6ff",fontSize:11,fontWeight:700,marginBottom:3}}>J1: {(simRes.survJ1.reduce((a,b)=>a+b,0)/simRes.n).toFixed(1)} unités</div>
+                      <div style={{height:8,borderRadius:3,background:"#21262d",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${Math.min(100,(simRes.survJ1.reduce((a,b)=>a+b,0)/simRes.n)/(simA1.length||8)*100)}%`,background:"#58a6ff",borderRadius:3}}/>
+                      </div>
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{color:"#f85149",fontSize:11,fontWeight:700,marginBottom:3}}>J2: {(simRes.survJ2.reduce((a,b)=>a+b,0)/simRes.n).toFixed(1)} unités</div>
+                      <div style={{height:8,borderRadius:3,background:"#21262d",overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${Math.min(100,(simRes.survJ2.reduce((a,b)=>a+b,0)/simRes.n)/(simA2.length||9)*100)}%`,background:"#f85149",borderRadius:3}}/>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Unit survival rates */}
+                <div style={{background:"#0d1117",borderRadius:6,padding:10}}>
+                  <div style={{color:"#e6edf3",fontWeight:700,fontSize:12,marginBottom:6}}>Taux de survie par type d'unité</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:4}}>
+                    {Object.entries(simRes.unitStats).sort((a,b)=>(b[1].alive/b[1].total)-(a[1].alive/a[1].total)).map(([type,s])=>{
+                      const def=type.startsWith("v_")?VDEFS[type.slice(2)]:UDEFS[type];if(!def)return null;
+                      const rate=s.alive/s.total;
+                      const barC=rate>0.6?"#3fb950":rate>0.3?"#f0c040":"#f85149";
+                      return(
+                        <div key={type} style={{background:type.startsWith("v_")?"#1a1500":"#161b22",borderRadius:4,padding:"4px 8px",display:"flex",alignItems:"center",gap:6}}>
+                          <span style={{fontSize:14}}>{def.ic}</span>
+                          <div style={{flex:1}}>
+                            <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#8b949e",marginBottom:2}}>
+                              <span>{def.n} ({def.pts}pts)</span>
+                              <span style={{color:barC,fontWeight:700}}>{(rate*100).toFixed(0)}%</span>
+                            </div>
+                            <div style={{height:5,borderRadius:2,background:"#21262d",overflow:"hidden"}}>
+                              <div style={{height:"100%",width:`${rate*100}%`,background:barC,borderRadius:2}}/>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                <div style={{background:"#0d1117",borderRadius:6,padding:10,marginTop:10}}>
+                  <div style={{color:"#f0c040",fontWeight:700,fontSize:12,marginBottom:4}}>💡 Recommandations d'équilibrage</div>
+                  {(()=>{
+                    const tips=[];const r=simRes.w1/simRes.n;
+                    if(r>0.6)tips.push(`J1 gagne ${(r*100).toFixed(0)}% → Retirez une unité J1 ou ajoutez +1 B1 à J2`);
+                    if(r<0.4)tips.push(`J2 gagne ${((1-r)*100).toFixed(0)}% → Retirez un B1/B2 ou ajoutez une unité J1`);
+                    for(const[type,s]of Object.entries(simRes.unitStats)){
+                      const def=type.startsWith("v_")?VDEFS[type.slice(2)]:UDEFS[type];if(!def||s.total<simRes.n*0.5)continue;
+                      const rate=s.alive/s.total;
+                      if(rate>0.75)tips.push(`${def.ic} ${def.n} survit ${(rate*100).toFixed(0)}% → trop résistant, +30pts`);
+                      if(rate<0.15)tips.push(`${def.ic} ${def.n} meurt ${((1-rate)*100).toFixed(0)}% → trop fragile, -30pts`);
+                    }
+                    if(!tips.length)tips.push("✅ L'équilibre semble bon ! Essayez 500+ batailles pour confirmer.");
+                    return tips.map((t,i)=><div key={i} style={{color:"#e6edf3",fontSize:10,margin:"3px 0",padding:"2px 0",borderBottom:"1px solid #21262d"}}>{t}</div>);
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ ARMY TAB ═══ */}
+      {tab==="army"&&(
+        <div style={{padding:10}}>
+          <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+            {[1,2].map(pl=>{const army=pl===1?a1:a2;const pts=pl===1?p1:p2;const c=pl===1?"#3388ff":"#ff4444";const fac=pl===1?["cl"]:["sep","reb"];
+              const vFac=pl===1?"cl":"sep";
+              return(<div key={pl} style={{flex:1,minWidth:240,background:"#161b22",border:`1px solid ${c}`,borderRadius:6,padding:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{color:c,fontWeight:700,fontSize:12}}>J{pl} — {pts}pts ({army.length}u)</span>
+                  <button onClick={()=>preset(pl)} style={BS("#30363d")}>🎲 Preset</button>
+                </div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:2,marginBottom:4}}>
+                  {Object.entries(UDEFS).filter(([,v])=>fac.includes(v.fac)).map(([k,v])=>(
+                    <button key={k} onClick={()=>addU(pl,k)} style={{...BS(),fontSize:9,padding:"2px 5px"}}>{v.ic}{v.n}({v.pts})</button>
+                  ))}
+                </div>
+                {/* Vehicle buttons */}
+                <div style={{borderTop:"1px solid #30363d",paddingTop:4,marginTop:2,marginBottom:4}}>
+                  <span style={{color:"#f0c040",fontSize:9,fontWeight:700}}>🚗 Véhicules:</span>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:2}}>
+                    {Object.entries(VDEFS).filter(([,v])=>v.fac===vFac).map(([k,v])=>(
+                      <button key={k} onClick={()=>addV(pl,k)} style={{...BS("#2a1f00"),fontSize:9,padding:"2px 5px",border:"1px solid #f0c04055"}}>{v.ic}{v.n}({v.pts})</button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:2}}>
+                  {army.map(u=>(<span key={u.id} style={{background:u.isVeh?"#1a1500":"#0d1117",borderRadius:3,padding:"1px 4px",fontSize:8,display:"inline-flex",alignItems:"center",gap:2,border:`1px solid ${u.isVeh?"#f0c040":u.co}`}}>
+                    {u.ic}{u.name}{u.isVeh&&<span style={{color:"#f0c040",fontSize:7}}>🚗</span>}
+                    {u.isVeh&&u.vHp>0&&<span style={{color:"#8b949e",fontSize:7}}>V:{u.vMHp}pv</span>}
+                    <span onClick={()=>u.isVeh?remV(pl,u.id):remU(pl,u.id)} style={{cursor:"pointer",color:"#f44",fontWeight:700}}>×</span>
+                  </span>))}
+                </div>
+              </div>);
+            })}
+          </div>
+          <div style={{marginTop:8,display:"flex",gap:6}}>
+            <span style={{color:"#8b949e",fontSize:10}}>Écart: {Math.abs(p1-p2)}pts {Math.abs(p1-p2)>50?"⚠":"✓"}</span>
+            <button onClick={()=>{if(!a1.length)preset(1);if(!a2.length)preset(2);setPhase("deploy_choice");setTab("battle");}} style={BS("#238636")}>▶ Déploiement</button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ BATTLE TAB ═══ */}
+      {tab==="battle"&&(
+        <div style={{padding:8}}>
+          {phase==="setup"&&(
+            <div style={{textAlign:"center",padding:20}}>
+              <p style={{color:"#8b949e",margin:"0 0 10px"}}>Construisez vos armées ou démarrez vite!</p>
+              <button onClick={()=>{preset(1);preset(2);setPhase("deploy_choice");}} style={{...BS("#238636"),fontSize:14,padding:"10px 24px"}}>⚡ Démarrage rapide</button>
+            </div>
+          )}
+
+          {phase==="deploy_choice"&&(
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:20,gap:12}}>
+              <h2 style={{color:"#f0c040",fontSize:20,margin:0}}>Mode de déploiement</h2>
+              <p style={{color:"#8b949e",fontSize:10,margin:0}}>Plateau 2×3 portées. Unités au bord.</p>
+              <div style={{display:"flex",gap:14}}>
+                <button onClick={()=>startDeploy("manual")} style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 28px",borderRadius:8,border:"2px solid #238636",background:"#238636"+"33",color:"#e6edf3",cursor:"pointer",gap:4}}>
+                  <span style={{fontSize:28}}>🎯</span><span style={{fontSize:14,fontWeight:700}}>Manuel</span>
+                </button>
+                <button onClick={()=>startDeploy("auto")} style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 28px",borderRadius:8,border:"2px solid #1f6feb",background:"#1f6feb33",color:"#e6edf3",cursor:"pointer",gap:4}}>
+                  <span style={{fontSize:28}}>🤖</span><span style={{fontSize:14,fontWeight:700}}>Auto</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TERRAIN BAR */}
+          {(phase==="terr_p1"||phase==="terr_p2")&&(
+            <div style={{background:"#161b22",border:"2px solid #f0c040",borderRadius:5,padding:8,marginBottom:6,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={{color:"#f0c040",fontWeight:700,fontSize:12}}>🏗 J{phase==="terr_p1"?1:2}: Placez décors</span>
+              <button onClick={nextTerr} style={{...BS("#238636"),fontSize:14,padding:"6px 18px"}}>✓ SUIVANT</button>
+              <button onClick={delTerr} disabled={!tSel} style={{...BS(tSel?"#b35900":"#333"),fontSize:14,padding:"6px 18px",opacity:tSel?1:0.4}}>🗑 SUPPRIMER</button>
+              {tSel&&<span style={{color:"#ff0",fontSize:10}}>● sélectionné</span>}
+            </div>
+          )}
+
+          {/* DEPLOY BAR */}
+          {phase==="dep_units"&&(
+            <div style={{background:"#161b22",border:"2px solid #f0c040",borderRadius:5,padding:8,marginBottom:6}}>
+              <span style={{color:"#f0c040",fontWeight:700,fontSize:13}}>
+                🪖 J{dTn}: Placez {getCurDU()?`${getCurDU().ic} ${getCurDU().name}`:""}
+                {dTn===1?" — bord BAS":" — bord HAUT"}
+                {(dTn===1?ev1:ev2).length>0&&<span style={{color:"#b45309"}}> ou 🚗 cliquez véhicule</span>}
+              </span>
+              <span style={{color:"#8b949e",fontSize:10,marginLeft:10}}>Restant J1:{dQ1.length} J2:{dQ2.length}</span>
+            </div>
+          )}
+
+          {/* BATTLE HUD */}
+          {(phase==="battle"||phase==="gameover")&&(
+            <div style={{background:"#161b22",border:"1px solid #30363d",borderRadius:5,padding:6,marginBottom:5,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",fontSize:11}}>
+              <span style={{color:"#f0c040",fontWeight:700}}>Tour {turn}</span>
+              <span style={{color:"#8b949e"}}>🎲J1:{ini.p1} J2:{ini.p2}</span>
+              <span style={{color:curP===1?"#58a6ff":"#f85149",fontWeight:700}}>→J{curP}</span>
+              <span style={{color:"#58a6ff"}}>J1: {a1.filter(u=>u.hp>0).length}u</span>
+              <span style={{color:"#f85149"}}>J2: {a2.filter(u=>u.hp>0).length}u</span>
+              {paused&&<span style={{color:"#f0c040",fontWeight:900}}>⏸ PAUSE</span>}
+              {winner&&<span style={{color:"#f0c040",fontSize:16,fontWeight:900}}>🏆 J{winner} GAGNE!</span>}
+            </div>
+          )}
+
+          {/* MANUAL PANEL */}
+          {paused&&mU&&(
+            <div style={{background:"#1a1a0a",border:"3px solid #f0c040",borderRadius:8,padding:10,marginBottom:5}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
+                <span style={{fontWeight:900,color:"#f0c040",fontSize:15}}>🎮 {mU.ic} {mU.name} (J{mU.pl})</span>
+                <span style={{color:"#58a6ff",fontWeight:700}}>PA:{mU.act}/{mU.mAct}</span>
+                <span style={{color:"#3fb950"}}>PV:{mU.hp}/{mU.mHp}</span>
+                {mU.isVeh&&mU.vHp>0&&<span style={{color:"#f0c040",fontWeight:700}}>Véh:{mU.vHp}/{mU.vMHp}</span>}
+                {mU.isVeh&&mU.hasGunner&&<span style={{color:"#d2a8ff",fontWeight:700}}>Canon:{mU.gunAct}PA</span>}
+                {mU.fly&&<span style={{color:"#58a6ff",fontSize:10}}>✈ Vol</span>}
+                {mU.prone&&<span style={{color:"#60a5fa",fontSize:10}}>🛏 Couché</span>}
+                {mU.sqId&&<span style={{color:sqColor(mU.sqId)||"#aaa",fontSize:10,border:`1px solid ${sqColor(mU.sqId)||"#555"}`,borderRadius:3,padding:"0 3px"}}>👥 Escouade</span>}
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button onClick={()=>manAction("move")} disabled={mU.act<1||animating} style={{...BS(mU.act>=1?"#238636":"#333"),fontSize:13,padding:"7px 18px",opacity:mU.act<1?0.3:1}}>➡ DÉPLACER (1PA)</button>
+                <button onClick={()=>manAction("attack")} disabled={mU.act<2} style={{...BS(mU.act>=2?"#b35900":"#333"),fontSize:13,padding:"7px 18px",opacity:mU.act<2?0.3:1}}>⚔ {mU.isVeh?"PILOTE":"ATTAQUE"} (2PA)</button>
+                {mU.isVeh&&mU.hasGunner&&<button onClick={()=>manAction("gunner")} disabled={mU.gunAct<2} style={{...BS(mU.gunAct>=2?"#6e40aa":"#333"),fontSize:13,padding:"7px 18px",opacity:mU.gunAct<2?0.3:1}}>🎯 CANONNIER (2PA)</button>}
+                {/* SQUAD FIRE */}
+                {mU.sqId&&!mU.isVeh&&<button onClick={()=>manAction("squadfire")} disabled={mU.act<2} style={{...BS(mU.act>=2?"#8b5cf6":"#333"),fontSize:12,padding:"6px 14px",opacity:mU.act<2?0.3:1}}>👥 TIR GROUPÉ (2PA/u)</button>}
+                {/* PRONE */}
+                {!mU.isVeh&&<button onClick={()=>manAction("prone")} disabled={mU.act<1} style={{...BS(mU.act>=1?(mU.prone?"#2563eb":"#6b7280"):"#333"),fontSize:12,padding:"6px 14px",opacity:mU.act<1?0.3:1}}>{mU.prone?"🧍 LEVER":"🛏 COUCHER"} (1PA)</button>}
+                {/* BOARD VEHICLE */}
+                {!mU.isVeh&&(mU.pl===1?ev1:ev2).some(v=>Math.hypot((v.x+BR)-(mU.x+BR),(v.y+BR)-(mU.y+BR))<=SEG_PX*1.5)&&
+                  <button onClick={()=>manAction("board")} style={{...BS("#b45309"),fontSize:12,padding:"6px 14px"}}>🚗 EMBARQUER (all PA)</button>}
+                {/* DISMOUNT */}
+                {mU.isVeh&&<button onClick={()=>manAction("dismount")} disabled={mU.act<1} style={{...BS(mU.act>=1?"#dc2626":"#333"),fontSize:12,padding:"6px 14px",opacity:mU.act<1?0.3:1}}>🏃 DÉBARQUER (1PA)</button>}
+                {/* PICK UP WEAPON */}
+                {!mU.isVeh&&drops.some(d=>d.pickable&&Math.hypot((d.x+2)-(mU.x+BR),(d.y+2)-(mU.y+BR))<=SEG_PX)&&
+                  <button onClick={()=>manAction("pickup")} style={{...BS("#059669"),fontSize:12,padding:"6px 14px"}}>🔫 RAMASSER (all PA)</button>}
+                <button onClick={()=>manAction("end")} style={{...BS("#555"),fontSize:13,padding:"7px 18px"}}>⏹ TERMINER</button>
+              </div>
+              {mU.prone&&<div style={{color:"#60a5fa",fontSize:10,marginTop:3}}>🛏 Couché — MM−4, invisible derrière petits décors</div>}
+              {mW&&<div style={{marginTop:4,color:"#f0c040",fontSize:11,fontWeight:700}}>{mW==="move"?"➡ Cliquez la destination sur la carte":mW==="gunner"?"🎯 Canonnier: cliquez sur un ennemi":mW==="squadfire"?"👥 TIR GROUPÉ: cliquez l'ennemi cible":"🎯 Cliquez sur un ennemi"}</div>}
+            </div>
+          )}
+          {paused&&!mU&&phase==="battle"&&(
+            <div style={{background:"#1a1a0a",border:"2px solid #f0c040",borderRadius:6,padding:8,marginBottom:5,color:"#f0c040",fontSize:12,fontWeight:700}}>
+              🎮 Cliquez sur N'IMPORTE quelle unité non-activée pour la contrôler
+            </div>
+          )}
+
+          {/* ═══ BOARD 3D ═══ */}
+          {showBoard&&(
+            <div style={{overflow:"auto",maxWidth:"100%",perspective:"900px",perspectiveOrigin:"50% 30%"}}>
+              <svg ref={bRef} viewBox={`0 0 ${BW} ${BH}`}
+                width={Math.min(BW,typeof window!=='undefined'?window.innerWidth-24:500)}
+                height={Math.min(BH,(typeof window!=='undefined'?window.innerWidth-24:500)*BH/BW)}
+                onClick={onBoardClick} style={{background:"linear-gradient(180deg,#1a3d16 0%,#2d5a27 30%,#3a6b30 70%,#2a5020 100%)",borderRadius:4,border:"3px solid #8B4513",cursor:"crosshair",display:"block",transform:"rotateX(25deg)",transformOrigin:"50% 50%"}}>
+
+                {/* 3D defs */}
+                <defs>
+                  <pattern id="grid" width={SEG_PX} height={SEG_PX} patternUnits="userSpaceOnUse">
+                    <rect width={SEG_PX} height={SEG_PX} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={0.3}/>
+                  </pattern>
+                  <pattern id="studs" width={SPX*4} height={SPX*4} patternUnits="userSpaceOnUse">
+                    <circle cx={SPX*2} cy={SPX*2} r={0.7} fill="rgba(255,255,255,0.04)"/>
+                  </pattern>
+                  <linearGradient id="groundG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="rgba(0,0,0,0.15)"/>
+                    <stop offset="50%" stopColor="rgba(0,0,0,0)"/>
+                    <stop offset="100%" stopColor="rgba(0,0,0,0.1)"/>
+                  </linearGradient>
+                  <filter id="unitSh" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx={1.5} dy={2.5} stdDeviation={1.2} floodColor="#000" floodOpacity={0.5}/>
+                  </filter>
+                  <filter id="terrSh" x="-20%" y="-20%" width="140%" height="160%">
+                    <feDropShadow dx={2} dy={3} stdDeviation={1.5} floodColor="#000" floodOpacity={0.4}/>
+                  </filter>
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation={1.5} result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                </defs>
+
+                {/* Ground layers */}
+                <rect width={BW} height={BH} fill="url(#studs)"/>
+                <rect width={BW} height={BH} fill="url(#grid)"/>
+                <rect width={BW} height={BH} fill="url(#groundG)"/>
+                <rect x={0} y={0} width={BW} height={BH} fill="none" stroke="#654321" strokeWidth={PAD}/>
+                {/* Board edge 3D bevel */}
+                <line x1={0} y1={BH} x2={BW} y2={BH} stroke="#3a2510" strokeWidth={3}/>
+                <line x1={BW} y1={0} x2={BW} y2={BH} stroke="#4a3520" strokeWidth={2}/>
+
+                {/* Half line */}
+                <line x1={0} y1={HALF} x2={BW} y2={HALF} stroke="rgba(255,255,255,0.06)" strokeWidth={0.5} strokeDasharray="4,3"/>
+                <text x={BW/2} y={BH-4} textAnchor="middle" fill="rgba(51,136,255,0.15)" fontSize={6}>J1</text>
+                <text x={BW/2} y={9} textAnchor="middle" fill="rgba(255,68,68,0.15)" fontSize={6}>J2</text>
+
+                {/* Deploy edge highlight */}
+                {phase==="dep_units"&&dTn===1&&<rect x={PAD} y={BH-BASE-PAD-3} width={BW-PAD*2} height={BASE+6} fill="rgba(51,136,255,0.2)" stroke="#58a6ff" strokeWidth={0.8} strokeDasharray="4,2" rx={2}/>}
+                {phase==="dep_units"&&dTn===2&&<rect x={PAD} y={PAD-3} width={BW-PAD*2} height={BASE+6} fill="rgba(255,68,68,0.2)" stroke="#f85149" strokeWidth={0.8} strokeDasharray="4,2" rx={2}/>}
+
+                {/* Terrain dark overlay */}
+                {phase==="terr_p1"&&<rect x={0} y={0} width={BW} height={HALF} fill="#0d1117" opacity={0.8}/>}
+                {phase==="terr_p2"&&<rect x={0} y={HALF} width={BW} height={HALF} fill="#0d1117" opacity={0.8}/>}
+
+                {/* ═══ 3D TERRAIN ═══ */}
+                {terr.map(t=>{
+                  const D=6; // 3D depth
+                  const darkC=t.color.replace(/^#/,'');
+                  const r=Math.max(0,parseInt(darkC.slice(0,2),16)-50);
+                  const g=Math.max(0,parseInt(darkC.slice(2,4),16)-50);
+                  const b2=Math.max(0,parseInt(darkC.slice(4,6),16)-50);
+                  const sideC=`rgb(${r},${g},${b2})`;
+                  const frontC=`rgb(${Math.max(0,r-20)},${Math.max(0,g-20)},${Math.max(0,b2-20)})`;
+                  return(
+                  <g key={t.id} onClick={e=>{if(phase.startsWith("terr")){e.stopPropagation();sTSel(t.id);}}} filter="url(#terrSh)">
+                    {/* Front face (3D depth) */}
+                    <polygon points={`${t.x},${t.y+t.h} ${t.x+D},${t.y+t.h+D} ${t.x+t.w+D},${t.y+t.h+D} ${t.x+t.w},${t.y+t.h}`} fill={frontC} opacity={0.9}/>
+                    {/* Right face */}
+                    <polygon points={`${t.x+t.w},${t.y} ${t.x+t.w+D},${t.y+D} ${t.x+t.w+D},${t.y+t.h+D} ${t.x+t.w},${t.y+t.h}`} fill={sideC} opacity={0.85}/>
+                    {/* Top face */}
+                    <rect x={t.x} y={t.y} width={t.w} height={t.h} fill={t.color} stroke={tSel===t.id?"#ff0":"#444"} strokeWidth={tSel===t.id?2:0.5} rx={1} opacity={0.9}/>
+                    {/* Highlight edge */}
+                    <line x1={t.x} y1={t.y} x2={t.x+t.w} y2={t.y} stroke="rgba(255,255,255,0.15)" strokeWidth={0.5}/>
+                    <line x1={t.x} y1={t.y} x2={t.x} y2={t.y+t.h} stroke="rgba(255,255,255,0.1)" strokeWidth={0.3}/>
+                    {/* Emoji */}
+                    <text x={t.x+t.w/2} y={t.y+t.h/2+1} textAnchor="middle" dominantBaseline="middle" fontSize={Math.min(t.w,t.h)*0.35} style={{pointerEvents:"none"}}>{t.emoji}</text>
+                  </g>
+                  );
+                })}
+
+                {/* LOS lines — with glow */}
+                {los.map((l,i)=>(
+                  <g key={i}>
+                    <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth={l.canFire?1.5:0.5} strokeDasharray={l.blocked?"3,3":"none"} opacity={l.canFire?0.6:0.3} filter={l.canFire?"url(#glow)":"none"}/>
+                    {l.canFire&&<circle cx={l.x2} cy={l.y2} r={BR+2.5} fill="none" stroke={l.color} strokeWidth={1} opacity={0.4}/>}
+                  </g>
+                ))}
+
+                {/* ═══ EMPTY VEHICLES (no pilot) ═══ */}
+                {[...ev1,...ev2].map(v=>{const cx=v.x+BR,cy=v.y+BR;
+                  return(<g key={v.id} onClick={e=>{e.stopPropagation();aL(`🚗 ${v.name} vide (J${v.pl}) — embarquez un pilote!`);}}>
+                    <ellipse cx={cx+0.5} cy={cy+4} rx={BR+6} ry={BR*0.5} fill="rgba(0,0,0,0.25)"/>
+                    {drawVeh(v.vtype,cx,cy-4,0.65,v.pl,0.4)}
+                    <text x={cx} y={cy+BASE} textAnchor="middle" fontSize={3} fill="#f0c040" fontWeight="bold" opacity={0.8}>VIDE</text>
+                    <ellipse cx={cx} cy={cy+2} rx={BR+5} ry={BR*0.4} fill="none" stroke="#f0c04088" strokeWidth={0.6} strokeDasharray="2,2">
+                      <animate attributeName="stroke-opacity" values="0.4;0.9;0.4" dur="2s" repeatCount="indefinite"/>
+                    </ellipse>
+                  </g>);
+                })}
+
+                {/* ═══ DROPPED WEAPONS ═══ */}
+                {drops.map(d=>{const wSrc=WEAPS[d.key];const col=wSrc?(wSrc.pen>=6?"#6af":wSrc.pen>=4?"#4af":"#aaa"):"#888";
+                  return(<g key={d.id}>
+                    <ellipse cx={d.x+2} cy={d.y+3.5} rx={2.5} ry={1} fill="rgba(0,0,0,0.2)"/>
+                    {d.pickable?<>
+                      <line x1={d.x-0.5} y1={d.y+2.5} x2={d.x+4.5} y2={d.y+1} stroke={col} strokeWidth={0.7} strokeLinecap="round"/>
+                      <rect x={d.x+0.5} y={d.y+1.5} width={1.5} height={2} rx={0.3} fill="#333" stroke={col} strokeWidth={0.3}/>
+                    </>:<>
+                      <line x1={d.x} y1={d.y+1} x2={d.x+4} y2={d.y+2.5} stroke="#555" strokeWidth={0.5}/>
+                      <line x1={d.x} y1={d.y+2.5} x2={d.x+4} y2={d.y+1} stroke="#a33" strokeWidth={0.4}/>
+                    </>}
+                  </g>);
+                })}
+
+                {/* ═══ LEGO MINIFIGURES & VEHICLES ═══ */}
+                {all.filter(u=>u.dep&&u.hp>0).map(u=>{
+                  const cx=u.x+BR,cy=u.y+BR;
+                  const isSel=sel?.id===u.id||mU?.id===u.id;
+                  const sC=sqColor(u.sqId);
+                  const H=u.isVeh?9:u.prone?3:7;
+                  const VR=u.isVeh?BR+3:0;
+                  return(
+                    <g key={u.id} onClick={e=>{e.stopPropagation();if(paused&&!u.done)takeCtrl(u);else showLos(u);}} style={{cursor:"pointer"}} filter="url(#unitSh)">
+                      {/* Selection pulse */}
+                      {isSel&&<ellipse cx={cx} cy={cy+2} rx={BR+5+VR} ry={BR*0.5+3} fill="none" stroke="#f0c040" strokeWidth={1} opacity={0.5}>
+                        <animate attributeName="rx" values={`${BR+4+VR};${BR+7+VR};${BR+4+VR}`} dur="1s" repeatCount="indefinite"/>
+                      </ellipse>}
+                      {/* Squad ring */}
+                      {sC&&<ellipse cx={cx} cy={cy+1} rx={BR+3} ry={BR*0.4} fill="none" stroke={sC} strokeWidth={1.2} opacity={0.6}/>}
+                      {/* Ground shadow */}
+                      <ellipse cx={cx+0.5} cy={cy+H*0.3+3} rx={BR+(u.isVeh?5:2)} ry={BR*(u.isVeh?0.5:0.4)} fill="rgba(0,0,0,0.3)"/>
+
+                      {u.isVeh?
+                        drawVeh(u.vtype,cx,cy-H+1,0.8,u.pl,1)
+                      :u.prone?
+                        drawProne(u.type,cx,cy-1,0.6,u.pl)
+                      :
+                        drawFig(u.type,cx,cy-H+1,0.7,u.pl)
+                      }
+
+                      {/* HP bars */}
+                      {u.isVeh&&u.vHp>0&&<>
+                        <rect x={u.x-3} y={u.y-H-4} width={BASE+6} height={2} fill="#222" rx={0.4} opacity={0.8}/>
+                        <rect x={u.x-3} y={u.y-H-4} width={(BASE+6)*(u.vHp/u.vMHp)} height={2} fill={u.vHp>u.vMHp/2?"#f0c040":"#f85149"} rx={0.4}/>
+                        <rect x={u.x-1} y={u.y-H-1.5} width={BASE+2} height={1.2} fill="#222" rx={0.3} opacity={0.7}/>
+                        <rect x={u.x-1} y={u.y-H-1.5} width={(BASE+2)*(u.hp/u.mHp)} height={1.2} fill="#3fb950" rx={0.3}/>
+                      </>}
+                      {!u.isVeh&&<>
+                        <rect x={u.x-1} y={u.y-H-2} width={BASE+2} height={1.6} fill="#222" rx={0.3} opacity={0.8}/>
+                        <rect x={u.x-1} y={u.y-H-2} width={(BASE+2)*(u.hp/u.mHp)} height={1.6} fill={u.hp>u.mHp/2?"#3fb950":"#f85149"} rx={0.3}/>
+                      </>}
+                      {/* AP dots */}
+                      {Array.from({length:Math.min(u.act,6)}).map((_,i)=>(
+                        <circle key={`a${i}`} cx={u.x+1+i*2} cy={u.y+BASE+3} r={0.7} fill="#58a6ff"/>
+                      ))}
+                      {u.isVeh&&u.hasGunner&&Array.from({length:Math.min(u.gunAct||0,6)}).map((_,i)=>(
+                        <circle key={`g${i}`} cx={u.x+1+i*2} cy={u.y+BASE+5} r={0.5} fill="#d2a8ff"/>
+                      ))}
+                      {u.done&&<text x={cx} y={u.y+BASE+(u.isVeh?7:5)} textAnchor="middle" fontSize={3} fill="#666">✓</text>}
+                    </g>
+                  );
+                })}
+
+                {/* Bullets — 3D with trail */}
+                {bul.map(b=>{const x=b.x1+(b.x2-b.x1)*b.t,y=b.y1+(b.y2-b.y1)*b.t;
+                  const px=b.x1+(b.x2-b.x1)*Math.max(0,b.t-0.15),py=b.y1+(b.y2-b.y1)*Math.max(0,b.t-0.15);
+                  return(<g key={b.id}>
+                    <line x1={px} y1={py} x2={x} y2={y} stroke="#f0c040" strokeWidth={1.2} opacity={0.7}/>
+                    <circle cx={x} cy={y} r={2} fill="#ff6b35" filter="url(#glow)"/>
+                    <circle cx={x} cy={y} r={0.8} fill="#fff"/>
+                  </g>);
+                })}
+              </svg>
+            </div>
+          )}
+
+          {/* Unit roster */}
+          {phase==="battle"&&(
+            <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:4}}>
+              {all.filter(u=>u.hp>0&&u.dep).map(u=>(
+                <div key={u.id} onClick={()=>{if(paused)takeCtrl(u);else showLos(u);}}
+                  style={{padding:"1px 5px",borderRadius:3,fontSize:8,cursor:u.done&&!paused?"default":"pointer",
+                    background:mU?.id===u.id?"rgba(240,192,64,0.2)":"#161b22",
+                    borderLeft:`3px solid ${u.pl===1?"#3388ff":"#ff4444"}`,
+                    border:`1px solid ${u.pl===1?"#3388ff33":"#ff444433"}`,
+                    opacity:u.done&&!paused?0.3:1}}>
+                  {u.ic}{u.name} PA:{u.act}{u.isVeh&&u.vHp>0?` V:${u.vHp}`:""} PV:{u.hp}{u.isVeh&&u.hasGunner?` C:${u.gunAct}`:""}{u.prone?"🛏":""} <span style={{color:"#555",fontSize:7}}>J{u.pl}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* LOG */}
+          {showBoard&&(
+            <div ref={lRef} style={{maxHeight:130,overflowY:"auto",background:"#0d1117",borderRadius:3,padding:4,marginTop:4,fontSize:8,fontFamily:"monospace",lineHeight:1.4,border:"1px solid #21262d"}}>
+              {log.slice(-50).map((m,i)=>(
+                <div key={i} style={{color:
+                  m.includes("💀")?"#f85149":m.includes("🏆")?"#f0c040":m.includes("🎲")?"#58a6ff":
+                  m.includes("⚔")?"#d2a8ff":m.includes("🎮")?"#3fb950":
+                  m.includes("✗")?"#f97583":m.includes("✓Paré")?"#56d364":
+                  m.includes("Armure")?"#dda0dd":"#8b949e"
+                }}>{m}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// Mount the app
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(CrossBlock));
+  </script>
+</body>
+</html>
