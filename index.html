@@ -11,7 +11,7 @@
 
 <body>
 
-<!-- Images de fond fixes -->
+<!-- Fond sombre et images fixes -->
 <div class="fixed-bg" style="background-image:url('backgrounds/battle1.jpg');"></div>
 <div class="overlay-dark"></div>
 
@@ -21,11 +21,10 @@
   <img src="logo.svg" class="logo" style="height:100px;">
   <h1 style="font-size:48px; margin:20px 0;">CrossBlocks</h1>
   <p style="font-size:18px; max-width:600px; margin:auto;">
-    CrossBlocks est un générateur de cartes et d’unités pour vos jeux de stratégie ou wargames LEGO.
-    Créez vos unités, choisissez leurs caractéristiques, appliquez un thème et exportez vos cartes en PDF.
+    Générateur de cartes et unités pour vos jeux LEGO et wargames.
   </p>
   <p style="margin-top:20px; font-weight:bold;">Éditeur de fiches personnages :</p>
-  <a href="https://discord.gg/ptfAK55PdJ" target="_blank">
+  <a href="TON_LIEN_DISCORD_ICI" target="_blank">
     <button class="discord-btn">Rejoindre le Discord</button>
   </a>
 </header>
@@ -33,35 +32,28 @@
 <hr>
 
 <div class="controls">
-
   <label>Nom :</label>
   <input id="name" placeholder="Nom de l'unité">
-
   <label>Points :</label>
   <input id="points" type="number">
-
   <label>PV :</label>
   <input id="hp" type="number">
-
   <label>Armure :</label>
   <input id="armor" type="number">
-
   <label>Mouvement :</label>
   <input id="move" type="number">
-
   <label>Thème :</label>
   <select id="theme" onchange="setTheme(this.value)"></select>
 
   <br><br>
-  <button onclick="addCard()">Ajouter à la page</button>
+  <button onclick="addCard()">Ajouter</button>
   <button onclick="exportPDF()">Exporter PDF A6</button>
   <button onclick="promptAdmin()">🔒 Admin</button>
-
 </div>
 
 <hr>
 
-<div id="cards-container" style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px;"></div>
+<div id="cards-container"></div>
 
 <!-- Panneau Admin -->
 <div id="adminPanel" style="display:none; position:fixed;top:5%;left:5%; width:90%;height:90%; background:white;color:black; z-index:9999; overflow:auto;padding:20px;">
@@ -75,22 +67,21 @@
 </div>
 
 <script>
-// Génération automatique des options de thème depuis CONFIG
-const themeSelect = document.getElementById("theme");
-function populateThemeOptions(){
-    themeSelect.innerHTML = "";
-    CONFIG.themes.forEach(t=>{
-        const opt = document.createElement("option");
-        opt.value = t;
-        opt.text = t.charAt(0).toUpperCase() + t.slice(1);
-        themeSelect.appendChild(opt);
-    });
-    setTheme(CONFIG.themes[0]);
-}
-populateThemeOptions();
+  // Génération des thèmes dynamiques
+  function populateThemeOptions(){
+      const themeSelect = document.getElementById("theme");
+      themeSelect.innerHTML="";
+      CONFIG.themes.forEach(t=>{
+          const opt = document.createElement("option");
+          opt.value=t;
+          opt.text=t.charAt(0).toUpperCase()+t.slice(1);
+          themeSelect.appendChild(opt);
+      });
+      setTheme(CONFIG.themes[0]);
+  }
+  populateThemeOptions();
 </script>
 
-</div> <!-- main-content -->
-
+</div>
 </body>
 </html>
