@@ -11,21 +11,27 @@
 
 <body>
 
-<!-- PAGE D’ACCUEIL -->
-<div id="home" style="background:white; padding:50px; text-align:center;">
+<!-- Images de fond fixes -->
+<div class="fixed-bg" style="background-image:url('backgrounds/battle1.jpg');"></div>
+<div class="overlay-dark"></div>
+
+<div class="main-content">
+
+<header style="text-align:center;">
   <img src="logo.svg" class="logo" style="height:100px;">
   <h1 style="font-size:48px; margin:20px 0;">CrossBlocks</h1>
   <p style="font-size:18px; max-width:600px; margin:auto;">
-    CrossBlocks est un générateur de cartes et d’unités pour vos jeux de stratégie ou wargames LEGO. Créez vos unités, choisissez leurs caractéristiques, appliquez un thème et exportez vos cartes en PDF.
+    CrossBlocks est un générateur de cartes et d’unités pour vos jeux de stratégie ou wargames LEGO.
+    Créez vos unités, choisissez leurs caractéristiques, appliquez un thème et exportez vos cartes en PDF.
   </p>
-  <p style="margin-top:30px; font-weight:bold;">Éditeur de fiches personnages :</p>
-</div>
+  <p style="margin-top:20px; font-weight:bold;">Éditeur de fiches personnages :</p>
+  <a href="TON_LIEN_DISCORD_ICI" target="_blank">
+    <button class="discord-btn">Rejoindre le Discord</button>
+  </a>
+</header>
 
-<hr style="margin:30px 0;">
+<hr>
 
-<a href="game.html" style="display:inline-block;padding:10px 24px;background:#f0c040;color:#000;font-weight:bold;border-radius:6px;text-decoration:none;margin:10px 0;">🎮 Jouer à CrossBlock</a>
-
-<!-- ÉDITEUR -->
 <div class="controls">
 
   <label>Nom :</label>
@@ -44,24 +50,20 @@
   <input id="move" type="number">
 
   <label>Thème :</label>
-  <select id="theme" onchange="setTheme(this.value)">
-    <!-- Options générées dynamiquement depuis CONFIG -->
-  </select>
+  <select id="theme" onchange="setTheme(this.value)"></select>
 
   <br><br>
   <button onclick="addCard()">Ajouter à la page</button>
   <button onclick="exportPDF()">Exporter PDF A6</button>
-
-  <!-- Bouton admin secret -->
   <button onclick="promptAdmin()">🔒 Admin</button>
+
 </div>
 
 <hr>
 
-<!-- Conteneur des cartes générées -->
 <div id="cards-container" style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px;"></div>
 
-<!-- PANNEAU ADMIN -->
+<!-- Panneau Admin -->
 <div id="adminPanel" style="display:none; position:fixed;top:5%;left:5%; width:90%;height:90%; background:white;color:black; z-index:9999; overflow:auto;padding:20px;">
   <h2>Panneau Admin</h2>
   <button onclick="closeAdmin()">Fermer</button>
@@ -72,22 +74,23 @@
   <div id="adminWeapons"></div>
 </div>
 
-<!-- SCRIPT DE DÉMARRAGE -->
 <script>
 // Génération automatique des options de thème depuis CONFIG
 const themeSelect = document.getElementById("theme");
 function populateThemeOptions(){
-  themeSelect.innerHTML = "";
-  CONFIG.themes.forEach(t=>{
-    const opt = document.createElement("option");
-    opt.value = t;
-    opt.text = t;
-    themeSelect.appendChild(opt);
-  });
-  setTheme(CONFIG.themes[0]);
+    themeSelect.innerHTML = "";
+    CONFIG.themes.forEach(t=>{
+        const opt = document.createElement("option");
+        opt.value = t;
+        opt.text = t.charAt(0).toUpperCase() + t.slice(1);
+        themeSelect.appendChild(opt);
+    });
+    setTheme(CONFIG.themes[0]);
 }
 populateThemeOptions();
 </script>
+
+</div> <!-- main-content -->
 
 </body>
 </html>

@@ -1,33 +1,86 @@
-body{
-background:#111;
-color:white;
-font-family:Arial;
+body {
+  margin:0;
+  font-family:Arial, sans-serif;
+  background-color:#0f1115;
+  color:white;
 }
 
-header{
-display:flex;
-align-items:center;
-gap:15px;
+.main-content {
+  background: rgba(20,20,25,0.85);
+  padding:40px;
+  position:relative;
+  z-index:2;
 }
 
-.editor{
-display:flex;
-gap:20px;
+.fixed-bg {
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background-size:cover;
+  background-position:center;
+  background-attachment:fixed;
+  opacity:0.25;
+  z-index:0;
 }
 
-.controls{
-width:200px;
+.overlay-dark {
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+  z-index:1;
 }
 
-.stat{
-display:flex;
-align-items:center;
-gap:5px;
-margin:4px 0;
+.logo {
+  display:block;
+  margin:auto;
 }
 
-.sheet{
-display:flex;
-flex-wrap:wrap;
-width:210mm;
+.controls input, .controls select {
+  margin:5px;
+  padding:5px;
+}
+
+.card {
+  width:105mm;
+  height:148mm;
+  border-radius:15px;
+  padding:15px;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+  color:white;
+  position:relative;
+  background-size:cover;
+  background-position:center;
+  display:flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.stat {
+  margin:5px;
+  font-size:18px;
+  background: rgba(0,0,0,0.5);
+  padding:2px 5px;
+  border-radius:4px;
+}
+
+.discord-btn {
+  background:#5865F2;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  font-size:16px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.2s;
+  margin:10px;
+}
+
+.discord-btn:hover {
+  background:#4752C4;
+  transform:scale(1.05);
 }
