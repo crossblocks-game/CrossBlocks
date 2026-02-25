@@ -151,8 +151,6 @@ body {
   display:grid; grid-template-columns:1fr 1fr;
   gap:20px; align-items:start;
 }
-@media(max-width:780px){ .editor-layout { grid-template-columns:1fr; } }
-
 .editor-form { display:flex; flex-direction:column; gap:10px; }
 
 .form-group { display:flex; flex-direction:column; gap:2px; }
@@ -169,7 +167,6 @@ body {
 
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .form-row-4 { grid-template-columns:repeat(4,1fr); }
-@media(max-width:500px){ .form-row-4 { grid-template-columns:1fr 1fr; } }
 .form-actions { display:flex; gap:8px; margin-top:2px; }
 
 /* ── Weapon Grid ── */
@@ -203,7 +200,7 @@ body {
 
 /* ═══ CARD DESIGN ═══ */
 .card {
-  width:280px;
+  width:min(280px, 100%);
   aspect-ratio: 105 / 148;
   border-radius:10px; padding:12px;
   position:relative;
@@ -454,3 +451,157 @@ body {
 .admin-weapon-row label { font-size:9px; color:var(--text2); }
 .admin-weapon-row input { width:60px; }
 .admin-weapon-row input:first-child { width:140px; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — MOBILE OPTIMIZATION
+   ═══════════════════════════════════════ */
+
+/* ── Tablet (≤780px) ── */
+@media (max-width: 780px) {
+  .main-content { padding:10px; }
+
+  /* Nav: horizontal scroll if needed */
+  .site-nav { padding:6px 10px; gap:8px; overflow-x:auto; }
+  .site-nav a { font-size:12px; padding:4px 8px; white-space:nowrap; }
+  .site-nav .nav-title { font-size:14px; letter-spacing:2px; }
+
+  /* Header smaller */
+  .site-header { padding:16px 0 10px; }
+  .logo { height:50px; }
+  .site-title { letter-spacing:3px; }
+  .site-desc { font-size:13px; }
+
+  /* Editor: single column */
+  .editor-layout { grid-template-columns:1fr; }
+
+  /* Sections tighter */
+  .editor-section, .cards-section, .gallery-section, .seo-section {
+    padding:14px; margin:10px 0;
+  }
+  .section-title { font-size:14px; letter-spacing:1px; }
+
+  /* Card preview: not sticky on tablet */
+  .preview-area { position:static; }
+
+  /* Cards toolbar: wrap better */
+  .cards-toolbar { flex-direction:column; align-items:flex-start; }
+  .cards-actions { flex-wrap:wrap; gap:6px; }
+}
+
+/* ── Mobile (≤520px) ── */
+@media (max-width: 520px) {
+  .main-content { padding:6px; }
+
+  /* Nav: compact */
+  .site-nav { padding:5px 8px; gap:4px; }
+  .site-nav .nav-title { font-size:13px; letter-spacing:1px; }
+  .site-nav a { font-size:11px; padding:3px 6px; }
+  .site-nav .nav-sep { display:none; }
+
+  /* Header minimal */
+  .site-header { padding:10px 0 8px; }
+  .logo { height:40px; }
+  .site-desc { font-size:12px; }
+
+  /* Sections */
+  .editor-section, .cards-section, .gallery-section, .seo-section {
+    padding:10px; margin:8px 0; border-radius:8px;
+  }
+  .section-title { font-size:13px; margin-bottom:10px; padding-bottom:4px; }
+
+  /* Form: stack everything */
+  .form-row { grid-template-columns:1fr; gap:6px; }
+  .form-row-4 { grid-template-columns:1fr 1fr; }
+  .form-group label { font-size:10px; }
+  .form-group input, .form-group select { padding:6px 8px; font-size:13px; }
+
+  /* Weapon grid: single column on tiny screens */
+  .weapon-grid {
+    grid-template-columns:1fr;
+    max-height:150px;
+  }
+  .weapon-option { padding:5px 6px; font-size:12px; }
+
+  /* Form actions: stack buttons */
+  .form-actions {
+    flex-direction:column;
+  }
+  .form-actions .btn { width:100%; justify-content:center; }
+
+  /* Card preview: full width */
+  .preview-area { position:static; margin-top:12px; }
+  .card { width:100%; max-width:300px; margin:0 auto; }
+
+  /* Card stats: 2x2 grid on very small */
+  .card-stats { grid-template-columns:repeat(2, 1fr); gap:3px; }
+
+  /* Gallery: single column */
+  .gallery-grid { grid-template-columns:1fr; gap:6px; }
+  .gallery-filters { gap:3px; }
+  .btn-filter { padding:3px 8px; font-size:10px; }
+  .gallery-card { padding:6px 8px; }
+  .gc-name { font-size:10px; }
+  .gc-pts { font-size:11px; }
+
+  /* Cards grid: single column */
+  .cards-grid {
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+
+  /* Cards actions: stack */
+  .cards-actions {
+    width:100%;
+    justify-content:flex-start;
+  }
+  .cards-actions .btn { font-size:10px; padding:5px 10px; }
+
+  /* Price breakdown: tighter */
+  .price-breakdown { padding:8px; font-size:11px; }
+  .price-result { font-size:18px; }
+  .price-row .pr-label { font-size:11px; }
+
+  /* Footer: stack */
+  .site-footer {
+    flex-direction:column; text-align:center; gap:6px;
+  }
+
+  /* Admin panel: fullscreen on mobile */
+  .admin-panel { width:100%; max-width:100%; max-height:100vh; border-radius:0; }
+  .admin-weapon-row { flex-direction:column; align-items:stretch; }
+  .admin-weapon-row input { width:100% !important; }
+}
+
+/* ── Tiny screens (≤360px) ── */
+@media (max-width: 360px) {
+  .site-title { font-size:22px; letter-spacing:1px; }
+  .form-row-4 { grid-template-columns:1fr 1fr; }
+  .card { padding:8px; }
+  .card-name { font-size:12px; }
+  .card-weapon .cw-name { font-size:9px; }
+  .card-weapon .cw-stat { font-size:7px; }
+  .stat-val { font-size:13px; }
+  .stat-icon { font-size:10px; }
+  .header-buttons .btn { font-size:12px; padding:6px 12px; }
+}
+
+/* ── Touch-friendly: bigger tap targets ── */
+@media (hover: none) and (pointer: coarse) {
+  .btn { min-height:40px; padding:8px 16px; }
+  .weapon-option { min-height:36px; padding:6px 8px; }
+  .weapon-option input[type="checkbox"] {
+    width:18px; height:18px;
+  }
+  .gallery-card { min-height:44px; }
+  .gc-add { width:32px; height:32px; font-size:18px; }
+  .card-delete { width:28px; height:28px; font-size:16px; opacity:1; }
+  .btn-filter { min-height:32px; }
+  .form-group input, .form-group select { min-height:38px; font-size:14px; }
+}
+
+/* ── Prevent zoom on input focus (iOS) ── */
+@media (max-width: 520px) {
+  input[type="text"], input[type="number"], select {
+    font-size:16px !important;
+  }
+}
