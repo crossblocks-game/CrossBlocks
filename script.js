@@ -356,3 +356,125 @@ function hexToRgb(hex) {
   if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
   return [parseInt(hex.substr(0,2),16), parseInt(hex.substr(2,2),16), parseInt(hex.substr(4,2),16)];
 }
+
+// ═══ LANCHESTER PRICE CALCULATOR ═══
+// Exponential cost based on N² combat power scaling
+
+function calcWeaponDmg(w, targetArm) {
+  // Best range damage of a weapon vs target armor
+  if (!w) return 0;
+  var best = 0;
+  var bands = [w.diff]; // simplified: use main diff
+  var hitP = Math.max(0, (21 - w.diff) / 20);
+  var pen = w.pen || 0;
+  var saveP = Math.max(0, (21 - (targetArm + pen)) / 20);
+  var failSave = 1 - saveP;
+  var dmg = w.dmg;
+  if (typeof dmg === "string") {
+    // Handle "1-4" style damage
+    var parts = dmg.split("-");
+    dmg = (parseInt(parts[0]) + parseInt(parts[1])) / 2;
+  }
+  var mun = w.mun || 1;
+  return mun * hitP * failSave * dmg;
+}
+
+function calcPrice() {
+  var hp = Math.max(1, parseInt(document.getElementById("ed-hp").value) || 1);
+  var arm = parseInt(document.getElementById("ed-armor").value) || 15;
+  var pa = Math.max(1, parseInt(document.getElementById("ed-pa").value) || 5);
+  var move = parseInt(document.getElementById("ed-move").value) || 0;
+
+  var TARGET_ARM = 15; // Reference target: Clone armor
+  var REF_PEN = 5;     // Reference attacker penetration
+
+  // ── 1. HP Factor (exponential: Lanchester) ──
+  var hpFactor = Math.pow(hp, 1.5);
+
+  // ── 2. Armor → Parade → Effective HP multiplier ──
+  var parade = Math.max(0, (21 - (arm + REF_PEN)) / 20);
+  var survivalMult;
+  if (parade >= 1) {
+    survivalMult = 20; // practically invincible cap
+  } else if (parade <= 0) {
+    survivalMult = 1;  // no save = raw HP
+  } else {
+    survivalMult = 1 / (1 - parade); // effective HP multiplier
+  }
+
+  // ── 3. Weapon DPT (damage per turn) ──
+  var nWeapons = selectedWeapons.length;
+  var maxFires = Math.floor(pa / 2);
+  var nFires = Math.min(nWeapons, maxFires);
+
+  // Calculate each weapon's damage, sort by best
+  var wDmgs = [];
+  for (var i = 0; i < selectedWeapons.length; i++) {
+    var w = CONFIG.weapons[selectedWeapons[i]];
+    var d = calcWeaponDmg(w, TARGET_ARM);
+    wDmgs.push({ name: selectedWeapons[i], dmg: d, pen: w ? w.pen : 0 });
+  }
+  wDmgs.sort(function(a, b) { return b.dmg - a.dmg; });
+
+  var dpt = 0;
+  var totalPen = 0;
+  for (var j = 0; j < nFires; j++) {
+    dpt += wDmgs[j].dmg;
+    totalPen += Math.max(0, wDmgs[j].pen - 4); // pen premium above baseline
+  }
+
+  // Weapon factor: DPT + penetration premium for anti-armor
+  var weaponFactor = 1 + Math.pow(dpt, 0.8) * 0.5 + totalPen * 0.06;
+
+  // ── 4. PA / Mobility ──
+  var paAfterFire = pa - nFires * 2;
+  var mobilityFactor = 1 + paAfterFire * 0.05 + move * 0.03;
+
+  // ── 5. Final price ──
+  // BASE calibrated so Clone Ph.2 (2hp,arm15,5PA,fusil) ≈ 200pts
+  var BASE = 40;
+  var rawPrice = BASE * hpFactor * survivalMult * weaponFactor * mobilityFactor;
+  var finalPrice = Math.round(rawPrice / 10) * 10; // round to nearest 10
+
+  // ── Apply to field ──
+  document.getElementById("ed-points").value = finalPrice;
+  updatePreview();
+
+  // ── Show breakdown ──
+  var bk = document.getElementById("price-breakdown");
+  bk.style.display = "block";
+
+  // Rating: compare to Clone Ph.2 baseline (~200pts)
+  var rating = finalPrice <= 150 ? "Bon marché" :
+               finalPrice <= 250 ? "Standard" :
+               finalPrice <= 500 ? "Élite" :
+               finalPrice <= 1000 ? "Héroïque" : "Titanesque";
+  var ratingColor = finalPrice <= 150 ? "#3fb950" :
+                    finalPrice <= 250 ? "#58a6ff" :
+                    finalPrice <= 500 ? "#f0c040" :
+                    finalPrice <= 1000 ? "#f09040" : "#f85149";
+
+  // Lanchester comparison: how many Clones (200pts) would this equal?
+  var cloneEquiv = (finalPrice / 200).toFixed(1);
+  // But in Lanchester, N clones have N² power, so effective power ratio:
+  var nClones = finalPrice / 200;
+  var clonePower = Math.pow(Math.max(1, Math.round(nClones)), 2);
+  var unitPower = hpFactor * survivalMult * weaponFactor;
+  var powerRatio = unitPower / clonePower;
+  var powerVerdict = powerRatio > 1.2 ? "OP 🔴" : powerRatio > 0.8 ? "Équilibré ✅" : "Faible 🔵";
+
+  var barPct = Math.min(100, finalPrice / 30);
+  var barColor = finalPrice <= 250 ? "#3fb950" : finalPrice <= 500 ? "#f0c040" : "#f85149";
+
+  bk.innerHTML =
+    '<div class="price-result">⭐ ' + finalPrice + ' pts</div>' +
+    '<div style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:' + ratingColor + '22;color:' + ratingColor + ';margin-bottom:8px;">' + rating + '</div>' +
+    '<div class="price-row"><span class="pr-label">HP^1.5 (Lanchester)</span><span class="pr-val">' + hp + ' PV → ×' + hpFactor.toFixed(1) + '</span></div>' +
+    '<div class="price-row"><span class="pr-label">Parade (arm=' + arm + ' vs pen=5)</span><span class="pr-val ' + (parade > 0.3 ? "pr-high" : parade > 0 ? "pr-mid" : "pr-low") + '">' + Math.round(parade * 100) + '% → ×' + survivalMult.toFixed(2) + '</span></div>' +
+    '<div class="price-row"><span class="pr-label">DPT (' + nFires + ' tir(s)/tour vs arm=15)</span><span class="pr-val">' + dpt.toFixed(2) + ' dmg → ×' + weaponFactor.toFixed(2) + '</span></div>' +
+    '<div class="price-row"><span class="pr-label">Mobilité (' + paAfterFire + ' PA mvt, MM' + (move >= 0 ? "+" : "") + move + ')</span><span class="pr-val">×' + mobilityFactor.toFixed(2) + '</span></div>' +
+    '<div class="price-bar"><div class="price-bar-fill" style="width:' + barPct + '%;background:' + barColor + '"></div></div>' +
+    '<div class="price-row" style="margin-top:6px;border:none"><span class="pr-label">≈ ' + cloneEquiv + ' Clones en coût</span><span class="pr-val">' + powerVerdict + '</span></div>' +
+    '<div class="price-tip">💡 Formule : Base(70) × HP^1.5 × Survie × Armes × Mobilité — ' +
+    'basé sur la loi de Lanchester (N² scaling)</div>';
+}
