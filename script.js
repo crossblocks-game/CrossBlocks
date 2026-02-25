@@ -3,12 +3,224 @@
 let cards = [];
 let selectedWeapons = [];
 
+// ═══ GALERIE D'UNITÉS PRÉ-FAITES ═══
+var GALLERY = [
+  // ── République ──
+  { name:"Clone Phase 2", faction:"République", theme:"clone", points:200, hp:2, armor:15, move:0, pa:5, weapons:["Fusil blaster"], icon:"🪖" },
+  { name:"Clone Spécialiste", faction:"République", theme:"clone", points:250, hp:2, armor:15, move:0, pa:5, weapons:["Double fusil"], icon:"🎖️" },
+  { name:"Clone Sniper", faction:"République", theme:"military", points:260, hp:2, armor:15, move:0, pa:5, weapons:["Fusil sniper"], icon:"🎯" },
+  { name:"Clone Airborne", faction:"République", theme:"military", points:250, hp:2, armor:14, move:1, pa:5, weapons:["Fusil blaster"], icon:"🪂" },
+  { name:"Clone Répéteur", faction:"République", theme:"clone", points:300, hp:2, armor:15, move:-1, pa:5, weapons:["Blaster répéteur"], icon:"🔥" },
+  { name:"Rex", faction:"République", theme:"metal", points:400, hp:2, armor:12, move:0, pa:5, weapons:["Pistolet auto."], icon:"⭐" },
+  { name:"Fives", faction:"République", theme:"metal", points:430, hp:2, armor:13, move:0, pa:5, weapons:["Pistolet auto."], icon:"⭐" },
+  { name:"Pilote AV-7", faction:"République", theme:"military", points:1800, hp:6, armor:12, move:-3, pa:5, weapons:["Canon AV-7"], icon:"💣" },
+
+  // ── Séparatistes ──
+  { name:"Droïde B1", faction:"Séparatistes", theme:"parchment", points:170, hp:2, armor:18, move:0, pa:4, weapons:["Fusil blaster"], icon:"🤖" },
+  { name:"Droïde B1 Pilote", faction:"Séparatistes", theme:"parchment", points:120, hp:2, armor:19, move:0, pa:4, weapons:["Pistolet blaster"], icon:"🤖" },
+  { name:"Droïde B2", faction:"Séparatistes", theme:"industrial", points:300, hp:3, armor:11, move:-2, pa:4, weapons:["x2 Fusils poing"], icon:"💪" },
+  { name:"Droïde Sniper", faction:"Séparatistes", theme:"dark", points:280, hp:2, armor:17, move:0, pa:4, weapons:["Fusil sniper"], icon:"🎯" },
+  { name:"Pilote STAP", faction:"Séparatistes", theme:"industrial", points:500, hp:3, armor:14, move:3, pa:5, weapons:["x2 Canons STAP"], icon:"🏍️" },
+  { name:"Tri-Droïde", faction:"Séparatistes", theme:"industrial", points:1800, hp:10, armor:6, move:2, pa:4, weapons:["x3 Tourelles","x3 Rockets"], icon:"🕷️" },
+
+  // ── Rebelles ──
+  { name:"Rebelle", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["Blaster"], icon:"✊" },
+  { name:"Rebelle Garde", faction:"Rebelles", theme:"rebel", points:200, hp:2, armor:16, move:0, pa:5, weapons:["Fusil blaster"], icon:"🛡️" },
+  { name:"Rebelle Sniper", faction:"Rebelles", theme:"rebel", points:250, hp:2, armor:17, move:0, pa:5, weapons:["Fusil sniper"], icon:"🎯" },
+  { name:"Rebelle Jetpack", faction:"Rebelles", theme:"rebel", points:270, hp:2, armor:16, move:2, pa:5, weapons:["Pistolet blaster"], icon:"🚀" },
+
+  // ── Empire ──
+  { name:"Stormtrooper", faction:"Empire", theme:"empire", points:190, hp:2, armor:16, move:0, pa:5, weapons:["Fusil blaster"], icon:"⚫" },
+  { name:"Scout Trooper", faction:"Empire", theme:"dark", points:220, hp:2, armor:17, move:1, pa:5, weapons:["Pistolet blaster"], icon:"🏍️" },
+  { name:"Death Trooper", faction:"Empire", theme:"dark", points:320, hp:3, armor:13, move:0, pa:5, weapons:["Blaster répéteur"], icon:"💀" },
+];
+
+// ═══ LOCALSTORAGE ═══
+var LS_KEY = "crossblocks_cards";
+
+function saveCards() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(cards));
+    flashSave();
+  } catch(e) { /* quota exceeded or unavailable */ }
+}
+
+function loadCards() {
+  try {
+    var data = localStorage.getItem(LS_KEY);
+    if (data) {
+      cards = JSON.parse(data);
+      if (!Array.isArray(cards)) cards = [];
+      return true;
+    }
+  } catch(e) { /* parse error */ }
+  return false;
+}
+
+function flashSave() {
+  var el = document.getElementById("save-indicator");
+  if (!el) return;
+  el.textContent = "💾 Sauvegardé !";
+  el.classList.add("flash");
+  setTimeout(function() {
+    el.textContent = "💾 Sauvegarde auto activée";
+    el.classList.remove("flash");
+  }, 1200);
+}
+
+// ── Export JSON ──
+function saveToJSON() {
+  if (cards.length === 0) { alert("Aucune carte à exporter."); return; }
+  var json = JSON.stringify(cards, null, 2);
+  var blob = new Blob([json], { type:"application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "CrossBlocks_cartes.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Import JSON ──
+function loadFromJSON(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) { alert("Fichier invalide."); return; }
+      var mode = cards.length > 0
+        ? confirm("Ajouter aux cartes existantes ?\n(OK = ajouter, Annuler = remplacer)")
+        : false;
+      if (mode) {
+        cards = cards.concat(data);
+      } else {
+        cards = data;
+      }
+      saveCards();
+      displayCards();
+      alert(data.length + " carte(s) importée(s) !");
+    } catch(err) {
+      alert("Erreur de lecture : " + err.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = ""; // reset for re-upload
+}
+
+// ═══ GALERIE ═══
+var currentGalleryFilter = "all";
+
+function renderGallery() {
+  var grid = document.getElementById("gallery-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  GALLERY.forEach(function(unit, i) {
+    if (currentGalleryFilter !== "all" && unit.faction !== currentGalleryFilter) return;
+
+    var fac = CONFIG.factions[unit.faction] || { color:"#888" };
+    var el = document.createElement("div");
+    el.className = "gallery-card";
+    el.setAttribute("data-faction", unit.faction);
+
+    el.innerHTML =
+      '<span class="gc-icon">' + unit.icon + '</span>' +
+      '<div class="gc-info">' +
+        '<div class="gc-name">' + unit.name + '</div>' +
+        '<div class="gc-meta">' +
+          '<span class="gc-faction" style="background:' + fac.color + '22;color:' + fac.color + '">' + unit.faction + '</span> ' +
+          unit.weapons.join(", ") +
+        '</div>' +
+      '</div>' +
+      '<span class="gc-pts">' + unit.points + '</span>' +
+      '<button class="gc-add" onclick="addFromGallery(' + i + ',this)" title="Ajouter">+</button>';
+
+    grid.appendChild(el);
+  });
+}
+
+function filterGallery(faction, btn) {
+  currentGalleryFilter = faction;
+  // Update active button
+  var btns = document.querySelectorAll(".btn-filter");
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");
+  if (btn) btn.classList.add("active");
+  renderGallery();
+}
+
+function addFromGallery(index, btn) {
+  var unit = GALLERY[index];
+  if (!unit) return;
+  cards.push({
+    name: unit.name,
+    faction: unit.faction,
+    theme: unit.theme,
+    points: String(unit.points),
+    hp: String(unit.hp),
+    armor: String(unit.armor),
+    move: String(unit.move),
+    pa: String(unit.pa),
+    weapons: unit.weapons.slice()
+  });
+  saveCards();
+  displayCards();
+
+  // Visual feedback
+  if (btn) {
+    var card = btn.closest(".gallery-card");
+    if (card) card.classList.add("gc-added");
+    btn.textContent = "✓";
+    btn.style.background = "#40b860";
+    setTimeout(function() {
+      btn.textContent = "+";
+      btn.style.background = "";
+      if (card) card.classList.remove("gc-added");
+    }, 800);
+  }
+}
+
+// ── Load gallery unit into editor ──
+function loadToEditor(index) {
+  var unit = GALLERY[index];
+  if (!unit) return;
+  document.getElementById("ed-name").value = unit.name;
+  document.getElementById("ed-points").value = unit.points;
+  document.getElementById("ed-hp").value = unit.hp;
+  document.getElementById("ed-armor").value = unit.armor;
+  document.getElementById("ed-move").value = unit.move;
+  document.getElementById("ed-pa").value = unit.pa;
+
+  // Set faction & theme
+  document.getElementById("ed-faction").value = unit.faction;
+  document.getElementById("ed-theme").value = unit.theme;
+
+  // Set weapons
+  selectedWeapons = unit.weapons.slice();
+  var cbs = document.querySelectorAll("#weapon-selector input[type=checkbox]");
+  for (var i = 0; i < cbs.length; i++) {
+    cbs[i].checked = selectedWeapons.indexOf(cbs[i].value) >= 0;
+  }
+  updatePreview();
+  // Scroll to editor
+  document.querySelector(".editor-section").scrollIntoView({ behavior:"smooth" });
+}
+
 // ── Init ──
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function() {
   populateThemes();
   populateFactions();
   populateWeapons();
   updatePreview();
+  renderGallery();
+
+  // Load saved cards from localStorage
+  if (loadCards()) {
+    displayCards();
+    var el = document.getElementById("save-indicator");
+    if (el) el.textContent = "💾 " + cards.length + " carte(s) restaurée(s) depuis la sauvegarde";
+  }
 });
 
 function populateThemes() {
@@ -126,6 +338,7 @@ function addCard() {
     pa: document.getElementById("ed-pa").value || "5",
     weapons: selectedWeapons.slice() // copy
   });
+  saveCards();
   displayCards();
   // Flash feedback
   var btn = document.querySelector(".btn-add");
@@ -211,12 +424,14 @@ function displayCards() {
 
 function deleteCard(index) {
   cards.splice(index, 1);
+  saveCards();
   displayCards();
 }
 
 function clearAllCards() {
   if (confirm("Supprimer toutes les cartes ?")) {
     cards = [];
+    saveCards();
     displayCards();
   }
 }

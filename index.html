@@ -173,18 +173,35 @@
     </div>
   </section>
 
+  <!-- ═══ GALERIE D'UNITÉS ═══ -->
+  <section class="gallery-section">
+    <h2 class="section-title">🎨 Galerie d'unités — Ajout rapide</h2>
+    <div class="gallery-filters">
+      <button class="btn btn-filter active" onclick="filterGallery('all',this)">Toutes</button>
+      <button class="btn btn-filter" onclick="filterGallery('République',this)">République</button>
+      <button class="btn btn-filter" onclick="filterGallery('Séparatistes',this)">Séparatistes</button>
+      <button class="btn btn-filter" onclick="filterGallery('Rebelles',this)">Rebelles</button>
+      <button class="btn btn-filter" onclick="filterGallery('Empire',this)">Empire</button>
+    </div>
+    <div id="gallery-grid" class="gallery-grid"></div>
+  </section>
+
   <!-- ═══ CARTES GÉNÉRÉES ═══ -->
   <section class="cards-section">
     <div class="cards-toolbar">
       <h2 class="section-title">🃏 Cartes générées</h2>
       <div class="cards-actions">
         <span id="card-count" class="card-counter">0 carte(s)</span>
-        <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled>📄 Exporter PDF A6</button>
+        <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled>📄 PDF</button>
+        <button class="btn btn-save" onclick="saveToJSON()">💾 Exporter JSON</button>
+        <button class="btn btn-load" onclick="document.getElementById('json-upload').click()">📂 Importer</button>
+        <input type="file" id="json-upload" accept=".json" style="display:none" onchange="loadFromJSON(this)">
         <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none">🗑️ Tout supprimer</button>
       </div>
     </div>
+    <div id="save-indicator" class="save-indicator">💾 Sauvegarde auto activée</div>
     <div id="cards-container" class="cards-grid">
-      <div class="cards-empty">Aucune carte pour l'instant. Utilisez l'éditeur ci-dessus pour en créer !</div>
+      <div class="cards-empty">Aucune carte pour l'instant. Utilisez l'éditeur ou la galerie ci-dessus !</div>
     </div>
   </section>
 
