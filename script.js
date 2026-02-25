@@ -3,36 +3,42 @@
 let cards = [];
 let selectedWeapons = [];
 
-// ═══ GALERIE D'UNITÉS PRÉ-FAITES ═══
+// ═══ GALERIE D'UNITÉS PRÉ-FAITES (d'après les règles officielles) ═══
 var GALLERY = [
-  // ── République ──
+  // ── République (Clones) ──
   { name:"Clone Phase 2", faction:"République", theme:"clone", points:200, hp:2, armor:15, move:0, pa:5, weapons:["Fusil blaster"], icon:"🪖" },
-  { name:"Clone Spécialiste", faction:"République", theme:"clone", points:250, hp:2, armor:15, move:0, pa:5, weapons:["Double fusil"], icon:"🎖️" },
-  { name:"Clone Sniper", faction:"République", theme:"military", points:260, hp:2, armor:15, move:0, pa:5, weapons:["Fusil sniper"], icon:"🎯" },
-  { name:"Clone Airborne", faction:"République", theme:"military", points:250, hp:2, armor:14, move:1, pa:5, weapons:["Fusil blaster"], icon:"🪂" },
-  { name:"Clone Répéteur", faction:"République", theme:"clone", points:300, hp:2, armor:15, move:-1, pa:5, weapons:["Blaster répéteur"], icon:"🔥" },
-  { name:"Rex", faction:"République", theme:"metal", points:400, hp:2, armor:12, move:0, pa:5, weapons:["Pistolet auto."], icon:"⭐" },
-  { name:"Fives", faction:"République", theme:"metal", points:430, hp:2, armor:13, move:0, pa:5, weapons:["Pistolet auto."], icon:"⭐" },
-  { name:"Pilote AV-7", faction:"République", theme:"military", points:1800, hp:6, armor:12, move:-3, pa:5, weapons:["Canon AV-7"], icon:"💣" },
+  { name:"Clone Phase 2 de Geonosis", faction:"République", theme:"clone", points:230, hp:2, armor:15, move:0, pa:5, weapons:["Blaster"], icon:"🪖" },
+  { name:"Clone Spécialiste 501ème", faction:"République", theme:"clone", points:250, hp:2, armor:15, move:0, pa:5, weapons:["Double fusil"], icon:"🎖️" },
+  { name:"Clone Sniper 501ème", faction:"République", theme:"military", points:260, hp:2, armor:15, move:0, pa:5, weapons:["Fusil sniper"], icon:"🎯" },
+  { name:"Clone Phase 2 (Sniper)", faction:"République", theme:"clone", points:260, hp:2, armor:15, move:0, pa:5, weapons:["Fusil sniper"], icon:"🎯" },
+  { name:"Clone Officier 501ème", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["Pistolet blaster"], icon:"📋" },
+  { name:"Clone de Coruscant", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["Pistolet blaster"], icon:"🏛️" },
+  { name:"Clone Airborne de Geonosis", faction:"République", theme:"military", points:270, hp:2, armor:15, move:0, pa:5, weapons:["Blaster"], icon:"🪂", special:"Largage" },
+  { name:"Commandant Rex", faction:"République", theme:"metal", points:400, hp:2, armor:12, move:0, pa:5, weapons:["Pistolet auto."], icon:"⭐" },
+  { name:"Commandant Fives", faction:"République", theme:"metal", points:430, hp:2, armor:13, move:0, pa:5, weapons:["Pistolet auto."], icon:"⭐", special:"Kit de soin" },
 
   // ── Séparatistes ──
-  { name:"Droïde B1", faction:"Séparatistes", theme:"parchment", points:170, hp:2, armor:18, move:0, pa:4, weapons:["Fusil blaster"], icon:"🤖" },
-  { name:"Droïde B1 Pilote", faction:"Séparatistes", theme:"parchment", points:120, hp:2, armor:19, move:0, pa:4, weapons:["Pistolet blaster"], icon:"🤖" },
-  { name:"Droïde B2", faction:"Séparatistes", theme:"industrial", points:300, hp:3, armor:11, move:-2, pa:4, weapons:["x2 Fusils poing"], icon:"💪" },
-  { name:"Droïde Sniper", faction:"Séparatistes", theme:"dark", points:280, hp:2, armor:17, move:0, pa:4, weapons:["Fusil sniper"], icon:"🎯" },
-  { name:"Pilote STAP", faction:"Séparatistes", theme:"industrial", points:500, hp:3, armor:14, move:3, pa:5, weapons:["x2 Canons STAP"], icon:"🏍️" },
+  { name:"Droïde de combat B1", faction:"Séparatistes", theme:"parchment", points:170, hp:2, armor:18, move:0, pa:4, weapons:["Fusil blaster"], icon:"🤖" },
+  { name:"Droïde de combat lourd B2", faction:"Séparatistes", theme:"industrial", points:300, hp:3, armor:11, move:-2, pa:4, weapons:["x2 Fusils poing"], icon:"💪" },
   { name:"Tri-Droïde", faction:"Séparatistes", theme:"industrial", points:1800, hp:10, armor:6, move:2, pa:4, weapons:["x3 Tourelles","x3 Rockets"], icon:"🕷️" },
 
   // ── Rebelles ──
-  { name:"Rebelle", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["Blaster"], icon:"✊" },
-  { name:"Rebelle Garde", faction:"Rebelles", theme:"rebel", points:200, hp:2, armor:16, move:0, pa:5, weapons:["Fusil blaster"], icon:"🛡️" },
-  { name:"Rebelle Sniper", faction:"Rebelles", theme:"rebel", points:250, hp:2, armor:17, move:0, pa:5, weapons:["Fusil sniper"], icon:"🎯" },
-  { name:"Rebelle Jetpack", faction:"Rebelles", theme:"rebel", points:270, hp:2, armor:16, move:2, pa:5, weapons:["Pistolet blaster"], icon:"🚀" },
+  { name:"Rebelle (Blaster)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["Blaster"], icon:"✊" },
+  { name:"Rebelle (Fusil)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["Fusil blaster"], icon:"✊" },
+  { name:"Rebelle (Pistolet)", faction:"Rebelles", theme:"rebel", points:150, hp:2, armor:17, move:0, pa:5, weapons:["Pistolet blaster"], icon:"✊" },
+  { name:"Garde Rebelle", faction:"Rebelles", theme:"rebel", points:200, hp:2, armor:16, move:0, pa:5, weapons:["Blaster"], icon:"🛡️" },
+  { name:"Rebelle Jetpack", faction:"Rebelles", theme:"rebel", points:240, hp:2, armor:17, move:2, pa:5, weapons:["Blaster"], icon:"🚀", special:"Jetpack / Vol" },
+];
 
-  // ── Empire ──
-  { name:"Stormtrooper", faction:"Empire", theme:"empire", points:190, hp:2, armor:16, move:0, pa:5, weapons:["Fusil blaster"], icon:"⚫" },
-  { name:"Scout Trooper", faction:"Empire", theme:"dark", points:220, hp:2, armor:17, move:1, pa:5, weapons:["Pistolet blaster"], icon:"🏍️" },
-  { name:"Death Trooper", faction:"Empire", theme:"dark", points:320, hp:3, armor:13, move:0, pa:5, weapons:["Blaster répéteur"], icon:"💀" },
+// ═══ VÉHICULES (onglet séparé) ═══
+var VEHICLES = [
+  // ── République ──
+  { name:"Motojet CRAM", faction:"République", theme:"metal", points:1000, hp:6, armor:12, move:4, pa:5, weapons:["x2 Fusils motojet","x2 Snipers montés"], icon:"🏍️", special:"Vol / Poste canonnier" },
+  { name:"TR-TT", faction:"République", theme:"military", points:1800, hp:8, armor:10, move:1, pa:5, weapons:["Blaster répéteur","Canon monté"], icon:"🦏", special:"Poste canonnier" },
+  { name:"Canon anti-char AV-7", faction:"République", theme:"military", points:1600, hp:6, armor:12, move:-3, pa:5, weapons:["Canon AV-7"], icon:"💣" },
+
+  // ── Séparatistes ──
+  { name:"STAP Droïde", faction:"Séparatistes", theme:"industrial", points:650, hp:5, armor:12, move:3, pa:5, weapons:["x2 Canons STAP"], icon:"🏍️", special:"Vol" },
 ];
 
 // ═══ LOCALSTORAGE ═══
@@ -111,19 +117,44 @@ function loadFromJSON(input) {
 
 // ═══ GALERIE ═══
 var currentGalleryFilter = "all";
+var currentGalleryTab = "units"; // "units" or "vehicles"
+
+function switchGalleryTab(tab, btn) {
+  currentGalleryTab = tab;
+  var btns = document.querySelectorAll(".btn-tab");
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");
+  if (btn) btn.classList.add("active");
+
+  // Update filter buttons: hide Rebelles for vehicles (no rebel vehicles)
+  var filterBtns = document.querySelectorAll(".btn-filter");
+  for (var j = 0; j < filterBtns.length; j++) {
+    filterBtns[j].style.display = "";
+  }
+
+  renderGallery();
+}
 
 function renderGallery() {
   var grid = document.getElementById("gallery-grid");
   if (!grid) return;
   grid.innerHTML = "";
 
-  GALLERY.forEach(function(unit, i) {
+  var source = currentGalleryTab === "vehicles" ? VEHICLES : GALLERY;
+
+  source.forEach(function(unit, i) {
     if (currentGalleryFilter !== "all" && unit.faction !== currentGalleryFilter) return;
 
     var fac = CONFIG.factions[unit.faction] || { color:"#888" };
     var el = document.createElement("div");
     el.className = "gallery-card";
     el.setAttribute("data-faction", unit.faction);
+
+    var specialBadge = unit.special
+      ? ' <span class="gc-special">' + unit.special + '</span>'
+      : '';
+
+    var isVehicle = currentGalleryTab === "vehicles";
+    var arrayName = isVehicle ? "VEHICLES" : "GALLERY";
 
     el.innerHTML =
       '<span class="gc-icon">' + unit.icon + '</span>' +
@@ -132,26 +163,31 @@ function renderGallery() {
         '<div class="gc-meta">' +
           '<span class="gc-faction" style="background:' + fac.color + '22;color:' + fac.color + '">' + unit.faction + '</span> ' +
           unit.weapons.join(", ") +
+          specialBadge +
         '</div>' +
       '</div>' +
       '<span class="gc-pts">' + unit.points + '</span>' +
-      '<button class="gc-add" onclick="addFromGallery(' + i + ',this)" title="Ajouter">+</button>';
+      '<button class="gc-add" onclick="addFromGallery(\'' + arrayName + '\',' + i + ',this)" title="Ajouter">+</button>';
 
     grid.appendChild(el);
   });
+
+  if (grid.children.length === 0) {
+    grid.innerHTML = '<div class="cards-empty">Aucune unité dans cette catégorie.</div>';
+  }
 }
 
 function filterGallery(faction, btn) {
   currentGalleryFilter = faction;
-  // Update active button
   var btns = document.querySelectorAll(".btn-filter");
   for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");
   if (btn) btn.classList.add("active");
   renderGallery();
 }
 
-function addFromGallery(index, btn) {
-  var unit = GALLERY[index];
+function addFromGallery(arrayName, index, btn) {
+  var source = arrayName === "VEHICLES" ? VEHICLES : GALLERY;
+  var unit = source[index];
   if (!unit) return;
   cards.push({
     name: unit.name,
@@ -248,18 +284,35 @@ function populateFactions() {
 }
 
 function populateWeapons() {
-  const grid = document.getElementById("weapon-selector");
+  var grid = document.getElementById("weapon-selector");
   if (!grid) return;
   grid.innerHTML = "";
-  Object.entries(CONFIG.weapons).forEach(([name, w]) => {
-    const label = document.createElement("label");
+  var weaponNames = Object.keys(CONFIG.weapons);
+  for (var i = 0; i < weaponNames.length; i++) {
+    var name = weaponNames[i];
+    var w = CONFIG.weapons[name];
+    var icon = w.icon || "🔫";
+    var label = document.createElement("label");
     label.className = "weapon-option";
-    label.innerHTML =
-      '<input type="checkbox" value="' + name + '" onchange="toggleWeapon(this)">' +
-      '<span class="w-name">' + w.icon + ' ' + name + '</span>' +
-      '<span class="w-stats">' + w.mun + 'd p' + w.pen + ' d' + w.dmg + '</span>';
+
+    var cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = name;
+    cb.onchange = (function(cbRef) { return function() { toggleWeapon(cbRef); }; })(cb);
+
+    var nameSpan = document.createElement("span");
+    nameSpan.className = "w-name";
+    nameSpan.textContent = icon + " " + name;
+
+    var statsSpan = document.createElement("span");
+    statsSpan.className = "w-stats";
+    statsSpan.textContent = w.mun + "d p" + w.pen + " d" + w.dmg;
+
+    label.appendChild(cb);
+    label.appendChild(nameSpan);
+    label.appendChild(statsSpan);
     grid.appendChild(label);
-  });
+  }
 }
 
 function toggleWeapon(cb) {

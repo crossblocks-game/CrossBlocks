@@ -171,7 +171,7 @@ body {
 
 /* ── Weapon Grid ── */
 .weapon-grid {
-  display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
   gap:3px; max-height:180px; overflow-y:auto;
   padding:4px; background:var(--bg); border-radius:5px; border:1px solid var(--border);
 }
@@ -182,11 +182,12 @@ body {
   display:flex; align-items:center; gap:5px;
   padding:4px 7px; border-radius:4px; cursor:pointer;
   transition:background .12s; font-size:12px;
+  min-width:0;
 }
 .weapon-option:hover { background:var(--surface2); }
 .weapon-option input[type="checkbox"] { accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
-.weapon-option .w-name { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.weapon-option .w-stats { color:var(--text2); font-size:9px; flex-shrink:0; }
+.weapon-option .w-name { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.weapon-option .w-stats { color:var(--text2); font-size:9px; flex-shrink:0; white-space:nowrap; }
 
 /* ═══ CARD PREVIEW ═══ */
 .preview-area {
@@ -317,6 +318,20 @@ body {
   background:var(--surface); border:1px solid var(--border);
   border-radius:10px; padding:18px; margin:16px 0;
 }
+.gallery-tabs {
+  display:flex; gap:4px; margin-bottom:8px;
+}
+.btn-tab {
+  padding:6px 16px; font-size:13px; font-weight:700;
+  background:var(--bg); border:1px solid var(--border); border-radius:6px 6px 0 0;
+  color:var(--text2); cursor:pointer; transition:all .15s;
+  border-bottom:2px solid transparent;
+}
+.btn-tab:hover { color:var(--text); border-bottom-color:var(--accent); }
+.btn-tab.active {
+  background:var(--surface2); color:var(--accent);
+  border-color:var(--border); border-bottom-color:var(--accent);
+}
 .gallery-filters {
   display:flex; gap:5px; margin-bottom:12px; flex-wrap:wrap;
 }
@@ -360,6 +375,11 @@ body {
 .gc-pts {
   font-family:'Orbitron', monospace; font-size:13px; font-weight:900;
   color:var(--accent); flex-shrink:0;
+}
+.gc-special {
+  display:inline-block; font-size:8px; font-weight:700;
+  background:#8b5cf622; color:#a78bfa; border-radius:3px;
+  padding:0 4px; margin-left:3px; vertical-align:middle;
 }
 .gc-add {
   background:var(--green); color:#000; border:none; border-radius:4px;

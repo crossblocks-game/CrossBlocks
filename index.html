@@ -175,13 +175,16 @@
 
   <!-- ═══ GALERIE D'UNITÉS ═══ -->
   <section class="gallery-section">
-    <h2 class="section-title">🎨 Galerie d'unités — Ajout rapide</h2>
+    <h2 class="section-title">🎨 Galerie — Ajout rapide</h2>
+    <div class="gallery-tabs">
+      <button class="btn btn-tab active" onclick="switchGalleryTab('units',this)">🪖 Unités</button>
+      <button class="btn btn-tab" onclick="switchGalleryTab('vehicles',this)">🚗 Véhicules</button>
+    </div>
     <div class="gallery-filters">
       <button class="btn btn-filter active" onclick="filterGallery('all',this)">Toutes</button>
       <button class="btn btn-filter" onclick="filterGallery('République',this)">République</button>
       <button class="btn btn-filter" onclick="filterGallery('Séparatistes',this)">Séparatistes</button>
       <button class="btn btn-filter" onclick="filterGallery('Rebelles',this)">Rebelles</button>
-      <button class="btn btn-filter" onclick="filterGallery('Empire',this)">Empire</button>
     </div>
     <div id="gallery-grid" class="gallery-grid"></div>
   </section>
