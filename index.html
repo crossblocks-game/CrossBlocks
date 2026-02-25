@@ -2,86 +2,166 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CrossBlocks – Éditeur de cartes</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="themes.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="admin.js"></script>
-<script src="script.js"></script>
+<script src="config.js"></script>
 </head>
-
 <body>
 
-<!-- Fond sombre et images fixes -->
-<div class="fixed-bg" style="background-image:url('backgrounds/battle1.jpg');"></div>
+<!-- Navigation -->
+<nav class="site-nav">
+  <a href="index.html" class="nav-title">CROSSBLOCKS</a>
+  <span class="nav-sep">|</span>
+  <a href="index.html" class="nav-active">📝 Éditeur de cartes</a>
+  <a href="game.html">🎮 Simulateur</a>
+</nav>
+
+<!-- Fond fixe -->
+<div class="fixed-bg"></div>
 <div class="overlay-dark"></div>
 
 <div class="main-content">
 
-<header style="text-align:center;">
-  <img src="logo.svg" class="logo" style="height:100px;">
-  <h1 style="font-size:48px; margin:20px 0;">CrossBlocks</h1>
-  <p style="font-size:18px; max-width:600px; margin:auto;">
-    Générateur de cartes et unités pour vos jeux LEGO et wargames.
-  </p>
-  <p style="margin-top:20px; font-weight:bold;">Éditeur de fiches personnages :</p>
-  <a href="TON_LIEN_DISCORD_ICI" target="_blank">
-    <button class="discord-btn">Rejoindre le Discord</button>
-  </a>
-</header>
+  <!-- HEADER -->
+  <header class="site-header">
+    <img src="logo.svg" class="logo" alt="CrossBlocks">
+    <h1 class="site-title">CROSSBLOCKS</h1>
+    <p class="site-desc">Créez vos cartes d'unités pour wargames LEGO Star Wars.<br>Éditez, personnalisez et exportez en PDF A6.</p>
+    <div class="header-buttons">
+      <a href="TON_LIEN_DISCORD_ICI" target="_blank" class="btn btn-discord">💬 Discord</a>
+    </div>
+  </header>
 
-<hr>
+  <!-- ═══ ÉDITEUR ═══ -->
+  <section class="editor-section">
+    <h2 class="section-title">📝 Éditeur de fiches</h2>
 
-<div class="controls">
-  <label>Nom :</label>
-  <input id="name" placeholder="Nom de l'unité">
-  <label>Points :</label>
-  <input id="points" type="number">
-  <label>PV :</label>
-  <input id="hp" type="number">
-  <label>Armure :</label>
-  <input id="armor" type="number">
-  <label>Mouvement :</label>
-  <input id="move" type="number">
-  <label>Thème :</label>
-  <select id="theme" onchange="setTheme(this.value)"></select>
+    <div class="editor-layout">
 
-  <br><br>
-  <button onclick="addCard()">Ajouter</button>
-  <button onclick="exportPDF()">Exporter PDF A6</button>
-  <button onclick="promptAdmin()">🔒 Admin</button>
+      <!-- FORMULAIRE -->
+      <div class="editor-form">
+
+        <div class="form-group">
+          <label for="ed-name">Nom de l'unité</label>
+          <input id="ed-name" placeholder="Ex: Clone Phase 2" oninput="updatePreview()">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ed-faction">Faction</label>
+            <select id="ed-faction" onchange="updatePreview()"></select>
+          </div>
+          <div class="form-group">
+            <label for="ed-theme">Thème visuel</label>
+            <select id="ed-theme" onchange="updatePreview()"></select>
+          </div>
+        </div>
+
+        <div class="form-row form-row-4">
+          <div class="form-group">
+            <label>⭐ Points</label>
+            <input id="ed-points" type="number" value="200" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label>❤️ PV</label>
+            <input id="ed-hp" type="number" value="2" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label>🛡️ Armure</label>
+            <input id="ed-armor" type="number" value="15" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label>🏃 Mouvement</label>
+            <input id="ed-move" type="number" value="0" oninput="updatePreview()">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>⚡ Points d'Action</label>
+          <input id="ed-pa" type="number" value="5" min="1" max="8" oninput="updatePreview()">
+        </div>
+
+        <!-- Sélecteur d'armes -->
+        <div class="form-group">
+          <label>🔫 Armes (cochez pour ajouter)</label>
+          <div id="weapon-selector" class="weapon-grid"></div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-add" onclick="addCard()">➕ Ajouter la carte</button>
+          <button class="btn btn-secondary" onclick="clearForm()">🗑️ Vider le formulaire</button>
+        </div>
+      </div>
+
+      <!-- APERÇU EN DIRECT -->
+      <div class="preview-area">
+        <div class="preview-label">Aperçu en direct</div>
+        <div id="card-preview" class="card theme-metal">
+          <div class="card-header">
+            <span class="card-faction-badge">République</span>
+            <span class="card-points">⭐ 200</span>
+          </div>
+          <h2 class="card-name">Nom de l'unité</h2>
+          <div class="card-stats">
+            <div class="card-stat"><span class="stat-icon">❤️</span><span class="stat-val" id="pv-hp">2</span><span class="stat-label">PV</span></div>
+            <div class="card-stat"><span class="stat-icon">🛡️</span><span class="stat-val" id="pv-arm">15</span><span class="stat-label">Armure</span></div>
+            <div class="card-stat"><span class="stat-icon">🏃</span><span class="stat-val" id="pv-move">+0</span><span class="stat-label">Mouv.</span></div>
+            <div class="card-stat"><span class="stat-icon">⚡</span><span class="stat-val" id="pv-pa">5</span><span class="stat-label">PA</span></div>
+          </div>
+          <div class="card-weapons" id="pv-weapons">
+            <div class="card-no-weapon">Aucune arme sélectionnée</div>
+          </div>
+          <div class="card-footer">CROSSBLOCKS</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ CARTES GÉNÉRÉES ═══ -->
+  <section class="cards-section">
+    <div class="cards-toolbar">
+      <h2 class="section-title">🃏 Cartes générées</h2>
+      <div class="cards-actions">
+        <span id="card-count" class="card-counter">0 carte(s)</span>
+        <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled>📄 Exporter PDF A6</button>
+        <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none">🗑️ Tout supprimer</button>
+      </div>
+    </div>
+    <div id="cards-container" class="cards-grid">
+      <div class="cards-empty">Aucune carte pour l'instant. Utilisez l'éditeur ci-dessus pour en créer !</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <button class="btn btn-ghost" onclick="promptAdmin()">🔒 Admin</button>
+    <span>CrossBlocks © 2025</span>
+  </footer>
+
+  <!-- ═══ Panneau Admin ═══ -->
+  <div id="adminPanel" class="admin-overlay" style="display:none">
+    <div class="admin-panel">
+      <div class="admin-header">
+        <h2>⚙️ Panneau Admin</h2>
+        <button class="btn-close" onclick="closeAdmin()">✕</button>
+      </div>
+      <div class="admin-body">
+        <h3>Thèmes disponibles</h3>
+        <div id="adminThemes"></div>
+        <h3>Armes et statistiques</h3>
+        <div id="adminWeapons"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<hr>
+<script src="script.js"></script>
+<script src="admin.js"></script>
 
-<div id="cards-container"></div>
-
-<!-- Panneau Admin -->
-<div id="adminPanel" style="display:none; position:fixed;top:5%;left:5%; width:90%;height:90%; background:white;color:black; z-index:9999; overflow:auto;padding:20px;">
-  <h2>Panneau Admin</h2>
-  <button onclick="closeAdmin()">Fermer</button>
-  <hr>
-  <h3>Modifier les thèmes</h3>
-  <div id="adminThemes"></div>
-  <h3>Modifier les armes</h3>
-  <div id="adminWeapons"></div>
-</div>
-
-<script>
-  // Génération des thèmes dynamiques
-  function populateThemeOptions(){
-      const themeSelect = document.getElementById("theme");
-      themeSelect.innerHTML="";
-      CONFIG.themes.forEach(t=>{
-          const opt = document.createElement("option");
-          opt.value=t;
-          opt.text=t.charAt(0).toUpperCase()+t.slice(1);
-          themeSelect.appendChild(opt);
-      });
-      setTheme(CONFIG.themes[0]);
-  }
-  populateThemeOptions();
-</script>
-
-</div>
 </body>
 </html>

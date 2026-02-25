@@ -1,58 +1,102 @@
+// ═══ CROSSBLOCKS — Admin Panel ═══
+
 const ADMIN_PASSWORD = "crossblocks123";
 
-let CONFIG = {
-  themes:["metal","dark","military","parchment","clone","empire","rebel","neon","industrial","wood"],
-  weapons:{
-      "Blaster": {degats:10, portee:30},
-      "Fusil lourd": {degats:18, portee:40},
-      "Lance-roquettes": {degats:30, portee:60},
-      "Sabre laser": {degats:25, portee:1}
-  }
-};
-
-function promptAdmin(){
-    const pwd=prompt("Mot de passe admin ?");
-    if(pwd===ADMIN_PASSWORD) openAdmin();
-    else alert("Mot de passe incorrect");
+function promptAdmin() {
+  var pwd = prompt("Mot de passe admin :");
+  if (pwd === ADMIN_PASSWORD) openAdmin();
+  else if (pwd !== null) alert("Mot de passe incorrect.");
 }
 
-function openAdmin(){
-    document.getElementById("adminPanel").style.display="block";
-    renderAdmin();
+function openAdmin() {
+  document.getElementById("adminPanel").style.display = "flex";
+  renderAdmin();
 }
 
-function closeAdmin(){
-    document.getElementById("adminPanel").style.display="none";
+function closeAdmin() {
+  document.getElementById("adminPanel").style.display = "none";
+  // Refresh selectors after potential changes
+  populateThemes();
+  populateWeapons();
+  updatePreview();
 }
 
-function renderAdmin(){
-    const themeDiv=document.getElementById("adminThemes");
-    themeDiv.innerHTML="";
-    CONFIG.themes.forEach((t,i)=>{
-        const input=document.createElement("input");
-        input.value=t;
-        input.onchange=e=>CONFIG.themes[i]=e.target.value;
-        themeDiv.appendChild(input);
-        themeDiv.appendChild(document.createElement("br"));
-    });
+function renderAdmin() {
+  // ── Themes ──
+  var themeDiv = document.getElementById("adminThemes");
+  themeDiv.innerHTML = "";
+  CONFIG.themes.forEach(function(t, i) {
+    var row = document.createElement("div");
+    row.style.cssText = "display:flex; align-items:center; gap:6px; margin:3px 0;";
 
-    const weaponDiv=document.getElementById("adminWeapons");
-    weaponDiv.innerHTML="";
-    Object.keys(CONFIG.weapons).forEach(w=>{
-        const nameInput=document.createElement("input");
-        nameInput.value=w;
-        const dmgInput=document.createElement("input"); dmgInput.type="number"; dmgInput.value=CONFIG.weapons[w].degats;
-        const rangeInput=document.createElement("input"); rangeInput.type="number"; rangeInput.value=CONFIG.weapons[w].portee;
+    var swatch = document.createElement("div");
+    swatch.className = "card theme-" + t;
+    swatch.style.cssText = "width:18px; height:18px; border-radius:4px; flex-shrink:0;";
+    row.appendChild(swatch);
 
-        nameInput.onchange=e=>{
-            const obj=CONFIG.weapons[w]; delete CONFIG.weapons[w]; CONFIG.weapons[e.target.value]=obj;
-        };
-        dmgInput.onchange=e=>CONFIG.weapons[nameInput.value].degats=parseInt(e.target.value);
-        rangeInput.onchange=e=>CONFIG.weapons[nameInput.value].portee=parseInt(e.target.value);
+    var input = document.createElement("input");
+    input.value = t;
+    input.style.width = "140px";
+    input.onchange = function(e) { CONFIG.themes[i] = e.target.value; };
+    row.appendChild(input);
 
-        weaponDiv.appendChild(nameInput);
-        weaponDiv.appendChild(dmgInput);
-        weaponDiv.appendChild(rangeInput);
-        weaponDiv.appendChild(document.createElement("br"));
-    });
+    themeDiv.appendChild(row);
+  });
+
+  // ── Weapons ──
+  var weaponDiv = document.getElementById("adminWeapons");
+  weaponDiv.innerHTML = "";
+
+  // Header
+  var header = document.createElement("div");
+  header.className = "admin-weapon-row";
+  header.style.background = "transparent";
+  header.innerHTML =
+    '<span style="width:140px;font-size:10px;color:var(--accent)">Nom</span>' +
+    '<span style="width:60px;font-size:10px;color:var(--accent)">Mun</span>' +
+    '<span style="width:60px;font-size:10px;color:var(--accent)">Diff</span>' +
+    '<span style="width:60px;font-size:10px;color:var(--accent)">Pen</span>' +
+    '<span style="width:60px;font-size:10px;color:var(--accent)">Dmg</span>';
+  weaponDiv.appendChild(header);
+
+  Object.keys(CONFIG.weapons).forEach(function(wName) {
+    var w = CONFIG.weapons[wName];
+    var row = document.createElement("div");
+    row.className = "admin-weapon-row";
+
+    var nameI = document.createElement("input");
+    nameI.value = wName;
+    nameI.style.width = "140px";
+
+    var munI = document.createElement("input");
+    munI.type = "number"; munI.value = w.mun; munI.min = 1;
+    var diffI = document.createElement("input");
+    diffI.type = "number"; diffI.value = w.diff;
+    var penI = document.createElement("input");
+    penI.type = "number"; penI.value = w.pen;
+    var dmgI = document.createElement("input");
+    dmgI.value = w.dmg;
+
+    // Update handlers
+    nameI.onchange = function() {
+      var obj = CONFIG.weapons[wName];
+      delete CONFIG.weapons[wName];
+      wName = nameI.value;
+      CONFIG.weapons[wName] = obj;
+    };
+    munI.onchange = function() { CONFIG.weapons[wName].mun = parseInt(munI.value); };
+    diffI.onchange = function() { CONFIG.weapons[wName].diff = parseInt(diffI.value); };
+    penI.onchange = function() { CONFIG.weapons[wName].pen = parseInt(penI.value); };
+    dmgI.onchange = function() {
+      var v = parseInt(dmgI.value);
+      CONFIG.weapons[wName].dmg = isNaN(v) ? dmgI.value : v;
+    };
+
+    row.appendChild(nameI);
+    row.appendChild(munI);
+    row.appendChild(diffI);
+    row.appendChild(penI);
+    row.appendChild(dmgI);
+    weaponDiv.appendChild(row);
+  });
 }

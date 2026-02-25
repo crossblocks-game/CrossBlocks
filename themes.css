@@ -1,75 +1,86 @@
-/* Structure commune */
-.card {
-    transition: 0.3s;
-}
+/* ═══ CROSSBLOCKS — Card Themes ═══ */
 
 /* 1. Métal futuriste */
 .theme-metal {
-    background: linear-gradient(135deg,#3a3f46,#6b7684);
-    color:#e6f0ff;
-    border:2mm solid #9fb3c8;
+  background: linear-gradient(145deg, #3a3f4a, #5a6578, #3a3f4a);
+  color:#dce4f0;
+  border:2px solid #7888a0;
 }
 
 /* 2. Dark tactique */
 .theme-dark {
-    background:#1c1c1c;
-    color:#ffffff;
-    border:2mm solid #555;
+  background: linear-gradient(180deg, #1a1a1f, #0e0e12);
+  color:#e0e0e0;
+  border:2px solid #444;
 }
 
 /* 3. Militaire */
 .theme-military {
-    background:#4b5320;
-    color:#e8e6c1;
-    border:2mm solid #2e3312;
+  background: linear-gradient(135deg, #3a4418, #5a6828, #3a4418);
+  color:#e0ddb8;
+  border:2px solid #2e3312;
 }
 
 /* 4. Parchemin */
 .theme-parchment {
-    background:#f2e5c4;
-    color:#3a2a12;
-    border:2mm solid #8b6a3d;
+  background: linear-gradient(170deg, #f0e0c0, #d8c89a);
+  color:#2a1a08;
+  border:2px solid #8b6a3d;
 }
+.theme-parchment .card-points,
+.theme-parchment .cw-stat,
+.theme-parchment .stat-val { color:#8b5a1a; }
 
 /* 5. Clone (blanc high-tech) */
 .theme-clone {
-    background:linear-gradient(180deg,#ffffff,#e5e5e5);
-    color:#111;
-    border:2mm solid #cfcfcf;
+  background: linear-gradient(180deg, #f4f4f6, #dddde0);
+  color:#1a1a22;
+  border:2px solid #bbb;
 }
+.theme-clone .card-points,
+.theme-clone .cw-stat { color:#2255aa; }
+.theme-clone .stat-val { color:#222; }
 
 /* 6. Empire (rouge/noir) */
 .theme-empire {
-    background:#111;
-    color:#ff3b3b;
-    border:2mm solid #ff3b3b;
+  background: linear-gradient(160deg, #0a0a0a, #1a0808);
+  color:#ff4444;
+  border:2px solid #cc2222;
+  box-shadow: 0 4px 24px #0008, inset 0 0 30px #ff000008;
 }
+.theme-empire .card-name { color:#fff; }
+.theme-empire .card-points { color:#ff4444; }
 
-/* 7. Rebelle (orange technique) */
+/* 7. Rebelle (orange chaud) */
 .theme-rebel {
-    background:#2b2b2b;
-    color:#ff8c42;
-    border:2mm solid #ff8c42;
+  background: linear-gradient(150deg, #2a2220, #1a1614);
+  color:#ffaa66;
+  border:2px solid #cc6622;
 }
+.theme-rebel .card-name { color:#ffe0c0; }
 
 /* 8. Néon (cyberpunk) */
 .theme-neon {
-    background:#000000;
-    color:#00ffff;
-    border:2mm solid #00ffff;
-    box-shadow:0 0 15px #00ffff inset;
+  background: #050508;
+  color:#00eeff;
+  border:2px solid #00ccdd;
+  box-shadow: 0 4px 24px #0008, inset 0 0 20px #00ffff06;
 }
+.theme-neon .card-points { color:#00eeff; }
+.theme-neon .cw-stat { color:#00eeff; }
 
 /* 9. Industriel (acier brut) */
 .theme-industrial {
-    background:linear-gradient(45deg,#2a2a2a,#4a4a4a);
-    color:#dddddd;
-    border:2mm solid #888;
+  background: linear-gradient(50deg, #282828, #3c3c3c, #282828);
+  color:#cccccc;
+  border:2px solid #666;
 }
 
 /* 10. Bois */
 .theme-wood {
-    background:linear-gradient(45deg,#5a3a1a,#8b5a2b);
-    color:#ffe4b5;
-    border:2mm solid #3b2412;
+  background: linear-gradient(140deg, #4a2a10, #6a3a18, #4a2a10);
+  color:#ffe4b5;
+  border:2px solid #3b2412;
 }
+.theme-wood .card-points { color:#ffcc80; }
+.theme-wood .cw-stat { color:#ffcc80; }

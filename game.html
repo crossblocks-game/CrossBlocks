@@ -3,22 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CrossBlock — Wargame LEGO Star Wars</title>
+  <title>CrossBlock — Simulateur de Wargame LEGO Star Wars</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0d1117; overflow-x: hidden; }
-    #root { min-height: 100vh; }
-    /* Hide Babel warning */
-    .babel-repl-error { display: none !important; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0d1117; overflow-x:hidden; font-family:'Rajdhani','Segoe UI',sans-serif; }
+    #root { min-height:100vh; }
+
+    /* Navigation bar */
+    .site-nav {
+      background:#0a0c12; border-bottom:2px solid #f0c04033;
+      padding:8px 16px; display:flex; align-items:center; gap:12px;
+      position:sticky; top:0; z-index:9999;
+    }
+    .site-nav a {
+      color:#8890a4; text-decoration:none; font-size:13px;
+      font-weight:600; padding:4px 12px; border-radius:5px;
+      transition:all .15s;
+    }
+    .site-nav a:hover { color:#f0c040; background:#1a1f2e; }
+    .site-nav .nav-title {
+      font-family:'Orbitron',monospace; color:#f0c040;
+      font-size:16px; font-weight:900; letter-spacing:3px;
+    }
+    .site-nav .nav-sep { color:#262d40; }
   </style>
 </head>
 <body>
+
+  <!-- Nav bar linking back to site -->
+  <nav class="site-nav">
+    <a href="index.html" class="nav-title">CROSSBLOCKS</a>
+    <span class="nav-sep">|</span>
+    <a href="index.html">📝 Éditeur de cartes</a>
+    <a href="game.html" style="color:#f0c040;background:#1a1f2e;">🎮 Simulateur</a>
+  </nav>
+
   <div id="root"></div>
 
   <!-- React 18 via CDN -->
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <!-- Babel standalone for JSX transpilation -->
+  <!-- Babel for JSX -->
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 
   <script type="text/babel" data-presets="react">
@@ -2454,7 +2481,6 @@ function CrossBlock(){
 }
 
 
-// Mount the app
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CrossBlock));
   </script>
