@@ -179,15 +179,15 @@ body {
 .weapon-grid::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
 .weapon-option {
-  display:flex; align-items:center; gap:5px;
-  padding:4px 7px; border-radius:4px; cursor:pointer;
+  display:grid; grid-template-columns:18px 1fr auto;
+  align-items:center; gap:6px;
+  padding:5px 8px; border-radius:4px; cursor:pointer;
   transition:background .12s; font-size:12px;
-  min-width:0;
 }
 .weapon-option:hover { background:var(--surface2); }
-.weapon-option input[type="checkbox"] { accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
-.weapon-option .w-name { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.weapon-option .w-stats { color:var(--text2); font-size:9px; flex-shrink:0; white-space:nowrap; }
+.weapon-option input[type="checkbox"] { accent-color:var(--accent); cursor:pointer; width:14px; height:14px; }
+.weapon-option .w-name { color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.weapon-option .w-stats { color:var(--text2); font-size:9px; white-space:nowrap; text-align:right; }
 
 /* ═══ CARD PREVIEW ═══ */
 .preview-area {
@@ -437,6 +437,13 @@ body {
 .seo-details li { margin:4px 0; }
 
 /* ═══ ADMIN PANEL ═══ */
+.btn-admin-visible {
+  background:var(--surface2); color:var(--text2); border:1px solid var(--border);
+  border-radius:6px; padding:5px 14px; font-size:12px; cursor:pointer;
+  font-family:'Rajdhani', sans-serif; font-weight:600; transition:all .15s;
+}
+.btn-admin-visible:hover { border-color:var(--accent); color:var(--accent); }
+
 .admin-overlay {
   position:fixed; inset:0;
   background:#000000aa; z-index:9999;
@@ -444,7 +451,7 @@ body {
 }
 .admin-panel {
   background:var(--surface); border:1px solid var(--border);
-  border-radius:10px; width:92%; max-width:580px; max-height:80vh;
+  border-radius:10px; width:92%; max-width:700px; max-height:85vh;
   overflow-y:auto;
 }
 .admin-header {
@@ -453,7 +460,24 @@ body {
   position:sticky; top:0; background:var(--surface); z-index:1;
 }
 .admin-header h2 { font-family:'Orbitron', monospace; font-size:15px; color:var(--accent); }
+.admin-tabs {
+  display:flex; gap:4px; padding:8px 16px 0;
+  border-bottom:1px solid var(--border);
+  position:sticky; top:46px; background:var(--surface); z-index:1;
+}
+.btn-admtab {
+  padding:6px 16px; font-size:12px; font-weight:700;
+  background:transparent; border:1px solid transparent; border-bottom:2px solid transparent;
+  border-radius:6px 6px 0 0; color:var(--text2); cursor:pointer;
+  transition:all .15s;
+}
+.btn-admtab:hover { color:var(--text); }
+.btn-admtab.active {
+  color:var(--accent); border-bottom-color:var(--accent);
+  background:var(--surface2);
+}
 .admin-body { padding:16px; }
+.admin-desc { font-size:12px; color:var(--text2); margin-bottom:10px; }
 .admin-body h3 {
   font-size:13px; color:var(--accent); margin:12px 0 6px;
   text-transform:uppercase; letter-spacing:1px;
@@ -471,6 +495,32 @@ body {
 .admin-weapon-row label { font-size:9px; color:var(--text2); }
 .admin-weapon-row input { width:60px; }
 .admin-weapon-row input:first-child { width:140px; }
+
+/* Balance table */
+.bal-table {
+  width:100%; border-collapse:collapse; font-size:11px; margin-top:6px;
+}
+.bal-table th {
+  font-size:9px; text-transform:uppercase; letter-spacing:.5px;
+  color:var(--accent); text-align:left; padding:4px 6px;
+  border-bottom:1px solid var(--border); font-weight:700;
+}
+.bal-table td {
+  padding:4px 6px; border-bottom:1px solid #ffffff06;
+  color:var(--text);
+}
+.bal-table tr:hover td { background:var(--surface2); }
+.bal-name { font-weight:700; }
+.bal-val { font-family:'Orbitron', monospace; font-size:10px; font-weight:700; }
+.bal-good { color:#3fb950; }
+.bal-op { color:#f85149; }
+.bal-weak { color:#58a6ff; }
+.balance-legend {
+  display:flex; gap:14px; margin-top:10px; font-size:10px;
+}
+.bl-good { color:#3fb950; }
+.bl-op { color:#f85149; }
+.bl-weak { color:#58a6ff; }
 
 /* ═══════════════════════════════════════
    RESPONSIVE — MOBILE OPTIMIZATION
