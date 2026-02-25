@@ -318,10 +318,39 @@ body {
 /* ═══ FOOTER ═══ */
 .site-footer {
   display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:8px;
   padding:16px 0; margin-top:8px;
   border-top:1px solid var(--border);
   color:var(--text2); font-size:11px;
 }
+.footer-links a {
+  color:var(--text2); text-decoration:none; font-size:11px;
+  transition:color .15s;
+}
+.footer-links a:hover { color:var(--accent); }
+
+/* ═══ SEO CONTENT SECTION ═══ */
+.seo-section {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:18px; margin:16px 0;
+}
+.seo-section p {
+  font-size:14px; color:var(--text); margin:8px 0; line-height:1.7;
+}
+.seo-section strong { color:var(--accent); }
+.seo-details {
+  margin:8px 0; padding:8px 12px;
+  background:var(--bg); border-radius:6px; border:1px solid var(--border);
+}
+.seo-details summary {
+  cursor:pointer; font-weight:700; font-size:14px; color:var(--text);
+  padding:4px 0;
+}
+.seo-details summary:hover { color:var(--accent); }
+.seo-details ol, .seo-details p {
+  font-size:13px; color:var(--text); padding-left:18px; margin:6px 0;
+}
+.seo-details li { margin:4px 0; }
 
 /* ═══ ADMIN PANEL ═══ */
 .admin-overlay {

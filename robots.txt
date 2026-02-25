@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://crossblocks-game.github.io/CrossBlocks/sitemap.xml

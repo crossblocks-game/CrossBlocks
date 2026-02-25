@@ -3,7 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CrossBlocks – Éditeur de cartes</title>
+
+<!-- SEO: Title optimisé (60 caractères max, mots-clés en premier) -->
+<title>CrossBlocks — Wargame LEGO Star Wars | Créer vos cartes d'unités</title>
+
+<!-- SEO: Meta description (155 caractères, incite au clic) -->
+<meta name="description" content="CrossBlocks : créez et imprimez vos cartes d'unités pour wargame LEGO Star Wars. Éditeur gratuit, simulateur de batailles, export PDF. Jouez en ligne !">
+
+<!-- SEO: Keywords -->
+<meta name="keywords" content="wargame LEGO, CrossBlocks jeu, créer cartes wargame, wargame Star Wars, jeu stratégie LEGO, cartes unités LEGO, wargame figurines, jeu de guerre LEGO, simulateur bataille LEGO">
+
+<!-- SEO: Auteur et robots -->
+<meta name="author" content="CrossBlocks">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://crossblocks-game.github.io/CrossBlocks/">
+
+<!-- SEO: Open Graph (Facebook, Discord, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="CrossBlocks — Wargame LEGO Star Wars gratuit">
+<meta property="og:description" content="Créez vos cartes d'unités, simulez des batailles et jouez au wargame LEGO Star Wars. Éditeur en ligne gratuit avec export PDF.">
+<meta property="og:url" content="https://crossblocks-game.github.io/CrossBlocks/">
+<meta property="og:image" content="https://crossblocks-game.github.io/CrossBlocks/logo.svg">
+<meta property="og:site_name" content="CrossBlocks">
+<meta property="og:locale" content="fr_FR">
+
+<!-- SEO: Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CrossBlocks — Wargame LEGO Star Wars">
+<meta name="twitter:description" content="Créez vos cartes d'unités pour wargame LEGO. Éditeur gratuit + simulateur de batailles en ligne.">
+<meta name="twitter:image" content="https://crossblocks-game.github.io/CrossBlocks/logo.svg">
+
+<!-- SEO: Schema.org JSON-LD (données structurées) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "CrossBlocks",
+  "description": "Éditeur de cartes et simulateur de batailles pour wargame LEGO Star Wars",
+  "url": "https://crossblocks-game.github.io/CrossBlocks/",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "inLanguage": "fr",
+  "genre": ["Wargame", "Strategy", "LEGO"],
+  "image": "https://crossblocks-game.github.io/CrossBlocks/logo.svg"
+}
+</script>
+
+<!-- Favicon -->
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="themes.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -26,12 +75,13 @@
 <div class="main-content">
 
   <!-- HEADER -->
-  <header class="site-header">
-    <img src="logo.svg" class="logo" alt="CrossBlocks">
-    <h1 class="site-title">CROSSBLOCKS</h1>
-    <p class="site-desc">Créez vos cartes d'unités pour wargames LEGO Star Wars.<br>Éditez, personnalisez et exportez en PDF A6.</p>
+  <header class="site-header" itemscope itemtype="https://schema.org/WebApplication">
+    <img src="logo.svg" class="logo" alt="CrossBlocks — Wargame LEGO Star Wars" itemprop="image">
+    <h1 class="site-title" itemprop="name">CROSSBLOCKS</h1>
+    <p class="site-desc" itemprop="description">Le <strong>wargame LEGO Star Wars</strong> gratuit en ligne.<br>
+      <strong>Créez vos cartes</strong> d'unités, simulez des batailles et exportez en PDF.</p>
     <div class="header-buttons">
-      <a href="TON_LIEN_DISCORD_ICI" target="_blank" class="btn btn-discord">💬 Discord</a>
+      <a href="TON_LIEN_DISCORD_ICI" target="_blank" class="btn btn-discord" rel="noopener">💬 Discord</a>
     </div>
   </header>
 
@@ -138,10 +188,43 @@
     </div>
   </section>
 
+  <!-- SEO: Contenu texte riche pour Google -->
+  <section class="seo-section">
+    <h2 class="section-title">🧱 Qu'est-ce que CrossBlocks ?</h2>
+    <p>CrossBlocks est un <strong>wargame LEGO</strong> inspiré de l'univers <strong>Star Wars</strong>. 
+       Créez vos propres <strong>cartes d'unités</strong> avec des statistiques personnalisées 
+       (points de vie, armure, armes, points d'action), simulez des <strong>batailles stratégiques</strong> 
+       et imprimez vos cartes au format A6.</p>
+    <p>L'éditeur en ligne est <strong>100% gratuit</strong> — pas d'inscription, pas de téléchargement. 
+       Que vous jouiez avec des <strong>minifigures LEGO</strong>, des figurines peintes ou du papier, 
+       CrossBlocks s'adapte à votre style de jeu.</p>
+    <details class="seo-details">
+      <summary>📖 Comment jouer au wargame LEGO CrossBlocks ?</summary>
+      <ol>
+        <li><strong>Créez vos unités</strong> — utilisez l'éditeur ci-dessus pour définir les caractéristiques de chaque figurine</li>
+        <li><strong>Calculez les points</strong> — le calculateur intégré équilibre automatiquement le coût avec la loi de Lanchester</li>
+        <li><strong>Imprimez vos cartes</strong> — exportez en PDF A6 pour avoir vos fiches pendant la partie</li>
+        <li><strong>Composez votre armée</strong> — choisissez vos unités avec un budget en points</li>
+        <li><strong>Jouez !</strong> — utilisez le simulateur ou jouez en réel avec vos LEGO sur un plateau</li>
+      </ol>
+    </details>
+    <details class="seo-details">
+      <summary>⚔️ Factions disponibles</summary>
+      <p><strong>République</strong> (Clones Phase 2, Snipers, Commandants Rex & Fives, Airborne, véhicules AV-7 et CRAM), 
+         <strong>Séparatistes</strong> (Droïdes B1, B2, Tri-Droïde, STAP), 
+         <strong>Rebelles</strong> (Rebelles, Gardes, Jetpacks), 
+         <strong>Empire</strong>. Chaque faction a ses forces et faiblesses pour des parties équilibrées.</p>
+    </details>
+  </section>
+
   <!-- FOOTER -->
   <footer class="site-footer">
     <button class="btn btn-ghost" onclick="promptAdmin()">🔒 Admin</button>
-    <span>CrossBlocks © 2025</span>
+    <nav class="footer-links">
+      <a href="index.html">Éditeur de cartes</a> ·
+      <a href="game.html">Simulateur de batailles</a>
+    </nav>
+    <span>CrossBlocks © 2025 — Wargame LEGO gratuit</span>
   </footer>
 
   <!-- ═══ Panneau Admin ═══ -->
