@@ -1,74 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CrossBlocks — Simulateur de batailles | Wargame LEGO Star Wars gratuit</title>
-  <meta name="description" content="Simulateur de batailles pour wargame LEGO Star Wars. Composez vos armées, lancez des combats IA vs IA, analysez l'équilibre avec la loi de Lanchester. Gratuit en ligne.">
-  <meta name="keywords" content="wargame LEGO, simulateur bataille, CrossBlocks jeu, wargame Star Wars, stratégie LEGO, jeu de guerre figurines, simulateur wargame gratuit">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://crossblocks-game.github.io/CrossBlocks/game.html">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="CrossBlocks — Simulateur de batailles LEGO Star Wars">
-  <meta property="og:description" content="Composez vos armées et simulez des batailles. Wargame LEGO gratuit avec IA, terrain tactique et analyse d'équilibre.">
-  <meta property="og:url" content="https://crossblocks-game.github.io/CrossBlocks/game.html">
-  <meta property="og:image" content="https://crossblocks-game.github.io/CrossBlocks/logo.svg">
-  <meta property="og:locale" content="fr_FR">
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "VideoGame",
-    "name": "CrossBlocks Simulateur",
-    "description": "Simulateur de batailles pour wargame LEGO Star Wars avec IA intelligente, terrains et analyse d'équilibre",
-    "url": "https://crossblocks-game.github.io/CrossBlocks/game.html",
-    "genre": ["Wargame", "Strategy"],
-    "gamePlatform": "Web",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-    "inLanguage": "fr"
-  }
-  </script>
-  <link rel="icon" href="logo.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#0d1117; overflow-x:hidden; font-family:'Rajdhani','Segoe UI',sans-serif; }
-    #root { min-height:100vh; }
-    .site-nav {
-      background:#0a0c12; border-bottom:2px solid #f0c04033;
-      padding:8px 16px; display:flex; align-items:center; gap:12px;
-      position:sticky; top:0; z-index:9999;
-    }
-    .site-nav a {
-      color:#8890a4; text-decoration:none; font-size:13px;
-      font-weight:600; padding:4px 12px; border-radius:5px;
-      transition:all .15s;
-    }
-    .site-nav a:hover { color:#f0c040; background:#1a1f2e; }
-    .site-nav .nav-title {
-      font-family:'Orbitron',monospace; color:#f0c040;
-      font-size:16px; font-weight:900; letter-spacing:3px;
-    }
-    .site-nav .nav-sep { color:#262d40; }
-  </style>
-</head>
-<body>
-
-  <nav class="site-nav">
-    <a href="index.html" class="nav-title">CROSSBLOCKS</a>
-    <span class="nav-sep">|</span>
-    <a href="index.html">📝 Éditeur de cartes</a>
-    <a href="game.html" style="color:#f0c040;background:#1a1f2e;">🎮 Simulateur</a>
-  </nav>
-
-  <div id="root"></div>
-
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-
-  <script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef, useCallback, useMemo } = React;
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 /* ═══ CONSTANTS ═══ */
 const SPX=2.8, SEG=13, SEG_PX=SEG*SPX, RS=6;
@@ -560,7 +490,7 @@ function getBalanceTips(L){
 }
 
 /* ═══ COMPONENT ═══ */
-function CrossBlock(){
+export default function CrossBlock(){
   const[phase,setPhase]=useState("setup");
   const[tab,setTab]=useState("army");
   const[a1,sA1]=useState([]);const[a2,sA2]=useState([]);
@@ -2667,10 +2597,3 @@ function CrossBlock(){
     </div>
   );
 }
-
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(CrossBlock));
-  </script>
-</body>
-</html>

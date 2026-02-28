@@ -81,7 +81,7 @@
     <p class="site-desc" itemprop="description">Le <strong>wargame LEGO Star Wars</strong> gratuit en ligne.<br>
       <strong>Créez vos cartes</strong> d'unités, simulez des batailles et exportez en PDF.</p>
     <div class="header-buttons">
-      <a href="TON_LIEN_DISCORD_ICI" target="_blank" class="btn btn-discord" rel="noopener">💬 Discord</a>
+      <a href="https://discord.gg/CMntzhndfs" target="_blank" class="btn btn-discord" rel="noopener">💬 Discord</a>
     </div>
   </header>
 
@@ -208,6 +208,43 @@
     </div>
   </section>
 
+  <!-- ═══ PROPOSER UNE UNITÉ ═══ -->
+  <section class="suggest-section">
+    <h2 class="section-title">💡 Proposer une unité ou arme</h2>
+    <p class="suggest-desc">Envoyez vos créations ! Elles seront visibles après validation par l'admin.</p>
+    <div class="suggest-tabs">
+      <button class="btn btn-stab active" onclick="switchSuggestTab('unit',this)">🪖 Unité</button>
+      <button class="btn btn-stab" onclick="switchSuggestTab('weapon',this)">🔫 Arme</button>
+    </div>
+    <div id="suggest-unit" class="suggest-form">
+      <div class="form-row"><div class="form-group"><label>Nom</label><input id="sg-name" placeholder="Ex: Clone Commandant Cody"></div>
+      <div class="form-group"><label>Faction</label><select id="sg-faction"></select></div></div>
+      <div class="form-row form-row-4">
+        <div class="form-group"><label>⭐ Points</label><input id="sg-pts" type="number" value="200"></div>
+        <div class="form-group"><label>❤️ PV</label><input id="sg-hp" type="number" value="2"></div>
+        <div class="form-group"><label>🛡️ Armure</label><input id="sg-arm" type="number" value="15"></div>
+        <div class="form-group"><label>🏃 M.M.</label><input id="sg-mm" type="number" value="0"></div>
+      </div>
+      <div class="form-row"><div class="form-group"><label>⚡ PA</label><input id="sg-pa" type="number" value="5"></div>
+      <div class="form-group"><label>🔫 Armes (séparées par virgule)</label><input id="sg-weapons" placeholder="SW Fusil laser (bleu)"></div></div>
+      <div class="form-group"><label>📝 Notes / Capacité spéciale</label><input id="sg-notes" placeholder="Ex: Largage, Vol, Kit de soin..."></div>
+      <button class="btn btn-suggest" onclick="submitSuggestion('unit')">📩 Envoyer la proposition</button>
+    </div>
+    <div id="suggest-weapon" class="suggest-form" style="display:none">
+      <div class="form-row"><div class="form-group"><label>Nom complet</label><input id="sgw-name" placeholder="SW Canon laser (bleu)"></div>
+      <div class="form-group"><label>🎯 Difficulté</label><input id="sgw-diff" type="number" value="15"></div></div>
+      <div class="form-row form-row-4">
+        <div class="form-group"><label>💥 Mun</label><input id="sgw-mun" type="number" value="3"></div>
+        <div class="form-group"><label>🛡️ Pén</label><input id="sgw-pen" type="number" value="5"></div>
+        <div class="form-group"><label>❤️ Dégâts</label><input id="sgw-dmg" type="number" value="1"></div>
+        <div class="form-group"><label>📏 Portée</label><input id="sgw-portee" placeholder="Cat.1/Cat.2"></div>
+      </div>
+      <div class="form-group"><label>📝 Notes</label><input id="sgw-notes" placeholder="Ex: Usage unique, monté sur véhicule..."></div>
+      <button class="btn btn-suggest" onclick="submitSuggestion('weapon')">📩 Envoyer la proposition</button>
+    </div>
+    <div id="suggest-count" class="suggest-count"></div>
+  </section>
+
   <!-- SEO: Contenu texte riche pour Google -->
   <section class="seo-section">
     <h2 class="section-title">🧱 Qu'est-ce que CrossBlocks ?</h2>
@@ -239,7 +276,7 @@
 
   <!-- FOOTER -->
   <footer class="site-footer">
-    <button class="btn btn-ghost" onclick="promptAdmin()">🔒 Admin</button>
+    <button class="btn btn-admin-visible" onclick="promptAdmin()">🔒 Admin</button>
     <nav class="footer-links">
       <a href="index.html">Éditeur de cartes</a> ·
       <a href="game.html">Simulateur de batailles</a>
@@ -254,11 +291,32 @@
         <h2>⚙️ Panneau Admin</h2>
         <button class="btn-close" onclick="closeAdmin()">✕</button>
       </div>
-      <div class="admin-body">
+      <div class="admin-tabs">
+        <button class="btn btn-admtab active" onclick="switchAdminTab('config',this)">⚙️ Config</button>
+        <button class="btn btn-admtab" onclick="switchAdminTab('pending',this)">📬 Propositions</button>
+        <button class="btn btn-admtab" onclick="switchAdminTab('balance',this)">⚖️ Balance</button>
+      </div>
+      <div class="admin-body" id="admin-config">
         <h3>Thèmes disponibles</h3>
         <div id="adminThemes"></div>
         <h3>Armes et statistiques</h3>
         <div id="adminWeapons"></div>
+      </div>
+      <div class="admin-body" id="admin-pending" style="display:none">
+        <h3>📬 Propositions en attente</h3>
+        <p class="admin-desc">Les joueurs peuvent proposer de nouvelles unités et armes. Approuvez-les pour les ajouter à la galerie.</p>
+      </div>
+      <div class="admin-body" id="admin-balance" style="display:none">
+        <h3>⚖️ Analyse d'équilibre — Loi de Lanchester</h3>
+        <p class="admin-desc">Valeur de combat de chaque unité. Plus le ratio est élevé, plus l'unité est rentable pour son coût.</p>
+        <div id="balance-table"></div>
+        <h3 style="margin-top:14px">🚗 Véhicules</h3>
+        <div id="balance-table-vehicles"></div>
+        <div class="balance-legend">
+          <span class="bl-good">✅ Équilibré</span>
+          <span class="bl-op">🔴 Potentiellement OP</span>
+          <span class="bl-weak">🔵 Sous-coté</span>
+        </div>
       </div>
     </div>
   </div>
