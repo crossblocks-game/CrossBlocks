@@ -68,7 +68,7 @@
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 
   <script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef, useCallback, useMemo } = React;
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 /* ═══ CONSTANTS ═══ */
 const SPX=2.8, SEG=13, SEG_PX=SEG*SPX, RS=6;
@@ -560,7 +560,7 @@ function getBalanceTips(L){
 }
 
 /* ═══ COMPONENT ═══ */
-function CrossBlock(){
+export default function CrossBlock(){
   const[phase,setPhase]=useState("setup");
   const[tab,setTab]=useState("army");
   const[a1,sA1]=useState([]);const[a2,sA2]=useState([]);
@@ -2458,11 +2458,11 @@ function CrossBlock(){
 
           {/* ═══ BOARD 3D ═══ */}
           {showBoard&&(
-            <div style={{overflow:"auto",maxWidth:"100%",perspective:"900px",perspectiveOrigin:"50% 30%"}}>
+            <div style={{overflow:"auto",maxWidth:"100%",perspective:"900px",perspectiveOrigin:"50% 30%",display:"flex",justifyContent:"center"}}>
               <svg ref={bRef} viewBox={`0 0 ${BW} ${BH}`}
                 width={Math.min(BW,typeof window!=='undefined'?window.innerWidth-24:500)}
                 height={Math.min(BH,(typeof window!=='undefined'?window.innerWidth-24:500)*BH/BW)}
-                onClick={onBoardClick} style={{background:"linear-gradient(180deg,#1a3d16 0%,#2d5a27 30%,#3a6b30 70%,#2a5020 100%)",borderRadius:4,border:"3px solid #8B4513",cursor:"crosshair",display:"block",transform:"rotateX(25deg)",transformOrigin:"50% 50%"}}>
+                onClick={onBoardClick} style={{background:"linear-gradient(180deg,#1a3d16 0%,#2d5a27 30%,#3a6b30 70%,#2a5020 100%)",borderRadius:4,border:"3px solid #8B4513",cursor:"crosshair",display:"block",margin:"0 auto",transform:"rotateX(25deg)",transformOrigin:"50% 50%"}}>
 
                 {/* 3D defs */}
                 <defs>
@@ -2667,7 +2667,6 @@ function CrossBlock(){
     </div>
   );
 }
-
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CrossBlock));

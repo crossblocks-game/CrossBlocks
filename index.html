@@ -152,21 +152,23 @@
       <div class="preview-area">
         <div class="preview-label">Aperçu en direct</div>
         <div id="card-preview" class="card theme-metal">
-          <div class="card-header">
-            <span class="card-faction-badge">République</span>
-            <span class="card-points">⭐ 200</span>
+          <div class="card-inner">
+            <div class="card-header">
+              <span class="card-faction-badge">République</span>
+              <span class="card-points">⭐ 200</span>
+            </div>
+            <h2 class="card-name">Nom de l'unité</h2>
+            <div class="card-stats">
+              <div class="card-stat"><span class="stat-icon">❤️</span><span class="stat-val" id="pv-hp">2</span><span class="stat-label">PV</span></div>
+              <div class="card-stat"><span class="stat-icon">🛡️</span><span class="stat-val" id="pv-arm">15</span><span class="stat-label">Armure</span></div>
+              <div class="card-stat"><span class="stat-icon">🏃</span><span class="stat-val" id="pv-move">+0</span><span class="stat-label">Mouv.</span></div>
+              <div class="card-stat"><span class="stat-icon">⚡</span><span class="stat-val" id="pv-pa">5</span><span class="stat-label">PA</span></div>
+            </div>
+            <div class="card-weapons" id="pv-weapons">
+              <div class="card-no-weapon">Aucune arme sélectionnée</div>
+            </div>
+            <div class="card-footer">CROSSBLOCKS</div>
           </div>
-          <h2 class="card-name">Nom de l'unité</h2>
-          <div class="card-stats">
-            <div class="card-stat"><span class="stat-icon">❤️</span><span class="stat-val" id="pv-hp">2</span><span class="stat-label">PV</span></div>
-            <div class="card-stat"><span class="stat-icon">🛡️</span><span class="stat-val" id="pv-arm">15</span><span class="stat-label">Armure</span></div>
-            <div class="card-stat"><span class="stat-icon">🏃</span><span class="stat-val" id="pv-move">+0</span><span class="stat-label">Mouv.</span></div>
-            <div class="card-stat"><span class="stat-icon">⚡</span><span class="stat-val" id="pv-pa">5</span><span class="stat-label">PA</span></div>
-          </div>
-          <div class="card-weapons" id="pv-weapons">
-            <div class="card-no-weapon">Aucune arme sélectionnée</div>
-          </div>
-          <div class="card-footer">CROSSBLOCKS</div>
         </div>
       </div>
 
@@ -195,10 +197,8 @@
       <h2 class="section-title">🃏 Cartes générées</h2>
       <div class="cards-actions">
         <span id="card-count" class="card-counter">0 carte(s)</span>
-        <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled>📄 PDF</button>
-        <button class="btn btn-save" onclick="saveToJSON()">💾 Exporter JSON</button>
-        <button class="btn btn-load" onclick="document.getElementById('json-upload').click()">📂 Importer</button>
-        <input type="file" id="json-upload" accept=".json" style="display:none" onchange="loadFromJSON(this)">
+        <span id="army-total" class="army-total"></span>
+        <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled>📄 Exporter PDF</button>
         <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none">🗑️ Tout supprimer</button>
       </div>
     </div>

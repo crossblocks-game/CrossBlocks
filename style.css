@@ -206,14 +206,18 @@ body {
 
 /* ═══ CARD DESIGN ═══ */
 .card {
-  width:min(280px, 100%);
-  aspect-ratio: 105 / 148;
-  border-radius:10px; padding:12px;
+  width:100%;
+  padding-bottom:141%; /* aspect ratio 105:148 */
+  border-radius:10px;
   position:relative;
-  display:flex; flex-direction:column;
   overflow:hidden;
   box-shadow: 0 4px 24px #0008, inset 0 0 0 1px #ffffff08;
   transition: transform .2s;
+}
+.card-inner {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  padding:12px;
 }
 .card::before {
   content:''; position:absolute; inset:0;
@@ -295,18 +299,23 @@ body {
 .cards-toolbar .section-title { margin:0; border:none; padding:0; }
 .cards-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .card-counter { font-size:12px; color:var(--text2); }
+.army-total {
+  font-family:'Orbitron',monospace; font-size:13px; font-weight:900;
+  color:var(--accent); background:var(--accent)11; padding:2px 10px;
+  border-radius:4px; border:1px solid var(--accent)33;
+}
 
 .cards-grid {
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-  gap:14px; justify-items:center;
+  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+  gap:14px;
 }
 .cards-empty {
   grid-column:1/-1; text-align:center;
   padding:36px; color:var(--text2); font-size:13px;
 }
 
-.card-wrapper { position:relative; }
+.card-wrapper { position:relative; width:100%; }
 .card-delete {
   position:absolute; top:-5px; right:-5px; z-index:10;
   background:var(--red); color:#fff; border:2px solid var(--surface);
@@ -644,7 +653,7 @@ body {
 
   /* Card preview: full width */
   .preview-area { position:static; margin-top:12px; }
-  .card { width:100%; max-width:300px; margin:0 auto; }
+  .card { max-width:300px; margin:0 auto; }
 
   /* Card stats: 2x2 grid on very small */
   .card-stats { grid-template-columns:repeat(2, 1fr); gap:3px; }
@@ -690,7 +699,7 @@ body {
 @media (max-width: 360px) {
   .site-title { font-size:22px; letter-spacing:1px; }
   .form-row-4 { grid-template-columns:1fr 1fr; }
-  .card { padding:8px; }
+  .card-inner { padding:8px; }
   .card-name { font-size:12px; }
   .card-weapon .cw-name { font-size:9px; }
   .card-weapon .cw-stat { font-size:7px; }

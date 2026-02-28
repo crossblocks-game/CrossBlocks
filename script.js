@@ -431,10 +431,16 @@ function displayCards() {
   var countEl = document.getElementById("card-count");
   var exportBtn = document.getElementById("btn-export");
   var clearBtn = document.getElementById("btn-clear-all");
+  var totalEl = document.getElementById("army-total");
 
   countEl.textContent = cards.length + " carte(s)";
   exportBtn.disabled = cards.length === 0;
   clearBtn.style.display = cards.length > 0 ? "inline-flex" : "none";
+
+  // Army total
+  var total = 0;
+  for (var t = 0; t < cards.length; t++) total += parseInt(cards[t].points) || 0;
+  if (totalEl) totalEl.textContent = cards.length > 0 ? total + " pts" : "";
 
   if (cards.length === 0) {
     container.innerHTML = '<div class="cards-empty">Aucune carte pour l\'instant. Utilisez l\'éditeur ci-dessus pour en créer !</div>';
@@ -467,19 +473,21 @@ function displayCards() {
     wrapper.innerHTML =
       '<button class="card-delete" onclick="deleteCard(' + i + ')" title="Supprimer">\u2715</button>' +
       '<div class="card theme-' + c.theme + '">' +
-        '<div class="card-header">' +
-          '<span class="card-faction-badge" style="border-left:3px solid ' + fac.color + '">' + c.faction + '</span>' +
-          '<span class="card-points">\u2B50 ' + c.points + '</span>' +
+        '<div class="card-inner">' +
+          '<div class="card-header">' +
+            '<span class="card-faction-badge" style="border-left:3px solid ' + fac.color + '">' + c.faction + '</span>' +
+            '<span class="card-points">\u2B50 ' + c.points + '</span>' +
+          '</div>' +
+          '<h2 class="card-name">' + c.name + '</h2>' +
+          '<div class="card-stats">' +
+            '<div class="card-stat"><span class="stat-icon">\u2764\uFE0F</span><span class="stat-val">' + c.hp + '</span><span class="stat-label">PV</span></div>' +
+            '<div class="card-stat"><span class="stat-icon">\uD83D\uDEE1\uFE0F</span><span class="stat-val">' + c.armor + '</span><span class="stat-label">Armure</span></div>' +
+            '<div class="card-stat"><span class="stat-icon">\uD83C\uDFC3</span><span class="stat-val">' + (mv >= 0 ? "+" : "") + c.move + '</span><span class="stat-label">Mouv.</span></div>' +
+            '<div class="card-stat"><span class="stat-icon">\u26A1</span><span class="stat-val">' + c.pa + '</span><span class="stat-label">PA</span></div>' +
+          '</div>' +
+          '<div class="card-weapons">' + weaponHTML + '</div>' +
+          '<div class="card-footer">CROSSBLOCKS</div>' +
         '</div>' +
-        '<h2 class="card-name">' + c.name + '</h2>' +
-        '<div class="card-stats">' +
-          '<div class="card-stat"><span class="stat-icon">\u2764\uFE0F</span><span class="stat-val">' + c.hp + '</span><span class="stat-label">PV</span></div>' +
-          '<div class="card-stat"><span class="stat-icon">\uD83D\uDEE1\uFE0F</span><span class="stat-val">' + c.armor + '</span><span class="stat-label">Armure</span></div>' +
-          '<div class="card-stat"><span class="stat-icon">\uD83C\uDFC3</span><span class="stat-val">' + (mv >= 0 ? "+" : "") + c.move + '</span><span class="stat-label">Mouv.</span></div>' +
-          '<div class="card-stat"><span class="stat-icon">\u26A1</span><span class="stat-val">' + c.pa + '</span><span class="stat-label">PA</span></div>' +
-        '</div>' +
-        '<div class="card-weapons">' + weaponHTML + '</div>' +
-        '<div class="card-footer">CROSSBLOCKS</div>' +
       '</div>';
 
     container.appendChild(wrapper);
@@ -518,8 +526,106 @@ function exportPDF() {
       rebel:[38,30,28], neon:[5,5,10], industrial:[40,40,44], wood:[74,46,20]
     };
 
+    // ═══ PAGE 1: ARMY SUMMARY ═══
+    pdf.setFillColor(18, 18, 26);
+    pdf.rect(0, 0, 105, 148, "F");
+    pdf.setDrawColor(240, 192, 64);
+    pdf.setLineWidth(1);
+    pdf.roundedRect(3, 3, 99, 142, 3, 3, "S");
+
+    // Title
+    pdf.setFontSize(18);
+    pdf.setFont(undefined, "bold");
+    pdf.setTextColor(240, 192, 64);
+    pdf.text("CROSSBLOCKS", 52.5, 16, { align:"center" });
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, "normal");
+    pdf.setTextColor(200, 200, 210);
+    pdf.text("Récapitulatif d'armée", 52.5, 23, { align:"center" });
+
+    // Separator
+    pdf.setDrawColor(240, 192, 64);
+    pdf.setLineWidth(0.3);
+    pdf.line(10, 27, 95, 27);
+
+    // Army total
+    var armyTotal = 0;
+    for (var t = 0; t < cards.length; t++) armyTotal += parseInt(cards[t].points) || 0;
+    pdf.setFontSize(24);
+    pdf.setFont(undefined, "bold");
+    pdf.setTextColor(240, 192, 64);
+    pdf.text(armyTotal + " pts", 52.5, 38, { align:"center" });
+
+    pdf.setFontSize(8);
+    pdf.setFont(undefined, "normal");
+    pdf.setTextColor(140, 140, 160);
+    pdf.text(cards.length + " unité(s)", 52.5, 43, { align:"center" });
+
+    // Unit list
+    var y = 52;
+    pdf.setFontSize(7);
+    pdf.setTextColor(240, 192, 64);
+    pdf.text("COMPOSITION", 10, y);
+    y += 5;
+
+    // Group by faction
+    var factionGroups = {};
+    cards.forEach(function(c) {
+      if (!factionGroups[c.faction]) factionGroups[c.faction] = [];
+      factionGroups[c.faction].push(c);
+    });
+
+    Object.keys(factionGroups).forEach(function(faction) {
+      var group = factionGroups[faction];
+      var fac = CONFIG.factions[faction] || { color:"#888" };
+      var fc = hexToRgb(fac.color);
+
+      // Faction header
+      pdf.setFillColor(fc[0], fc[1], fc[2]);
+      pdf.roundedRect(8, y - 3, 3, 3, 0.5, 0.5, "F");
+      pdf.setFontSize(8);
+      pdf.setFont(undefined, "bold");
+      pdf.setTextColor(fc[0], fc[1], fc[2]);
+      pdf.text(faction.toUpperCase(), 14, y);
+
+      var factionTotal = 0;
+      for (var ft = 0; ft < group.length; ft++) factionTotal += parseInt(group[ft].points) || 0;
+      pdf.setFont(undefined, "normal");
+      pdf.setFontSize(7);
+      pdf.setTextColor(140, 140, 160);
+      pdf.text(factionTotal + " pts", 95, y, { align:"right" });
+      y += 5;
+
+      group.forEach(function(c) {
+        if (y > 130) return;
+        pdf.setFontSize(7);
+        pdf.setFont(undefined, "normal");
+        pdf.setTextColor(200, 200, 210);
+        pdf.text(c.name, 12, y);
+
+        pdf.setTextColor(240, 192, 64);
+        pdf.text(c.points + " pts", 95, y, { align:"right" });
+
+        // Weapon names small
+        if (c.weapons.length > 0 && y < 126) {
+          y += 3;
+          pdf.setFontSize(5);
+          pdf.setTextColor(100, 100, 120);
+          pdf.text(c.weapons.join(", "), 14, y, { maxWidth:78 });
+        }
+        y += 4;
+      });
+      y += 2;
+    });
+
+    // Date
+    pdf.setFontSize(5);
+    pdf.setTextColor(80, 80, 100);
+    pdf.text(new Date().toLocaleDateString("fr-FR"), 52.5, 142, { align:"center" });
+
+    // ═══ UNIT CARDS ═══
     cards.forEach(function(c, i) {
-      if (i > 0) pdf.addPage([105, 148], "portrait");
+      pdf.addPage([105, 148], "portrait");
 
       var bg = bgMap[c.theme] || [30, 30, 40];
       var isLight = (c.theme === "parchment" || c.theme === "clone");
@@ -572,59 +678,54 @@ function exportPDF() {
         var x = sx + si * sw + si * 2;
         pdf.setFillColor(dim[0], dim[1], dim[2]);
         pdf.roundedRect(x, 34, sw, 16, 2, 2, "F");
-        // Value
         pdf.setFontSize(15);
         pdf.setFont(undefined, "bold");
         pdf.setTextColor(acc[0], acc[1], acc[2]);
         pdf.text(String(s.val), x + sw/2, 43.5, { align:"center" });
-        // Label
         pdf.setFontSize(6);
         pdf.setFont(undefined, "normal");
         pdf.setTextColor(txt[0], txt[1], txt[2]);
         pdf.text(s.label, x + sw/2, 48.5, { align:"center" });
       });
 
-      // Weapons header
-      var y = 58;
+      // Weapons
+      var wy = 58;
       pdf.setFontSize(7);
       pdf.setTextColor(acc[0], acc[1], acc[2]);
-      pdf.text("ARMEMENT", 7, y);
-      y += 4;
+      pdf.text("ARMEMENT", 7, wy);
+      wy += 4;
 
       if (c.weapons.length === 0) {
         pdf.setFontSize(8);
         pdf.setTextColor(dim[0], dim[1], dim[2]);
-        pdf.text("Aucune arme", 52.5, y + 4, { align:"center" });
+        pdf.text("Aucune arme", 52.5, wy + 4, { align:"center" });
       } else {
         c.weapons.forEach(function(wName) {
           var w = CONFIG.weapons[wName];
-          if (!w || y > 128) return;
-          // Row bg
+          if (!w || wy > 128) return;
           pdf.setFillColor(dim[0], dim[1], dim[2]);
-          pdf.roundedRect(7, y, 91, 7.5, 1.5, 1.5, "F");
-          // Name
+          pdf.roundedRect(7, wy, 91, 7.5, 1.5, 1.5, "F");
           pdf.setFontSize(9);
           pdf.setFont(undefined, "bold");
           pdf.setTextColor(txt[0], txt[1], txt[2]);
-          pdf.text(wName, 10, y + 5);
-          // Stats
+          pdf.text(wName, 10, wy + 5);
           pdf.setFontSize(7);
           pdf.setFont(undefined, "normal");
           pdf.setTextColor(acc[0], acc[1], acc[2]);
           var info = w.mun + " des | Pen " + w.pen + " | Dmg " + w.dmg + " | " + w.portee;
-          pdf.text(info, 95, y + 5, { align:"right" });
-          y += 9;
+          pdf.text(info, 95, wy + 5, { align:"right" });
+          wy += 9;
         });
       }
 
-      // Footer
+      // Footer with card number
       pdf.setFontSize(5);
       pdf.setTextColor(dim[0], dim[1], dim[2]);
-      pdf.text("CROSSBLOCKS", 52.5, 143, { align:"center" });
+      pdf.text("CROSSBLOCKS — " + (i + 1) + "/" + cards.length + " — " + armyTotal + " pts total", 52.5, 143, { align:"center" });
     });
 
-    pdf.save("CrossBlocks_cartes.pdf");
-    btn.textContent = "\uD83D\uDCC4 Exporter PDF A6";
+    pdf.save("CrossBlocks_armee.pdf");
+    btn.textContent = "\uD83D\uDCC4 Exporter PDF";
     btn.disabled = false;
   }, 60);
 }
