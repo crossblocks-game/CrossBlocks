@@ -1,18 +1,28 @@
 // ═══ CROSSBLOCKS — Admin Panel ═══
 
 const ADMIN_PASSWORD = "crossblocks123";
+var isAdmin = false;
 
 function promptAdmin() {
+  if (isAdmin) { openAdmin(); return; }
   var pwd = prompt("Mot de passe admin :");
-  if (pwd === ADMIN_PASSWORD) openAdmin();
+  if (pwd === ADMIN_PASSWORD) {
+    isAdmin = true;
+    var btn = document.getElementById("admin-btn");
+    if (btn) { btn.textContent = "🔓 Admin"; btn.style.borderColor = "var(--accent)"; btn.style.color = "var(--accent)"; }
+    openAdmin();
+  }
   else if (pwd !== null) alert("Mot de passe incorrect.");
 }
 
 function openAdmin() {
   document.getElementById("adminPanel").style.display = "flex";
+  // Show balance tab only in admin mode
+  var balTab = document.getElementById("admin-bal-tab");
+  if (balTab) balTab.style.display = isAdmin ? "inline-flex" : "none";
   renderAdmin();
   renderPending();
-  renderBalance();
+  if (isAdmin) renderBalance();
 }
 
 function closeAdmin() {

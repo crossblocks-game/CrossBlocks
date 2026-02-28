@@ -81,7 +81,7 @@
     <p class="site-desc" itemprop="description">Le <strong>wargame LEGO Star Wars</strong> gratuit en ligne.<br>
       <strong>Créez vos cartes</strong> d'unités, simulez des batailles et exportez en PDF.</p>
     <div class="header-buttons">
-      <a href="https://discord.gg/CMntzhndfs" target="_blank" class="btn btn-discord" rel="noopener">💬 Discord</a>
+      <a href="https://discord.gg/CMntzhndfs" target="_blank" class="btn btn-discord" rel="noopener" onclick="window.open(this.href,'_blank');return false;">💬 Discord</a>
     </div>
   </header>
 
@@ -276,7 +276,7 @@
 
   <!-- FOOTER -->
   <footer class="site-footer">
-    <button class="btn btn-admin-visible" onclick="promptAdmin()">🔒 Admin</button>
+    <button class="btn btn-admin-visible" id="admin-btn" onclick="promptAdmin()">🔒 Admin</button>
     <nav class="footer-links">
       <a href="index.html">Éditeur de cartes</a> ·
       <a href="game.html">Simulateur de batailles</a>
@@ -294,7 +294,7 @@
       <div class="admin-tabs">
         <button class="btn btn-admtab active" onclick="switchAdminTab('config',this)">⚙️ Config</button>
         <button class="btn btn-admtab" onclick="switchAdminTab('pending',this)">📬 Propositions</button>
-        <button class="btn btn-admtab" onclick="switchAdminTab('balance',this)">⚖️ Balance</button>
+        <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)">⚖️ Balance</button>
       </div>
       <div class="admin-body" id="admin-config">
         <h3>Thèmes disponibles</h3>
