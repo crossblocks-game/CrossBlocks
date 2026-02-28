@@ -122,7 +122,7 @@ function renderAdmin() {
   });
 }
 
-// ═══ BALANCE ANALYSIS (Lanchester) ═══
+// ═══ BALANCE ANALYSIS (Lanchester) + REBALANCER ═══
 
 function balWeaponDmg(w, targetArm) {
   if (!w) return 0;
@@ -171,73 +171,205 @@ function analyzeUnit(unit) {
   var paAfterFire = pa - nFires * 2;
   var mobilityBonus = 1 + paAfterFire * 0.05 + move * 0.03;
 
-  // Value = combat power / cost
+  // Combat power
   var combatPower = lifetime * mobilityBonus;
   var value = unit.points > 0 ? (combatPower / unit.points * 1000) : 0;
 
-  // Suggested price (same formula as calcPrice)
+  // Raw theoretical price (Lanchester formula)
   var BASE = 40;
   var totalPen = 0;
   for (var k = 0; k < nFires; k++) totalPen += Math.max(0, wDmgs[k].pen - 4);
   var weaponFactor = 1 + Math.pow(dpt, 0.8) * 0.5 + totalPen * 0.06;
   var mobFactor = 1 + paAfterFire * 0.05 + move * 0.03;
-  var suggestedPrice = Math.round((BASE * hpFactor * survivalMult * weaponFactor * mobFactor) / 10) * 10;
+  var rawTheoretical = BASE * hpFactor * survivalMult * weaponFactor * mobFactor;
 
   return {
-    effHP: effHP.toFixed(1),
-    dpt: dpt.toFixed(2),
+    effHP: effHP,
+    dpt: dpt,
     nFires: nFires,
     paMove: paAfterFire,
-    lifetime: lifetime.toFixed(1),
-    value: value.toFixed(1),
-    suggested: suggestedPrice,
-    diff: suggestedPrice - unit.points,
+    lifetime: lifetime,
+    combatPower: combatPower,
+    value: value,
+    rawTheoretical: rawTheoretical,
     parade: Math.round(parade * 100)
   };
 }
 
-function renderBalance() {
-  renderBalanceTable(GALLERY, "balance-table");
-  renderBalanceTable(VEHICLES, "balance-table-vehicles");
-}
+// ═══ SMART REBALANCER ═══
+// Soft corrections: blend toward theoretical, clamped to ±25% max
+// This keeps gameplay intact while fixing the worst outliers
 
-function renderBalanceTable(source, containerId) {
-  var container = document.getElementById(containerId);
-  if (!container) return;
+function computeRebalance(source) {
+  var results = [];
 
-  var html = '<table class="bal-table"><thead><tr>' +
-    '<th>Nom</th><th>Faction</th><th>Pts</th><th>PVeff</th>' +
-    '<th>DPT</th><th>Tirs</th><th>PA mvt</th>' +
-    '<th>Prix suggéré</th><th>Écart</th><th>Ratio</th>' +
-    '</tr></thead><tbody>';
-
+  // 1. Analyze all units
   for (var i = 0; i < source.length; i++) {
     var u = source[i];
     var a = analyzeUnit(u);
+    results.push({ unit: u, analysis: a, index: i });
+  }
+
+  // 2. Calibration: anchor on Clone Phase 2 at 200pts
+  //    Find ratio between raw theoretical and actual price for the reference unit
+  var refUnit = null;
+  for (var r = 0; r < results.length; r++) {
+    if (results[r].unit.points === 200 && results[r].unit.hp === 2 && results[r].unit.armor === 15) {
+      refUnit = results[r]; break;
+    }
+  }
+  // Fallback: use average ratio of all standard infantry (≤300 pts)
+  var calibrationRatio = 1;
+  if (refUnit && refUnit.analysis.rawTheoretical > 0) {
+    calibrationRatio = 200 / refUnit.analysis.rawTheoretical;
+  } else {
+    var sum = 0, cnt = 0;
+    for (var c = 0; c < results.length; c++) {
+      if (results[c].unit.points <= 300 && results[c].analysis.rawTheoretical > 0) {
+        sum += results[c].unit.points / results[c].analysis.rawTheoretical;
+        cnt++;
+      }
+    }
+    if (cnt > 0) calibrationRatio = sum / cnt;
+  }
+
+  // 3. Compute suggested prices with soft correction
+  for (var s = 0; s < results.length; s++) {
+    var res = results[s];
+    var currentPts = res.unit.points;
+    var theoretical = Math.round(res.analysis.rawTheoretical * calibrationRatio / 10) * 10;
+
+    // Soft blend: move 50% toward theoretical
+    var blended = Math.round((currentPts * 0.5 + theoretical * 0.5) / 10) * 10;
+
+    // Clamp: max ±25% change from current
+    var maxUp = Math.round(currentPts * 1.25 / 10) * 10;
+    var maxDown = Math.round(currentPts * 0.75 / 10) * 10;
+    var suggested = Math.max(maxDown, Math.min(maxUp, blended));
+
+    // Round to 10
+    suggested = Math.round(suggested / 10) * 10;
+    if (suggested < 50) suggested = 50; // minimum price
+
+    var diff = suggested - currentPts;
+    var pctDiff = currentPts > 0 ? (diff / currentPts) : 0;
+
+    // Status
+    var status, reason;
+    if (Math.abs(pctDiff) < 0.05) {
+      status = "ok";
+      reason = "Équilibré";
+    } else if (diff > 0) {
+      status = "up";
+      reason = "Sous-coté: puissance de feu élevée pour le coût";
+      if (res.analysis.effHP > 4) reason = "Sous-coté: trop résistant pour le coût";
+      if (res.analysis.dpt > 1.5 && res.analysis.effHP > 3) reason = "Sous-coté: combo dégâts + survie trop fort";
+    } else {
+      status = "down";
+      reason = "Sur-coté: dégâts faibles pour le prix";
+      if (res.analysis.parade > 50) reason = "Sur-coté: armure trop faible, meurt vite";
+      if (res.analysis.paMove <= 0) reason = "Sur-coté: pas de mobilité restante";
+    }
+
+    res.suggested = suggested;
+    res.diff = diff;
+    res.pctDiff = pctDiff;
+    res.status = status;
+    res.reason = reason;
+    res.theoretical = theoretical;
+  }
+
+  return results;
+}
+
+function renderBalance() {
+  renderBalanceSection(GALLERY, "balance-table", "units");
+  renderBalanceSection(VEHICLES, "balance-table-vehicles", "vehicles");
+}
+
+function renderBalanceSection(source, containerId, sourceKey) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+
+  var results = computeRebalance(source);
+
+  // Count issues
+  var issues = results.filter(function(r) { return r.status !== "ok"; }).length;
+  var issueText = issues === 0
+    ? '<span style="color:#3fb950">Toutes les unités sont équilibrées.</span>'
+    : '<span style="color:#f59e0b">' + issues + ' ajustement(s) recommandé(s)</span>';
+
+  var html = '<div style="margin-bottom:8px;font-size:11px">' + issueText + '</div>';
+
+  html += '<table class="bal-table"><thead><tr>' +
+    '<th>Nom</th><th>Faction</th><th>Actuel</th>' +
+    '<th>PVeff</th><th>DPT</th><th>Théorique</th>' +
+    '<th>Conseillé</th><th>Écart</th><th>Diagnostic</th><th></th>' +
+    '</tr></thead><tbody>';
+
+  for (var i = 0; i < results.length; i++) {
+    var r = results[i];
+    var u = r.unit;
     var fac = CONFIG.factions[u.faction] || { color: "#888" };
 
-    // Rating
-    var absDiff = Math.abs(a.diff);
-    var pctDiff = u.points > 0 ? a.diff / u.points : 0;
-    var ratingClass, ratingLabel;
-    if (pctDiff > 0.3) { ratingClass = "bal-weak"; ratingLabel = "sous-coté"; }
-    else if (pctDiff < -0.3) { ratingClass = "bal-op"; ratingLabel = "OP"; }
-    else { ratingClass = "bal-good"; ratingLabel = "OK"; }
+    var statusClass = r.status === "ok" ? "bal-good" : r.status === "up" ? "bal-weak" : "bal-op";
+    var arrow = r.diff > 0 ? "▲" : r.diff < 0 ? "▼" : "=";
+    var diffStr = r.diff === 0 ? "—" : (r.diff > 0 ? "+" : "") + r.diff;
+    var pctStr = Math.abs(r.pctDiff) < 0.01 ? "" : " (" + (r.pctDiff > 0 ? "+" : "") + Math.round(r.pctDiff * 100) + "%)";
+
+    // Apply button (only if diff ≠ 0)
+    var applyBtn = r.diff !== 0
+      ? '<button class="btn-approve" style="font-size:9px;padding:2px 6px" onclick="applyRebalance(\'' + sourceKey + '\',' + i + ',' + r.suggested + ')">Appliquer</button>'
+      : '';
 
     html += '<tr>' +
-      '<td class="bal-name">' + u.icon + ' ' + u.name + '</td>' +
+      '<td class="bal-name">' + u.name + '</td>' +
       '<td><span style="color:' + fac.color + '">' + u.faction + '</span></td>' +
       '<td class="bal-val">' + u.points + '</td>' +
-      '<td>' + a.effHP + '</td>' +
-      '<td>' + a.dpt + '</td>' +
-      '<td>' + a.nFires + '</td>' +
-      '<td>' + a.paMove + '</td>' +
-      '<td class="bal-val">' + a.suggested + '</td>' +
-      '<td class="bal-val ' + ratingClass + '">' + (a.diff > 0 ? "+" : "") + a.diff + '</td>' +
-      '<td class="' + ratingClass + '">' + ratingLabel + '</td>' +
+      '<td>' + r.analysis.effHP.toFixed(1) + '</td>' +
+      '<td>' + r.analysis.dpt.toFixed(2) + '</td>' +
+      '<td class="bal-val" style="color:#888">' + r.theoretical + '</td>' +
+      '<td class="bal-val" style="font-weight:900;color:' + (r.status === "ok" ? "#3fb950" : "#f0c040") + '">' + r.suggested + '</td>' +
+      '<td class="bal-val ' + statusClass + '">' + arrow + ' ' + diffStr + pctStr + '</td>' +
+      '<td style="font-size:9px;color:' + (r.status === "ok" ? "#3fb950" : "#f59e0b") + '">' + r.reason + '</td>' +
+      '<td>' + applyBtn + '</td>' +
       '</tr>';
   }
 
   html += '</tbody></table>';
+
+  // "Apply all" button
+  if (issues > 0) {
+    html += '<div style="margin-top:10px;display:flex;gap:8px;align-items:center">' +
+      '<button class="btn-approve" style="padding:5px 14px;font-size:11px" onclick="applyAllRebalance(\'' + sourceKey + '\')">Appliquer tout (' + issues + ' changements)</button>' +
+      '<span style="font-size:10px;color:var(--text2)">Les points seront modifiés dans la galerie. Max ±25% par unité.</span>' +
+      '</div>';
+  }
+
   container.innerHTML = html;
+}
+
+function applyRebalance(sourceKey, index, newPrice) {
+  var source = sourceKey === "vehicles" ? VEHICLES : GALLERY;
+  if (source[index]) {
+    var old = source[index].points;
+    source[index].points = newPrice;
+    renderBalance();
+    renderGallery();
+  }
+}
+
+function applyAllRebalance(sourceKey) {
+  var source = sourceKey === "vehicles" ? VEHICLES : GALLERY;
+  var results = computeRebalance(source);
+  var count = 0;
+  for (var i = 0; i < results.length; i++) {
+    if (results[i].diff !== 0) {
+      source[results[i].index].points = results[i].suggested;
+      count++;
+    }
+  }
+  renderBalance();
+  renderGallery();
+  alert(count + " prix mis à jour.");
 }

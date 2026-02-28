@@ -307,15 +307,16 @@
         <p class="admin-desc">Les joueurs peuvent proposer de nouvelles unités et armes. Approuvez-les pour les ajouter à la galerie.</p>
       </div>
       <div class="admin-body" id="admin-balance" style="display:none">
-        <h3>⚖️ Analyse d'équilibre — Loi de Lanchester</h3>
-        <p class="admin-desc">Valeur de combat de chaque unité. Plus le ratio est élevé, plus l'unité est rentable pour son coût.</p>
+        <h3>Rééquilibrage — Analyse Lanchester</h3>
+        <p class="admin-desc">Système de rééquilibrage proportionnel. Les prix sont ajustés en douceur (max ±25%) par rapport aux prix actuels, calibrés sur le Clone Phase 2 = 200pts. Chaque suggestion peut être appliquée individuellement ou en lot.</p>
+        <h4 style="margin-top:12px;color:var(--accent);font-size:12px">Unités</h4>
         <div id="balance-table"></div>
-        <h3 style="margin-top:14px">🚗 Véhicules</h3>
+        <h4 style="margin-top:14px;color:var(--accent);font-size:12px">Véhicules</h4>
         <div id="balance-table-vehicles"></div>
         <div class="balance-legend">
-          <span class="bl-good">✅ Équilibré</span>
-          <span class="bl-op">🔴 Potentiellement OP</span>
-          <span class="bl-weak">🔵 Sous-coté</span>
+          <span class="bl-good">= Équilibré</span>
+          <span class="bl-op">▼ Sur-coté (réduire)</span>
+          <span class="bl-weak">▲ Sous-coté (augmenter)</span>
         </div>
       </div>
     </div>
