@@ -188,6 +188,11 @@ body {
 .weapon-option input[type="checkbox"] { accent-color:var(--accent); cursor:pointer; width:14px; height:14px; }
 .weapon-option .w-name { color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .weapon-option .w-stats { color:var(--text2); font-size:9px; white-space:nowrap; text-align:right; }
+.w-pending {
+  display:inline-block; background:#f59e0b33; color:#f59e0b;
+  font-size:8px; font-weight:700; padding:0 4px; border-radius:2px;
+  margin-left:4px; vertical-align:middle;
+}
 
 /* ═══ CARD PREVIEW ═══ */
 .preview-area {
@@ -266,7 +271,6 @@ body {
   background:#00000055; backdrop-filter:blur(4px);
   border-radius:3px; padding:2px 5px; font-size:9px;
 }
-.card-weapon .cw-icon { font-size:11px; flex-shrink:0; }
 .card-weapon .cw-name { flex:1; font-weight:700; font-size:10px; }
 .card-weapon .cw-stat {
   color:var(--accent); font-family:'Orbitron', monospace;
@@ -360,7 +364,16 @@ body {
 .gallery-card.gc-added {
   border-color:var(--green); background:#40b86010;
 }
-.gc-icon { font-size:24px; flex-shrink:0; }
+.gc-initial {
+  width:32px; height:32px; border-radius:6px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Orbitron',monospace; font-weight:700; font-size:14px;
+}
+.gc-pending {
+  display:inline-block; background:#f59e0b33; color:#f59e0b;
+  font-size:9px; font-weight:700; padding:1px 5px; border-radius:3px;
+  margin-left:4px; vertical-align:middle; text-transform:uppercase;
+}
 .gc-info { flex:1; min-width:0; }
 .gc-name {
   font-family:'Orbitron', monospace; font-size:11px; font-weight:700;

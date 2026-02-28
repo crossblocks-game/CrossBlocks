@@ -6,39 +6,39 @@ let selectedWeapons = [];
 // ═══ GALERIE D'UNITÉS PRÉ-FAITES (d'après les règles officielles) ═══
 var GALLERY = [
   // ── République (Clones) ──
-  { name:"Clone Phase 2", faction:"République", theme:"clone", points:200, hp:2, armor:15, move:0, pa:5, weapons:["SW Fusil laser (bleu)"], icon:"🪖" },
-  { name:"Clone Phase 2 de Geonosis", faction:"République", theme:"clone", points:230, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], icon:"🪖" },
-  { name:"Clone Spécialiste 501ème", faction:"République", theme:"clone", points:250, hp:2, armor:15, move:0, pa:5, weapons:["SW Double fusil laser lourd (bleu)"], icon:"🎖️" },
-  { name:"Clone Sniper 501ème", faction:"République", theme:"military", points:260, hp:2, armor:15, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"], icon:"🎯" },
-  { name:"Clone Phase 2 (Sniper)", faction:"République", theme:"clone", points:260, hp:2, armor:15, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"], icon:"🎯" },
-  { name:"Clone Officier 501ème", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet laser (bleu)"], icon:"📋" },
-  { name:"Clone de Coruscant", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet laser (bleu)"], icon:"🏛️" },
-  { name:"Clone Airborne de Geonosis", faction:"République", theme:"military", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], icon:"🪂", special:"Largage" },
-  { name:"Commandant Rex", faction:"République", theme:"metal", points:400, hp:2, armor:12, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"], icon:"⭐" },
-  { name:"Commandant Fives", faction:"République", theme:"metal", points:430, hp:2, armor:13, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"], icon:"⭐", special:"Kit de soin" },
+  { name:"SW Clone Phase 2", faction:"République", theme:"clone", points:200, hp:2, armor:15, move:0, pa:5, weapons:["SW Fusil laser (bleu)"] },
+  { name:"SW Clone Phase 2 de Geonosis", faction:"République", theme:"clone", points:230, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"] },
+  { name:"SW Clone Spécialiste 501ème", faction:"République", theme:"clone", points:250, hp:2, armor:15, move:0, pa:5, weapons:["SW Double fusil laser lourd (bleu)"] },
+  { name:"SW Clone Sniper 501ème", faction:"République", theme:"military", points:260, hp:2, armor:15, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"] },
+  { name:"SW Clone Phase 2 (Sniper)", faction:"République", theme:"clone", points:260, hp:2, armor:15, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"] },
+  { name:"SW Clone Officier 501ème", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet laser (bleu)"] },
+  { name:"SW Clone de Coruscant", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet laser (bleu)"] },
+  { name:"SW Clone Airborne de Geonosis", faction:"République", theme:"military", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], special:"Largage" },
+  { name:"SW Commandant Rex", faction:"République", theme:"metal", points:400, hp:2, armor:12, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"] },
+  { name:"SW Commandant Fives", faction:"République", theme:"metal", points:430, hp:2, armor:13, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"], special:"Kit de soin" },
 
   // ── Séparatistes ──
-  { name:"Droïde de combat B1", faction:"Séparatistes", theme:"parchment", points:170, hp:2, armor:18, move:0, pa:4, weapons:["SW Fusil laser (rouge)"], icon:"🤖" },
-  { name:"Droïde de combat lourd B2", faction:"Séparatistes", theme:"industrial", points:300, hp:3, armor:11, move:-2, pa:4, weapons:["x2 SW Fusils de poing laser (rouge)"], icon:"💪" },
-  { name:"Tri-Droïde", faction:"Séparatistes", theme:"industrial", points:1800, hp:10, armor:6, move:2, pa:4, weapons:["x3 SW Tourelles rotatives laser","x3 SW Rockets laser (usage unique)"], icon:"🕷️" },
+  { name:"SW Droïde de combat B1", faction:"Séparatistes", theme:"parchment", points:170, hp:2, armor:18, move:0, pa:4, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Droïde de combat lourd B2", faction:"Séparatistes", theme:"industrial", points:300, hp:3, armor:11, move:-2, pa:4, weapons:["x2 SW Fusils de poing laser (rouge)"] },
+  { name:"SW Tri-Droïde", faction:"Séparatistes", theme:"industrial", points:1800, hp:10, armor:6, move:2, pa:4, weapons:["x3 SW Tourelles rotatives laser","x3 SW Rockets laser (usage unique)"] },
 
   // ── Rebelles ──
-  { name:"Rebelle (Blaster)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Blaster laser (rouge)"], icon:"✊" },
-  { name:"Rebelle (Fusil)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Fusil laser (rouge)"], icon:"✊" },
-  { name:"Rebelle (Pistolet)", faction:"Rebelles", theme:"rebel", points:150, hp:2, armor:17, move:0, pa:5, weapons:["SW Pistolet laser (rouge)"], icon:"✊" },
-  { name:"Garde Rebelle", faction:"Rebelles", theme:"rebel", points:200, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], icon:"🛡️" },
-  { name:"Rebelle Jetpack", faction:"Rebelles", theme:"rebel", points:240, hp:2, armor:17, move:2, pa:5, weapons:["SW Blaster laser (rouge)"], icon:"🚀", special:"Jetpack / Vol" },
+  { name:"SW Rebelle (Blaster)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Rebelle (Fusil)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Rebelle (Pistolet)", faction:"Rebelles", theme:"rebel", points:150, hp:2, armor:17, move:0, pa:5, weapons:["SW Pistolet laser (rouge)"] },
+  { name:"SW Garde Rebelle", faction:"Rebelles", theme:"rebel", points:200, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (bleu)"] },
+  { name:"SW Rebelle Jetpack", faction:"Rebelles", theme:"rebel", points:240, hp:2, armor:17, move:2, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Jetpack / Vol" },
 ];
 
 // ═══ VÉHICULES (onglet séparé) ═══
 var VEHICLES = [
   // ── République ──
-  { name:"Motojet CRAM", faction:"République", theme:"metal", points:1000, hp:6, armor:12, move:4, pa:5, weapons:["x2 SW Fusils laser de Motojet (bleu)","x2 SW Snipers laser lourds montés (bleu)"], icon:"🏍️", special:"Vol / Poste canonnier" },
-  { name:"TR-TT", faction:"République", theme:"military", points:1800, hp:8, armor:10, move:1, pa:5, weapons:["SW Blaster à répétition monté (bleu)","SW Canon laser monté (bleu)"], icon:"🦏", special:"Poste canonnier" },
-  { name:"Canon anti-char AV-7", faction:"République", theme:"military", points:1600, hp:6, armor:12, move:-3, pa:5, weapons:["SW Canon anti-char lourd monté (bleu)"], icon:"💣" },
+  { name:"SW Motojet CRAM", faction:"République", theme:"metal", points:1000, hp:6, armor:12, move:4, pa:5, weapons:["x2 SW Fusils laser de Motojet (bleu)","x2 SW Snipers laser lourds montés (bleu)"], special:"Vol / Poste canonnier" },
+  { name:"SW TR-TT", faction:"République", theme:"military", points:1800, hp:8, armor:10, move:1, pa:5, weapons:["SW Blaster à répétition monté (bleu)","SW Canon laser monté (bleu)"], special:"Poste canonnier" },
+  { name:"SW Canon anti-char AV-7", faction:"République", theme:"military", points:1600, hp:6, armor:12, move:-3, pa:5, weapons:["SW Canon anti-char lourd monté (bleu)"] },
 
   // ── Séparatistes ──
-  { name:"STAP Droïde", faction:"Séparatistes", theme:"industrial", points:650, hp:5, armor:12, move:3, pa:5, weapons:["x2 SW Canons laser STAP (rouge)"], icon:"🏍️", special:"Vol" },
+  { name:"SW STAP Droïde", faction:"Séparatistes", theme:"industrial", points:650, hp:5, armor:12, move:3, pa:5, weapons:["x2 SW Canons laser STAP (rouge)"], special:"Vol" },
 ];
 
 // ═══ LOCALSTORAGE ═══
@@ -156,10 +156,13 @@ function renderGallery() {
     var isVehicle = currentGalleryTab === "vehicles";
     var arrayName = isVehicle ? "VEHICLES" : "GALLERY";
 
+    // Pending badge
+    var pendingBadge = unit._pending ? ' <span class="gc-pending">non validé</span>' : '';
+
     el.innerHTML =
-      '<span class="gc-icon">' + unit.icon + '</span>' +
+      '<span class="gc-initial" style="background:' + fac.color + '22;color:' + fac.color + '">' + unit.faction.charAt(0) + '</span>' +
       '<div class="gc-info">' +
-        '<div class="gc-name">' + unit.name + '</div>' +
+        '<div class="gc-name">' + unit.name + pendingBadge + '</div>' +
         '<div class="gc-meta">' +
           '<span class="gc-faction" style="background:' + fac.color + '22;color:' + fac.color + '">' + unit.faction + '</span> ' +
           unit.weapons.join(", ") +
@@ -249,6 +252,9 @@ document.addEventListener("DOMContentLoaded", function() {
   populateFactions();
   populateWeapons();
   updatePreview();
+  // Load community suggestions into live data (pending + approved)
+  loadSuggestions();
+
   renderGallery();
   populateSuggestFactions();
   updateSuggestCount();
@@ -293,7 +299,6 @@ function populateWeapons() {
   for (var i = 0; i < weaponNames.length; i++) {
     var name = weaponNames[i];
     var w = CONFIG.weapons[name];
-    var icon = w.icon || "🔫";
     var label = document.createElement("label");
     label.className = "weapon-option";
 
@@ -304,7 +309,13 @@ function populateWeapons() {
 
     var nameSpan = document.createElement("span");
     nameSpan.className = "w-name";
-    nameSpan.textContent = icon + " " + name;
+    nameSpan.textContent = name;
+    if (w._pending) {
+      var badge = document.createElement("span");
+      badge.className = "w-pending";
+      badge.textContent = "non validé";
+      nameSpan.appendChild(badge);
+    }
 
     var statsSpan = document.createElement("span");
     statsSpan.className = "w-stats";
@@ -369,7 +380,6 @@ function updatePreview() {
       const w = CONFIG.weapons[wName];
       if (!w) return "";
       return '<div class="card-weapon">' +
-        '<span class="cw-icon">' + w.icon + '</span>' +
         '<span class="cw-name">' + wName + '</span>' +
         '<span class="cw-stat">' + w.mun + '\uD83C\uDFB2 P' + w.pen + ' D' + w.dmg + '</span>' +
       '</div>';
@@ -448,7 +458,6 @@ function displayCards() {
         var w = CONFIG.weapons[wName];
         if (!w) return;
         weaponHTML += '<div class="card-weapon">' +
-          '<span class="cw-icon">' + w.icon + '</span>' +
           '<span class="cw-name">' + wName + '</span>' +
           '<span class="cw-stat">' + w.mun + '\uD83C\uDFB2 P' + w.pen + ' D' + w.dmg + '</span>' +
         '</div>';
@@ -750,6 +759,9 @@ function calcPrice() {
 }
 
 // ═══ COMMUNITY SUGGESTIONS ═══
+// Pending = usable locally with "non validé" badge
+// Approved = official, no badge
+// Rejected = removed entirely
 var SG_KEY = "crossblocks_suggestions";
 
 function getSuggestions() {
@@ -758,6 +770,40 @@ function getSuggestions() {
 }
 function saveSuggestions(arr) {
   try { localStorage.setItem(SG_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// Load all pending+approved suggestions into live lists
+function loadSuggestions() {
+  var arr = getSuggestions();
+  for (var i = 0; i < arr.length; i++) {
+    var s = arr[i];
+    if (s.status === "rejected") continue;
+    var isPending = s.status === "pending";
+
+    if (s.type === "unit") {
+      // Avoid duplicates (check by name)
+      var exists = false;
+      for (var j = 0; j < GALLERY.length; j++) {
+        if (GALLERY[j].name === s.name) { exists = true; break; }
+      }
+      if (!exists) {
+        GALLERY.push({
+          name: s.name, faction: s.faction, theme: s.theme || "metal",
+          points: s.points, hp: s.hp, armor: s.armor, move: s.move, pa: s.pa,
+          weapons: s.weapons, special: s.notes || null,
+          _pending: isPending, _sgIndex: i
+        });
+      }
+    } else if (s.type === "weapon") {
+      if (!CONFIG.weapons[s.name]) {
+        CONFIG.weapons[s.name] = {
+          mun: s.mun, diff: s.diff, pen: s.pen, dmg: s.dmg,
+          portee: s.portee,
+          _pending: isPending, _sgIndex: i
+        };
+      }
+    }
+  }
 }
 
 function switchSuggestTab(tab, btn) {
@@ -777,6 +823,7 @@ function submitSuggestion(type) {
       type: "unit",
       name: name,
       faction: document.getElementById("sg-faction").value,
+      theme: "metal",
       points: parseInt(document.getElementById("sg-pts").value) || 200,
       hp: parseInt(document.getElementById("sg-hp").value) || 2,
       armor: parseInt(document.getElementById("sg-arm").value) || 15,
@@ -803,18 +850,38 @@ function submitSuggestion(type) {
       status: "pending"
     };
   }
+
   var arr = getSuggestions();
   arr.push(sg);
   saveSuggestions(arr);
+
+  // Immediately add to live lists (usable locally)
+  var idx = arr.length - 1;
+  if (sg.type === "unit") {
+    GALLERY.push({
+      name: sg.name, faction: sg.faction, theme: sg.theme || "metal",
+      points: sg.points, hp: sg.hp, armor: sg.armor, move: sg.move, pa: sg.pa,
+      weapons: sg.weapons, special: sg.notes || null,
+      _pending: true, _sgIndex: idx
+    });
+    renderGallery();
+  } else {
+    CONFIG.weapons[sg.name] = {
+      mun: sg.mun, diff: sg.diff, pen: sg.pen, dmg: sg.dmg,
+      portee: sg.portee, _pending: true, _sgIndex: idx
+    };
+    populateWeapons();
+  }
+
   updateSuggestCount();
-  alert("✅ Merci ! Votre proposition a été envoyée et sera examinée par l'admin.");
+  alert("✅ Proposition ajoutée ! Elle est utilisable immédiatement et sera validée par l'admin.");
 }
 
 function updateSuggestCount() {
   var el = document.getElementById("suggest-count");
   if (!el) return;
   var pending = getSuggestions().filter(function(s) { return s.status === "pending"; });
-  el.textContent = pending.length > 0 ? "📬 " + pending.length + " proposition(s) en attente de validation" : "";
+  el.textContent = pending.length > 0 ? pending.length + " proposition(s) en attente de validation" : "";
 }
 
 function populateSuggestFactions() {
@@ -836,31 +903,35 @@ function renderPending() {
   var arr = getSuggestions();
   var pending = arr.filter(function(s) { return s.status === "pending"; });
 
+  var html = '<h3>Propositions en attente</h3>' +
+    '<p class="admin-desc">Les propositions sont utilisables localement. Approuver les rend officielles (badge retiré).</p>';
+
   if (pending.length === 0) {
-    container.innerHTML = '<p style="color:var(--text2);font-size:12px">Aucune proposition en attente.</p>';
+    html += '<p style="color:var(--text2);font-size:12px;margin-top:8px">Aucune proposition en attente.</p>';
+    container.innerHTML = html;
     return;
   }
 
-  var html = '<div class="pending-list">';
+  html += '<div class="pending-list">';
   for (var i = 0; i < arr.length; i++) {
     if (arr[i].status !== "pending") continue;
     var s = arr[i];
     if (s.type === "unit") {
       html += '<div class="pending-item">' +
-        '<div class="pi-info"><span class="pi-name">🪖 ' + s.name + '</span> (' + s.faction + ')' +
+        '<div class="pi-info"><span class="pi-name">' + s.name + '</span> (' + s.faction + ')' +
         '<div class="pi-meta">' + s.points + 'pts | PV:' + s.hp + ' Arm:' + s.armor + '+ PA:' + s.pa +
         ' MM:' + s.move + ' | Armes: ' + s.weapons.join(", ") +
         (s.notes ? ' | ' + s.notes : '') + ' | ' + s.date + '</div></div>' +
-        '<button class="btn-approve" onclick="approveSuggestion(' + i + ')">✓ Approuver</button>' +
-        '<button class="btn-reject" onclick="rejectSuggestion(' + i + ')">✗ Rejeter</button></div>';
+        '<button class="btn-approve" onclick="approveSuggestion(' + i + ')">Approuver</button>' +
+        '<button class="btn-reject" onclick="rejectSuggestion(' + i + ')">Rejeter</button></div>';
     } else {
       html += '<div class="pending-item">' +
-        '<div class="pi-info"><span class="pi-name">🔫 ' + s.name + '</span>' +
+        '<div class="pi-info"><span class="pi-name">' + s.name + '</span>' +
         '<div class="pi-meta">Mun:' + s.mun + ' Diff:' + s.diff + ' Pen:' + s.pen +
         ' Dmg:' + s.dmg + ' | ' + s.portee +
         (s.notes ? ' | ' + s.notes : '') + ' | ' + s.date + '</div></div>' +
-        '<button class="btn-approve" onclick="approveSuggestion(' + i + ')">✓ Approuver</button>' +
-        '<button class="btn-reject" onclick="rejectSuggestion(' + i + ')">✗ Rejeter</button></div>';
+        '<button class="btn-approve" onclick="approveSuggestion(' + i + ')">Approuver</button>' +
+        '<button class="btn-reject" onclick="rejectSuggestion(' + i + ')">Rejeter</button></div>';
     }
   }
   html += '</div>';
@@ -872,34 +943,45 @@ function approveSuggestion(index) {
   var s = arr[index];
   if (!s) return;
 
+  // Update status in localStorage
+  arr[index].status = "approved";
+  saveSuggestions(arr);
+
+  // Remove _pending flag from live data
   if (s.type === "unit") {
-    // Add to GALLERY
-    GALLERY.push({
-      name: s.name, faction: s.faction, theme: "metal",
-      points: s.points, hp: s.hp, armor: s.armor, move: s.move, pa: s.pa,
-      weapons: s.weapons, icon: "🆕", special: s.notes || null
-    });
+    for (var i = 0; i < GALLERY.length; i++) {
+      if (GALLERY[i].name === s.name) { GALLERY[i]._pending = false; break; }
+    }
     renderGallery();
   } else {
-    // Add to CONFIG.weapons
-    CONFIG.weapons[s.name] = {
-      mun: s.mun, diff: s.diff, pen: s.pen, dmg: s.dmg,
-      portee: s.portee, icon: "🆕"
-    };
+    if (CONFIG.weapons[s.name]) CONFIG.weapons[s.name]._pending = false;
     populateWeapons();
   }
 
-  arr[index].status = "approved";
-  saveSuggestions(arr);
   renderPending();
   updateSuggestCount();
-  alert("✅ " + s.name + " approuvé(e) et ajouté(e) !");
 }
 
 function rejectSuggestion(index) {
   var arr = getSuggestions();
-  if (!arr[index]) return;
-  var name = arr[index].name;
+  var s = arr[index];
+  if (!s) return;
+
+  // Remove from live data
+  if (s.type === "unit") {
+    for (var i = GALLERY.length - 1; i >= 0; i--) {
+      if (GALLERY[i].name === s.name && GALLERY[i]._sgIndex === index) {
+        GALLERY.splice(i, 1); break;
+      }
+    }
+    renderGallery();
+  } else {
+    if (CONFIG.weapons[s.name] && CONFIG.weapons[s.name]._sgIndex === index) {
+      delete CONFIG.weapons[s.name];
+    }
+    populateWeapons();
+  }
+
   arr[index].status = "rejected";
   saveSuggestions(arr);
   renderPending();
