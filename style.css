@@ -206,13 +206,17 @@ body {
 
 /* ═══ CARD DESIGN ═══ */
 .card {
-  width:100%;
-  padding-bottom:141%; /* aspect ratio 105:148 */
   border-radius:10px;
   position:relative;
   overflow:hidden;
   box-shadow: 0 4px 24px #0008, inset 0 0 0 1px #ffffff08;
   transition: transform .2s;
+}
+/* Full-size cards in grid and preview */
+.card-wrapper .card,
+.preview-area .card {
+  width:100%;
+  aspect-ratio: 105 / 148;
 }
 .card-inner {
   position:absolute; inset:0;
@@ -653,7 +657,7 @@ body {
 
   /* Card preview: full width */
   .preview-area { position:static; margin-top:12px; }
-  .card { max-width:300px; margin:0 auto; }
+  .card-wrapper .card { max-width:300px; margin:0 auto; }
 
   /* Card stats: 2x2 grid on very small */
   .card-stats { grid-template-columns:repeat(2, 1fr); gap:3px; }
@@ -728,3 +732,15 @@ body {
     font-size:16px !important;
   }
 }
+
+/* ═══ THEME BACKGROUNDS ═══ */
+.theme-metal { background: linear-gradient(135deg, #3a3f48, #2a2d32); }
+.theme-dark { background: linear-gradient(135deg, #16161c, #0e0e14); }
+.theme-military { background: linear-gradient(135deg, #3a4420, #2a3218); }
+.theme-parchment { background: linear-gradient(135deg, #eee0c0, #d8c8a0); color:#1a1008; }
+.theme-clone { background: linear-gradient(135deg, #eeeef2, #d8d8e0); color:#1a1a20; }
+.theme-empire { background: linear-gradient(135deg, #0e0a0a, #1a0808); }
+.theme-rebel { background: linear-gradient(135deg, #261e1c, #1a1210); }
+.theme-neon { background: linear-gradient(135deg, #05050a, #0a0a18); }
+.theme-industrial { background: linear-gradient(135deg, #28282c, #1e1e22); }
+.theme-wood { background: linear-gradient(135deg, #4a2e14, #3a2010); }

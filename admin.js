@@ -55,7 +55,7 @@ function renderAdmin() {
     row.style.cssText = "display:flex; align-items:center; gap:6px; margin:3px 0;";
 
     var swatch = document.createElement("div");
-    swatch.className = "card theme-" + t;
+    swatch.className = "theme-swatch theme-" + t;
     swatch.style.cssText = "width:18px; height:18px; border-radius:4px; flex-shrink:0;";
     row.appendChild(swatch);
 
