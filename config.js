@@ -34,5 +34,13 @@ const CONFIG = {
     "Neutre":       { color:"#888888", accent:"#f0c040" },
   },
 
-  siteName: "CrossBlocks"
+  siteName: "CrossBlocks",
+
+  // ═══ REMOTE SUGGESTIONS (jsonblob.com) ═══
+  // Pour activer les suggestions distantes :
+  // 1. Ouvrez un terminal et lancez :
+  //    curl -X POST https://jsonblob.com/api/jsonBlob -H "Content-Type: application/json" -d "[]"
+  // 2. Copiez l'ID du blob depuis l'URL retournée (ex: "1234567890")
+  // 3. Collez-le ci-dessous :
+  remoteSuggestionsId: null  // ex: "1234567890123456789"
 };

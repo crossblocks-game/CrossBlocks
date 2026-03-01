@@ -473,7 +473,6 @@ function displayCards() {
     wrapper.innerHTML =
       '<button class="card-delete" onclick="deleteCard(' + i + ')" title="Supprimer">\u2715</button>' +
       '<div class="card theme-' + c.theme + '">' +
-        '<div class="card-inner">' +
           '<div class="card-header">' +
             '<span class="card-faction-badge" style="border-left:3px solid ' + fac.color + '">' + c.faction + '</span>' +
             '<span class="card-points">\u2B50 ' + c.points + '</span>' +
@@ -487,7 +486,6 @@ function displayCards() {
           '</div>' +
           '<div class="card-weapons">' + weaponHTML + '</div>' +
           '<div class="card-footer">CROSSBLOCKS</div>' +
-        '</div>' +
       '</div>';
 
     container.appendChild(wrapper);
@@ -860,10 +858,18 @@ function calcPrice() {
 }
 
 // ═══ COMMUNITY SUGGESTIONS ═══
+// Local + Remote (jsonblob.com) support
 // Pending = usable locally with "non validé" badge
 // Approved = official, no badge
 // Rejected = removed entirely
+
 var SG_KEY = "crossblocks_suggestions";
+var _remoteLoaded = false;
+
+function getRemoteUrl() {
+  var id = CONFIG.remoteSuggestionsId;
+  return id ? "https://jsonblob.com/api/jsonBlob/" + id : null;
+}
 
 function getSuggestions() {
   try { var d = localStorage.getItem(SG_KEY); return d ? JSON.parse(d) : []; }
@@ -873,16 +879,90 @@ function saveSuggestions(arr) {
   try { localStorage.setItem(SG_KEY, JSON.stringify(arr)); } catch(e) {}
 }
 
+// ── Remote fetch/push ──
+function fetchRemoteSuggestions(callback) {
+  var url = getRemoteUrl();
+  if (!url) { if (callback) callback(null); return; }
+  fetch(url, { headers: { "Content-Type":"application/json", "Accept":"application/json" } })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) { if (callback) callback(Array.isArray(data) ? data : null); })
+    .catch(function() { if (callback) callback(null); });
+}
+
+function pushRemoteSuggestions(arr, callback) {
+  var url = getRemoteUrl();
+  if (!url) { if (callback) callback(false); return; }
+  fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type":"application/json", "Accept":"application/json" },
+    body: JSON.stringify(arr)
+  })
+    .then(function(r) { if (callback) callback(r.ok); })
+    .catch(function() { if (callback) callback(false); });
+}
+
+// Merge remote into local (remote wins on conflict by name+type)
+function mergeSuggestions(local, remote) {
+  if (!remote) return local;
+  var merged = local.slice();
+  var localKeys = {};
+  for (var i = 0; i < local.length; i++) {
+    localKeys[local[i].type + ":" + local[i].name] = i;
+  }
+  for (var j = 0; j < remote.length; j++) {
+    var key = remote[j].type + ":" + remote[j].name;
+    if (key in localKeys) {
+      // Remote wins (admin may have approved/rejected from another device)
+      merged[localKeys[key]] = remote[j];
+    } else {
+      merged.push(remote[j]);
+    }
+  }
+  return merged;
+}
+
 // Load all pending+approved suggestions into live lists
 function loadSuggestions() {
-  var arr = getSuggestions();
+  var local = getSuggestions();
+  injectSuggestions(local);
+
+  // Fetch remote and merge
+  fetchRemoteSuggestions(function(remote) {
+    if (remote) {
+      var merged = mergeSuggestions(local, remote);
+      saveSuggestions(merged);
+      // Re-inject (clear old injected items first)
+      clearInjectedSuggestions();
+      injectSuggestions(merged);
+      renderGallery();
+      populateWeapons();
+      updatePreview();
+      _remoteLoaded = true;
+    }
+  });
+
+  updateSuggestCount();
+}
+
+function clearInjectedSuggestions() {
+  // Remove suggestion-injected items from GALLERY
+  for (var i = GALLERY.length - 1; i >= 0; i--) {
+    if (GALLERY[i]._sgIndex !== undefined) GALLERY.splice(i, 1);
+  }
+  // Remove from CONFIG.weapons
+  var keys = Object.keys(CONFIG.weapons);
+  for (var j = 0; j < keys.length; j++) {
+    if (CONFIG.weapons[keys[j]]._sgIndex !== undefined) delete CONFIG.weapons[keys[j]];
+  }
+}
+
+function injectSuggestions(arr) {
   for (var i = 0; i < arr.length; i++) {
     var s = arr[i];
     if (s.status === "rejected") continue;
     var isPending = s.status === "pending";
 
     if (s.type === "unit") {
-      // Avoid duplicates (check by name)
       var exists = false;
       for (var j = 0; j < GALLERY.length; j++) {
         if (GALLERY[j].name === s.name) { exists = true; break; }
@@ -921,8 +1001,7 @@ function submitSuggestion(type) {
     var name = document.getElementById("sg-name").value.trim();
     if (!name) { alert("Entrez un nom d'unité !"); return; }
     sg = {
-      type: "unit",
-      name: name,
+      type: "unit", name: name,
       faction: document.getElementById("sg-faction").value,
       theme: "metal",
       points: parseInt(document.getElementById("sg-pts").value) || 200,
@@ -939,8 +1018,7 @@ function submitSuggestion(type) {
     var wname = document.getElementById("sgw-name").value.trim();
     if (!wname) { alert("Entrez un nom d'arme !"); return; }
     sg = {
-      type: "weapon",
-      name: wname,
+      type: "weapon", name: wname,
       diff: parseInt(document.getElementById("sgw-diff").value) || 15,
       mun: parseInt(document.getElementById("sgw-mun").value) || 3,
       pen: parseInt(document.getElementById("sgw-pen").value) || 5,
@@ -956,7 +1034,12 @@ function submitSuggestion(type) {
   arr.push(sg);
   saveSuggestions(arr);
 
-  // Immediately add to live lists (usable locally)
+  // Push to remote
+  pushRemoteSuggestions(arr, function(ok) {
+    if (!ok && getRemoteUrl()) console.warn("Échec sync distante, sauvé localement");
+  });
+
+  // Immediately add to live lists
   var idx = arr.length - 1;
   if (sg.type === "unit") {
     GALLERY.push({
@@ -975,7 +1058,7 @@ function submitSuggestion(type) {
   }
 
   updateSuggestCount();
-  alert("✅ Proposition ajoutée ! Elle est utilisable immédiatement et sera validée par l'admin.");
+  alert("✅ Proposition ajoutée ! Elle est synchronisée en ligne et sera validée par l'admin.");
 }
 
 function updateSuggestCount() {
@@ -983,6 +1066,12 @@ function updateSuggestCount() {
   if (!el) return;
   var pending = getSuggestions().filter(function(s) { return s.status === "pending"; });
   el.textContent = pending.length > 0 ? pending.length + " proposition(s) en attente de validation" : "";
+  // Show remote status
+  var remEl = document.getElementById("suggest-remote-status");
+  if (remEl) {
+    remEl.textContent = getRemoteUrl() ? "🌐 Synchronisation distante active" : "📱 Mode local uniquement";
+    remEl.style.color = getRemoteUrl() ? "#3fb950" : "#f59e0b";
+  }
 }
 
 function populateSuggestFactions() {
@@ -1044,9 +1133,14 @@ function approveSuggestion(index) {
   var s = arr[index];
   if (!s) return;
 
-  // Update status in localStorage
   arr[index].status = "approved";
   saveSuggestions(arr);
+
+  // Push to remote
+  pushRemoteSuggestions(arr, function(ok) {
+    if (ok) console.log("✅ Sync distante OK");
+    else if (getRemoteUrl()) console.warn("⚠ Échec sync distante");
+  });
 
   // Remove _pending flag from live data
   if (s.type === "unit") {
@@ -1085,6 +1179,13 @@ function rejectSuggestion(index) {
 
   arr[index].status = "rejected";
   saveSuggestions(arr);
+
+  // Push to remote
+  pushRemoteSuggestions(arr, function(ok) {
+    if (ok) console.log("✅ Sync distante OK");
+    else if (getRemoteUrl()) console.warn("⚠ Échec sync distante");
+  });
+
   renderPending();
   updateSuggestCount();
 }

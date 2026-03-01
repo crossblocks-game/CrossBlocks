@@ -3,72 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CrossBlocks — Simulateur de batailles | Wargame LEGO Star Wars gratuit</title>
-  <meta name="description" content="Simulateur de batailles pour wargame LEGO Star Wars. Composez vos armées, lancez des combats IA vs IA, analysez l'équilibre avec la loi de Lanchester. Gratuit en ligne.">
-  <meta name="keywords" content="wargame LEGO, simulateur bataille, CrossBlocks jeu, wargame Star Wars, stratégie LEGO, jeu de guerre figurines, simulateur wargame gratuit">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://crossblocks-game.github.io/CrossBlocks/game.html">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="CrossBlocks — Simulateur de batailles LEGO Star Wars">
-  <meta property="og:description" content="Composez vos armées et simulez des batailles. Wargame LEGO gratuit avec IA, terrain tactique et analyse d'équilibre.">
-  <meta property="og:url" content="https://crossblocks-game.github.io/CrossBlocks/game.html">
-  <meta property="og:image" content="https://crossblocks-game.github.io/CrossBlocks/logo.svg">
-  <meta property="og:locale" content="fr_FR">
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "VideoGame",
-    "name": "CrossBlocks Simulateur",
-    "description": "Simulateur de batailles pour wargame LEGO Star Wars avec IA intelligente, terrains et analyse d'équilibre",
-    "url": "https://crossblocks-game.github.io/CrossBlocks/game.html",
-    "genre": ["Wargame", "Strategy"],
-    "gamePlatform": "Web",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-    "inLanguage": "fr"
-  }
-  </script>
-  <link rel="icon" href="logo.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>CrossBlock — Wargame LEGO Star Wars</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#0d1117; overflow-x:hidden; font-family:'Rajdhani','Segoe UI',sans-serif; }
-    #root { min-height:100vh; }
-    .site-nav {
-      background:#0a0c12; border-bottom:2px solid #f0c04033;
-      padding:8px 16px; display:flex; align-items:center; gap:12px;
-      position:sticky; top:0; z-index:9999;
-    }
-    .site-nav a {
-      color:#8890a4; text-decoration:none; font-size:13px;
-      font-weight:600; padding:4px 12px; border-radius:5px;
-      transition:all .15s;
-    }
-    .site-nav a:hover { color:#f0c040; background:#1a1f2e; }
-    .site-nav .nav-title {
-      font-family:'Orbitron',monospace; color:#f0c040;
-      font-size:16px; font-weight:900; letter-spacing:3px;
-    }
-    .site-nav .nav-sep { color:#262d40; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d1117; overflow-x: hidden; }
+    #root { min-height: 100vh; }
+    /* Hide Babel warning */
+    .babel-repl-error { display: none !important; }
   </style>
 </head>
 <body>
-
-  <nav class="site-nav">
-    <a href="index.html" class="nav-title">CROSSBLOCKS</a>
-    <span class="nav-sep">|</span>
-    <a href="index.html">📝 Éditeur de cartes</a>
-    <a href="game.html" style="color:#f0c040;background:#1a1f2e;">🎮 Simulateur</a>
-  </nav>
-
   <div id="root"></div>
 
+  <!-- React 18 via CDN -->
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Babel standalone for JSX transpilation -->
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 
   <script type="text/babel" data-presets="react">
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ═══ CONSTANTS ═══ */
 const SPX=2.8, SEG=13, SEG_PX=SEG*SPX, RS=6;
@@ -111,24 +65,7 @@ const UDEFS={
   guard:{n:"Garde Reb.",pts:200,act:5,mm:0,arm:16,hp:2,w:["blast_b"],ic:"🛡",fac:"reb",co:"#884422"},
 };
 
-/* ═══ AI PERSONALITY SYSTEM ═══ */
-// Each unit type has a behavioral profile that shapes AI decisions
-const AI_ROLE={
-  // Snipers: stay far, seek cover, never advance into Cat.1
-  sniper:"sniper",
-  // Airborne/Jetpack: kamikaze rush, maximize damage before death
-  airborne:"kamikaze", rebel_jet:"kamikaze",
-  // Heroes: cautious, high-value, stay behind front line
-  fives:"hero", rex:"hero",
-  // B1 droids: expendable swarm, advance fearlessly
-  b1:"swarm",
-  // Heavy units: advance slowly, absorb damage
-  b2:"heavy", tri_droid:"heavy",
-  // Standard infantry: balanced advance-and-fire
-  clone:"standard", clone_geo:"standard", spec:"standard", officer:"standard",
-  rebel:"standard", rebel_f:"standard", rebel_p:"standard", guard:"standard",
-};
-const getRole=(type)=>AI_ROLE[type]||"standard";
+/* ═══ VEHICLE WEAPONS ═══ */
 const VWEAPS={
   stap_laser_x2:{n:"×2 Canons STAP",melee:0,cat1:12,cat2:14,catP:0,mun:8,pen:5,dmg:1},
   av7_cannon:{n:"Canon AV-7",melee:0,cat1:0,cat2:10,catP:10,mun:1,pen:10,dmg:4},
@@ -560,7 +497,7 @@ function getBalanceTips(L){
 }
 
 /* ═══ COMPONENT ═══ */
-export default function CrossBlock(){
+function CrossBlock(){
   const[phase,setPhase]=useState("setup");
   const[tab,setTab]=useState("army");
   const[a1,sA1]=useState([]);const[a2,sA2]=useState([]);
@@ -1109,7 +1046,6 @@ export default function CrossBlock(){
     let best=active[0],bs=-1e9;
     const enemies=all.filter(e=>e.pl!==active[0]?.pl&&e.hp>0&&e.dep);
     for(const u of active){let sc=0;const cx=u.x+BR,cy=u.y+BR;
-      const role=getRole(u.type);
       let canFire=false;
       for(const e of enemies){
         const d=Math.hypot(cx-(e.x+BR),cy-(e.y+BR));
@@ -1120,13 +1056,7 @@ export default function CrossBlock(){
       }
       // Units that can fire go first
       if(canFire)sc+=200;
-      else sc+=50;
-      // Role priority: kamikaze units act first (aggressive), snipers last (defensive)
-      if(role==="kamikaze")sc+=100;
-      if(role==="hero")sc-=30; // heroes wait, let troops clear first
-      if(role==="sniper"&&canFire)sc+=150; // snipers fire immediately if possible
-      // Dying units (1HP) get emergency priority — last stand
-      if(u.hp===1)sc+=60;
+      else sc+=50; // still activate to advance toward enemies
       const st=(learn.us||{})[u.type];if(st&&st.n>=2)sc+=(st.s/st.n-0.5)*15;
       if(sc>bs){bs=sc;best=u;}}
     return best;
@@ -1136,9 +1066,6 @@ export default function CrossBlock(){
     const en=all.filter(e=>e.pl!==u.pl&&e.hp>0&&e.dep);
     if(!en.length){endAi(u);return;}
     let cur={...u};const sA=cur.pl===1?sA1:sA2;const sD=cur.pl===1?sA2:sA1;
-    const role=getRole(cur.type);
-    const isDying=cur.hp===1;
-    const allies=all.filter(a=>a.pl===cur.pl&&a.hp>0&&a.dep&&a.id!==cur.id);
 
     // Helper: can fire from position?
     const canFireFrom=(px,py,ws)=>{
@@ -1149,30 +1076,8 @@ export default function CrossBlock(){
       }return false;
     };
 
-    // Near terrain (cover)?
-    const nearCover=(px,py)=>terr.some(t=>{
-      const tx=t.x+t.w*SPX/2,ty=t.y+t.h*SPX/2;
-      return Math.hypot(px-tx,py-ty)<SEG_PX*2;
-    });
-
-    // Threat level at position: how much damage enemies can deal to us here
-    const threatAt=(px,py)=>{
-      let threat=0;
-      for(const e of en.filter(e=>e.hp>0)){
-        const d=Math.hypot(px-(e.x+BR),py-(e.y+BR));
-        if(blocked(px,py,e.x+BR,e.y+BR,terr))continue;
-        const cat=rCat(d);
-        for(const w of e.ws||[]){if(w.cur>0){const df=wDiff(w.key,cat);if(df>0)threat+=(21-df)/20*w.cur*(w.dMax||w.dmg);}}
-      }return threat;
-    };
-
-    // Optimal range depends on role
+    // Optimal range: distance where best weapon has lowest difficulty
     const getOptRange=()=>{
-      if(role==="sniper")return C2*SEG_PX*0.75; // stay at Cat.2 distance
-      if(role==="kamikaze")return C1*SEG_PX*0.4; // rush close
-      if(role==="hero")return C1*SEG_PX*0.8; // medium range
-      if(role==="heavy")return C1*SEG_PX*0.6;
-      // Standard: use weapon's best range
       let best=C1*SEG_PX*0.7,bestD=99;
       for(const w of cur.ws){const src=WEAPS[w.key]||VWEAPS[w.key];if(!src)continue;
         const cats=[{d:src.melee,r:BASE*4},{d:src.cat1,r:C1*SEG_PX*0.7},{d:src.cat2,r:(C1+C2)/2*SEG_PX*0.5},{d:src.catP,r:C2*SEG_PX*0.9}];
@@ -1184,163 +1089,62 @@ export default function CrossBlock(){
     // Closest enemy distance
     const closestEnDist=()=>en.filter(e=>e.hp>0).reduce((m,e)=>Math.min(m,Math.hypot(cur.x+BR-(e.x+BR),cur.y+BR-(e.y+BR))),1e9);
 
-    // Check if AI should use squad fire
-    const trySquadFire=(target)=>{
-      if(!cur.sqId)return false;
-      const army=cur.pl===1?a1:a2;
-      const mates=army.filter(m=>m.sqId===cur.sqId&&m.hp>0&&m.dep&&m.act>=2&&m.id!==cur.id);
-      if(mates.length<1)return false;
-      // Check if mates can see target
-      const tx=target.x+BR,ty=target.y+BR;
-      const validMates=mates.filter(m=>!blocked(m.x+BR,m.y+BR,tx,ty,terr));
-      if(validMates.length<1)return false;
-      // Squad fire is worth it if target has enough HP to survive single unit
-      const singleDmg=cur.ws.reduce((s,w)=>s+(w.cur>0?(w.dMax||w.dmg)*w.cur*0.3:0),0);
-      if(target.hp<=singleDmg&&role!=="kamikaze")return false; // single fire enough
-      aL(`👥 TIR GROUPÉ IA: escouade ${cur.sqId} → ${target.ic}${target.name}`);
-      return true; // signal to fire as squad
-    };
-
     const step=(n)=>{
       if(n>10||cur.act<=0){
         if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}
         endAi(cur);return;
       }
 
-      // ══ DYING UNIT OVERRIDE: last stand behavior ══
-      if(isDying&&n===0){
-        const cx=cur.x+BR,cy=cur.y+BR;
-        const myThreat=threatAt(cx,cy);
-        // If likely to die next turn (threat > 0.5 damage), go all-in on attacks
-        if(myThreat>=0.5){
-          // Don't flee — maximize damage output, spend every PA attacking
-          // Fall through to normal attack logic but skip movement afterward
-        }
-        // If far from danger, try to flee behind cover
-        else if(myThreat<0.3&&!canFireFrom(cx,cy,cur.ws)){
-          // Flee toward nearest cover
-          let bestCover=null,bestCoverD=1e9;
-          for(let i=0;i<20;i++){
-            const a=Math.random()*Math.PI*2,mp=(2+cur.mm)*SEG_PX*(0.5+Math.random()*0.5);
-            const c2=clamp(cur.x+Math.cos(a)*mp,cur.y+Math.sin(a)*mp);
-            if((!cur.fly&&(onTerr(c2.x,c2.y,terr)||blocked(cx,cy,c2.x+BR,c2.y+BR,terr)))||overlap(c2.x,c2.y,all,cur.id))continue;
-            const t=threatAt(c2.x+BR,c2.y+BR);const cov=nearCover(c2.x+BR,c2.y+BR)?20:0;
-            const sc=cov-t*30;
-            if(sc>bestCoverD){bestCoverD=sc;bestCover=c2;}
-          }
-          if(bestCover){
-            aL(`🏃 ${cur.ic}${cur.name} fuit vers un couvert (1PV restant)`);
-            moveUnit(cur,bestCover.x,bestCover.y,sA,(r)=>{if(r){cur=r;sSel(cur);showLos(cur);setTimeout(()=>step(n+1),400);}else endAi(cur);});return;
-          }
-        }
-      }
-
-      // ── PHASE 1: ATTACK ──
+      // ── PHASE 1: ATTACK (always try first if 2+ PA) ──
       if(cur.act>=2){
         const cx=cur.x+BR,cy=cur.y+BR;let bT=null,bS=-1e9;
         for(const e of en.filter(e=>e.hp>0)){
           const d=Math.hypot(cx-(e.x+BR),cy-(e.y+BR));
           if(blocked(cx,cy,e.x+BR,e.y+BR,terr))continue;
           const cat=rCat(d);for(const w of cur.ws){if(w.cur<=0)continue;const df=wDiff(w.key,cat);const wd=w.dMax||w.dmg;
-            if(df>0){let sc=(21-df)*w.cur*wd+(e.hp<=wd?80:0);
-              // Role-specific target preferences
-              if(role==="sniper")sc+=e.pts>300?30:0; // snipers prefer high-value targets
-              if(role==="kamikaze")sc+=20; // kamikaze always wants to attack
-              if(isDying)sc+=40; // dying units: attack everything possible
-              if(sc>bS){bS=sc;bT=e;}}}
+            if(df>0){const sc=(21-df)*w.cur*wd+(e.hp<=wd?80:0);if(sc>bS){bS=sc;bT=e;}}}
         }
         if(bT){
-          // Try squad fire for first attack
-          if(n===0&&trySquadFire(bT)){
-            // Execute squad fire: all squad mates fire at target
-            attackUnit(cur,bT,sA,sD,(uA)=>{
-              if(uA){cur=uA;sSel(cur);showLos(cur);}
-              // Fire squad mates with delay
-              const army=cur.pl===1?a1:a2;
-              const mates=army.filter(m=>m.sqId===cur.sqId&&m.hp>0&&m.dep&&m.act>=2&&m.id!==cur.id);
-              const tx=bT.x+BR,ty=bT.y+BR;
-              let delay=600;
-              for(const mate of mates){
-                if(blocked(mate.x+BR,mate.y+BR,tx,ty,terr))continue;
-                setTimeout(()=>{
-                  const freshMate=(mate.pl===1?a1:a2).find(u2=>u2.id===mate.id);
-                  if(freshMate&&freshMate.hp>0&&freshMate.act>=2){
-                    attackUnit(freshMate,bT,mate.pl===1?sA1:sA2,bT.pl===1?sA1:sA2,null,false);
-                  }
-                },delay);delay+=500;
-              }
-              setTimeout(()=>step(n+1),delay+400);
-            });return;
-          }
           attackUnit(cur,bT,sA,sD,(uA)=>{if(uA){cur=uA;sSel(cur);showLos(cur);}setTimeout(()=>step(n+1),700);});
           return;
         }
       }
 
-      // ── Dying unit with no targets: try to flee ──
-      if(isDying&&cur.act>=1){
-        const cx=cur.x+BR,cy=cur.y+BR;
-        if(threatAt(cx,cy)>=0.5){
-          // Try to move to lower threat position
-          let bDe=null,bDS=1e9;
-          for(let i=0;i<20;i++){
-            const a=Math.random()*Math.PI*2,mp=(2+cur.mm)*SEG_PX*(0.4+Math.random()*0.6);
-            const c2=clamp(cur.x+Math.cos(a)*mp,cur.y+Math.sin(a)*mp);
-            if((!cur.fly&&(onTerr(c2.x,c2.y,terr)||blocked(cx,cy,c2.x+BR,c2.y+BR,terr)))||overlap(c2.x,c2.y,all,cur.id))continue;
-            const t=threatAt(c2.x+BR,c2.y+BR);
-            if(t<bDS){bDS=t;bDe=c2;}
-          }
-          if(bDe&&bDS<threatAt(cx,cy)*0.7){
-            aL(`🏃💨 ${cur.ic}${cur.name} tente de survivre !`);
-            moveUnit(cur,bDe.x,bDe.y,sA,(r)=>{if(r){cur=r;sSel(cur);showLos(cur);setTimeout(()=>step(n+1),400);}else endAi(cur);});return;
-          }
-        }
-      }
-
-      // ── PHASE 2: MOVEMENT (personality-driven) ──
+      // ── PHASE 2: ALWAYS ADVANCE toward optimal firing range ──
       if(cur.act>=1){
         const ceDist=closestEnDist();
         const canFireHere=canFireFrom(cur.x+BR,cur.y+BR,cur.ws);
         const atOptimal=Math.abs(ceDist-optRange)<SEG_PX*2;
 
-        // Sniper: NEVER advance if already can fire, even if not at optimal
-        if(role==="sniper"&&canFireHere){
-          if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}
-          endAi(cur);return;
-        }
-        // Hero: stay put if can fire and behind allies
-        if(role==="hero"&&canFireHere){
-          const allyBetween=allies.some(a=>Math.hypot(a.x-cur.x,a.y-cur.y)<ceDist*0.7);
-          if(allyBetween||atOptimal){endAi(cur);return;}
-        }
-        // Standard/others: stay if can fire AND at optimal range
-        if(canFireHere&&atOptimal&&role!=="kamikaze"){
+        // Only stay if: can fire AND roughly at optimal range
+        if(canFireHere&&atOptimal){
           if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}
           endAi(cur);return;
         }
 
         // ── Find best move position ──
         let bDe=null,bDS=-1e9;
+        // Closest enemy for direct approach
         let cl=null,clD=1e9;for(const e of en.filter(e=>e.hp>0)){const d=Math.hypot(e.x-cur.x,e.y-cur.y);if(d<clD){clD=d;cl=e;}}
 
         const candidates=[];
+        // 30 random positions
         for(let i=0;i<30;i++){
           const a=Math.random()*Math.PI*2,mp=(2+cur.mm)*SEG_PX*(0.4+Math.random()*0.6);
           const c2=clamp(cur.x+Math.cos(a)*mp,cur.y+Math.sin(a)*mp);
           if((!cur.fly&&(onTerr(c2.x,c2.y,terr)||blocked(cur.x+BR,cur.y+BR,c2.x+BR,c2.y+BR,terr)))||overlap(c2.x,c2.y,all,cur.id))continue;
           candidates.push(c2);
         }
+        // Direct approach toward closest enemy — aim for optimal range distance
         if(cl){
           const ag=Math.atan2(cl.y-cur.y,cl.x-cur.x);
-          // Kamikaze: full speed toward enemy
-          // Sniper: move AWAY from enemy if too close
-          const dir=role==="sniper"&&ceDist<C1*SEG_PX?Math.PI+ag:ag;
           const ms=(2+cur.mm)*SEG_PX;
-          const c2=clamp(cur.x+Math.cos(dir)*ms,cur.y+Math.sin(dir)*ms);
+          const c2=clamp(cur.x+Math.cos(ag)*ms,cur.y+Math.sin(ag)*ms);
           if(!overlap(c2.x,c2.y,all,cur.id)&&(cur.fly||(!onTerr(c2.x,c2.y,terr)&&!blocked(cur.x+BR,cur.y+BR,c2.x+BR,c2.y+BR,terr))))
             candidates.push(c2);
+          // Also try 80% and 60% of max speed
           for(const f of [0.8,0.6]){
-            const c3=clamp(cur.x+Math.cos(dir)*ms*f,cur.y+Math.sin(dir)*ms*f);
+            const c3=clamp(cur.x+Math.cos(ag)*ms*f,cur.y+Math.sin(ag)*ms*f);
             if(!overlap(c3.x,c3.y,all,cur.id)&&(cur.fly||(!onTerr(c3.x,c3.y,terr)&&!blocked(cur.x+BR,cur.y+BR,c3.x+BR,c3.y+BR,terr))))
               candidates.push(c3);
           }
@@ -1348,44 +1152,25 @@ export default function CrossBlock(){
 
         for(const c2 of candidates){
           let sc=0;const px2=c2.x+BR,py2=c2.y+BR;
-          // Can fire from new position?
+          // Can fire from new position? Big bonus
           for(const e of en.filter(e=>e.hp>0)){
             const d=Math.hypot(px2-(e.x+BR),py2-(e.y+BR));
             if(!blocked(px2,py2,e.x+BR,e.y+BR,terr)){
               const cat=rCat(d);for(const w of cur.ws)if(w.cur>0&&wDiff(w.key,cat)>0)sc+=60;
             }
           }
+          // How close to optimal range? Strong bonus
           const newDist=en.filter(e=>e.hp>0).reduce((m,e)=>Math.min(m,Math.hypot(px2-(e.x+BR),py2-(e.y+BR))),1e9);
           const optDelta=Math.abs(newDist-optRange);
           sc+=Math.max(0,40-optDelta/SEG_PX*5);
-
-          // ── Role-specific movement scoring ──
-          if(role==="sniper"){
-            // Snipers love cover and hate getting closer
-            if(nearCover(px2,py2))sc+=40;
-            if(newDist<C1*SEG_PX)sc-=80; // NEVER go into Cat.1 range
-            sc-=threatAt(px2,py2)*25; // strongly avoid threat
-          } else if(role==="kamikaze"){
-            // Kamikaze: rush! Closer = better, ignore threat
-            if(newDist<ceDist)sc+=60;
-            sc+=Math.max(0,50-newDist/SEG_PX*2);
-          } else if(role==="hero"){
-            // Heroes: prefer positions behind allies
-            const behindAllies=allies.some(a=>Math.hypot(a.x+BR-px2,a.y+BR-py2)<SEG_PX*3&&
-              Math.hypot(a.x+BR-(cl?.x||0)+BR,a.y+BR-(cl?.y||0)+BR)<newDist);
-            if(behindAllies)sc+=30;
-            sc-=threatAt(px2,py2)*15;
-          } else if(role==="swarm"){
-            // Swarm: advance fearlessly
-            if(newDist<ceDist)sc+=35;
-          } else {
-            // Standard: balanced
-            if(newDist<ceDist)sc+=25;
-          }
-
+          // Reward advancing toward enemy (very important — drives engagement)
+          if(newDist<ceDist)sc+=25;
+          // Small threat penalty (units accept risk to fight)
+          // sc-=threatAt(px2,py2)*5; // almost zero — fighting is the point
           if(sc>bDS){bDS=sc;bDe=c2;}
         }
 
+        // ALWAYS move if not at optimal range — even with negative score
         if(bDe){
           moveUnit(cur,bDe.x,bDe.y,sA,(r)=>{if(r){cur=r;sSel(cur);showLos(cur);setTimeout(()=>step(n+1),400);}else endAi(cur);});return;
         }
@@ -2462,7 +2247,7 @@ export default function CrossBlock(){
               <svg ref={bRef} viewBox={`0 0 ${BW} ${BH}`}
                 width={Math.min(BW,typeof window!=='undefined'?window.innerWidth-24:500)}
                 height={Math.min(BH,(typeof window!=='undefined'?window.innerWidth-24:500)*BH/BW)}
-                onClick={onBoardClick} style={{background:"linear-gradient(180deg,#1a3d16 0%,#2d5a27 30%,#3a6b30 70%,#2a5020 100%)",borderRadius:4,border:"3px solid #8B4513",cursor:"crosshair",display:"block",margin:"0 auto",transform:"rotateX(25deg)",transformOrigin:"50% 50%"}}>
+                onClick={onBoardClick} style={{background:"linear-gradient(180deg,#1a3d16 0%,#2d5a27 30%,#3a6b30 70%,#2a5020 100%)",borderRadius:4,border:"3px solid #8B4513",cursor:"crosshair",display:"block",transform:"rotateX(25deg)",transformOrigin:"50% 50%"}}>
 
                 {/* 3D defs */}
                 <defs>
@@ -2668,7 +2453,11 @@ export default function CrossBlock(){
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+
+// Mount the app
+
+// Mount the app
+const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CrossBlock));
   </script>
 </body>
