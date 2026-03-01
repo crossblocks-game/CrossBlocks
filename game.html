@@ -500,6 +500,7 @@ function getBalanceTips(L){
 function CrossBlock(){
   const[phase,setPhase]=useState("setup");
   const[tab,setTab]=useState("army");
+  const[isGameAdmin,setGameAdmin]=useState(false);
   const[a1,sA1]=useState([]);const[a2,sA2]=useState([]);
   const[terr,sTerr]=useState([]);
   const[sel,sSel]=useState(null);
@@ -1596,11 +1597,12 @@ function CrossBlock(){
         <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}>🧱 CROSSBLOCKS</span>
         <a href="index.html" style={{fontSize:10,color:"#8b949e",textDecoration:"none",padding:"4px 10px",border:"1px solid #30363d",borderRadius:5,cursor:"pointer"}}>🃏 Éditeur de cartes</a>
         <div style={{display:"flex",gap:2}}>
-          {[["army","⚔ Armées"],["battle","💥 Bataille"],["sim","🔬 Simulation"],["tips","⚖ Balance"]].map(([k,l])=>(
+          {[["army","⚔ Armées"],["battle","💥 Bataille"],["sim","🔬 Simulation"],isGameAdmin&&["tips","⚖ Balance"]].filter(Boolean).map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{padding:"4px 12px",border:"none",borderRadius:"5px 5px 0 0",fontWeight:700,cursor:"pointer",fontSize:10,background:tab===k?"#f0c040":"#21262d",color:tab===k?"#000":"#8b949e"}}>{l}</button>
           ))}
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+          {!isGameAdmin&&<button onClick={()=>{var p=prompt("Mot de passe admin :");if(p==="crossblocks123")setGameAdmin(true);else if(p!==null)alert("Incorrect");}} style={{...BS("#21262d"),fontSize:10,padding:"4px 10px",color:"#8b949e"}}>🔒 Admin</button>}
           {phase==="battle"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?"▶ RELANCER":"⏸ PAUSE"}</button>}
           {phase!=="setup"&&<button onClick={resetGame} style={{...BS("#6e1010"),fontSize:13,padding:"6px 16px"}}>🔄 NOUVELLE PARTIE</button>}
         </div>

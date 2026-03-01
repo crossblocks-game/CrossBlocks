@@ -867,8 +867,118 @@ var SG_KEY = "crossblocks_suggestions";
 var _remoteLoaded = false;
 
 function getRemoteUrl() {
+  // Check config.js first, then localStorage fallback
   var id = CONFIG.remoteSuggestionsId;
+  if (!id) {
+    try { id = localStorage.getItem("crossblocks_remote_id"); } catch(e) {}
+  }
   return id ? "https://jsonblob.com/api/jsonBlob/" + id : null;
+}
+
+function getRemoteId() {
+  var id = CONFIG.remoteSuggestionsId;
+  if (!id) {
+    try { id = localStorage.getItem("crossblocks_remote_id"); } catch(e) {}
+  }
+  return id || null;
+}
+
+function setupRemoteSync() {
+  var statusEl = document.getElementById("sync-status");
+  if (statusEl) statusEl.textContent = "⏳ Création...";
+
+  fetch("https://jsonblob.com/api/jsonBlob", {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "Accept":"application/json" },
+    body: "[]"
+  })
+  .then(function(r) {
+    // Get blob ID from Location header
+    var loc = r.headers.get("Location") || "";
+    var id = loc.split("/").pop();
+    if (id && id.length > 5) {
+      try { localStorage.setItem("crossblocks_remote_id", id); } catch(e) {}
+      // Push current local suggestions to remote
+      var arr = getSuggestions();
+      if (arr.length > 0) {
+        pushRemoteSuggestions(arr, function() {});
+      }
+      renderSyncStatus();
+      alert("✅ Sync distante activée !\n\nID: " + id + "\n\nPour rendre permanent, ajoutez dans config.js :\nremoteSuggestionsId: \"" + id + "\"");
+    } else {
+      if (statusEl) statusEl.textContent = "❌ Erreur";
+    }
+  })
+  .catch(function() {
+    if (statusEl) statusEl.textContent = "❌ Erreur réseau";
+  });
+}
+
+function manualRemoteId() {
+  var id = prompt("Collez l'ID de synchronisation :");
+  if (id && id.trim().length > 5) {
+    try { localStorage.setItem("crossblocks_remote_id", id.trim()); } catch(e) {}
+    // Sync now
+    fetchRemoteSuggestions(function(remote) {
+      if (remote) {
+        var local = getSuggestions();
+        var merged = mergeSuggestions(local, remote);
+        saveSuggestions(merged);
+        clearInjectedSuggestions();
+        injectSuggestions(merged);
+        renderGallery();
+        populateWeapons();
+      }
+      renderSyncStatus();
+      renderPending();
+    });
+    alert("✅ ID enregistré. Synchronisation en cours...");
+  }
+}
+
+function forceSyncNow() {
+  var statusEl = document.getElementById("sync-status");
+  if (statusEl) statusEl.textContent = "⏳ Sync...";
+
+  fetchRemoteSuggestions(function(remote) {
+    if (remote) {
+      var local = getSuggestions();
+      var merged = mergeSuggestions(local, remote);
+      saveSuggestions(merged);
+      clearInjectedSuggestions();
+      injectSuggestions(merged);
+      renderGallery();
+      populateWeapons();
+      renderPending();
+      if (statusEl) statusEl.textContent = "✅ Synchronisé (" + merged.length + " items)";
+    } else {
+      if (statusEl) statusEl.textContent = "❌ Échec";
+    }
+  });
+}
+
+function renderSyncStatus() {
+  var box = document.getElementById("sync-controls");
+  if (!box) return;
+  var id = getRemoteId();
+  var statusEl = document.getElementById("sync-status");
+
+  if (id) {
+    if (statusEl) { statusEl.textContent = "✅ Connecté"; statusEl.style.color = "#3fb950"; }
+    box.innerHTML =
+      '<div style="font-size:10px;color:#ccc;margin-bottom:6px">ID: <code style="background:#161b22;padding:2px 5px;border-radius:3px;user-select:all">' + id + '</code></div>' +
+      '<div style="display:flex;gap:6px">' +
+        '<button class="btn" style="font-size:10px;padding:3px 10px" onclick="forceSyncNow()">🔄 Sync maintenant</button>' +
+        '<button class="btn" style="font-size:10px;padding:3px 10px" onclick="manualRemoteId()">✏️ Changer ID</button>' +
+      '</div>';
+  } else {
+    if (statusEl) { statusEl.textContent = "⚪ Non configuré"; statusEl.style.color = "#f59e0b"; }
+    box.innerHTML =
+      '<div style="display:flex;gap:6px">' +
+        '<button class="btn btn-approve" style="font-size:10px;padding:4px 12px" onclick="setupRemoteSync()">🌐 Activer la sync distante</button>' +
+        '<button class="btn" style="font-size:10px;padding:4px 12px" onclick="manualRemoteId()">📋 J\'ai déjà un ID</button>' +
+      '</div>';
+  }
 }
 
 function getSuggestions() {
@@ -1069,8 +1179,8 @@ function updateSuggestCount() {
   // Show remote status
   var remEl = document.getElementById("suggest-remote-status");
   if (remEl) {
-    remEl.textContent = getRemoteUrl() ? "🌐 Synchronisation distante active" : "📱 Mode local uniquement";
-    remEl.style.color = getRemoteUrl() ? "#3fb950" : "#f59e0b";
+    remEl.textContent = getRemoteId() ? "🌐 Synchronisation distante active" : "📱 Mode local uniquement";
+    remEl.style.color = getRemoteId() ? "#3fb950" : "#f59e0b";
   }
 }
 
@@ -1088,13 +1198,15 @@ function populateSuggestFactions() {
 
 // ═══ ADMIN: PENDING REVIEW ═══
 function renderPending() {
-  var container = document.getElementById("admin-pending");
+  // Render sync status first
+  renderSyncStatus();
+
+  var container = document.getElementById("pending-list-area");
   if (!container) return;
   var arr = getSuggestions();
   var pending = arr.filter(function(s) { return s.status === "pending"; });
 
-  var html = '<h3>Propositions en attente</h3>' +
-    '<p class="admin-desc">Les propositions sont utilisables localement. Approuver les rend officielles (badge retiré).</p>';
+  var html = '';
 
   if (pending.length === 0) {
     html += '<p style="color:var(--text2);font-size:12px;margin-top:8px">Aucune proposition en attente.</p>';

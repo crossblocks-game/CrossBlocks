@@ -130,17 +130,18 @@ function renderAdmin() {
 // ── D20 roll helper ──
 function d20() { return Math.floor(Math.random() * 20) + 1; }
 
-// ── Resolve one weapon firing at a target ──
-function resolveWeapon(w, targetArm) {
+// ── Resolve one fire action ──
+// Regular weapon: fires ALL mun shots at once (e.g. tourelles x3 = 12 shots)
+// Once weapon (rockets etc): fires 1 shot per fire action, limited total ammo
+function resolveShots(w, nShots, targetArm) {
   if (!w) return 0;
-  var dmg = w.dmg;
-  if (typeof dmg === "string") {
-    var parts = dmg.split("-");
-    dmg = Math.floor(Math.random() * (parseInt(parts[1]) - parseInt(parts[0]) + 1)) + parseInt(parts[0]);
-  }
   var totalDmg = 0;
-  var mun = w.mun || 1;
-  for (var i = 0; i < mun; i++) {
+  for (var i = 0; i < nShots; i++) {
+    var dmg = w.dmg;
+    if (typeof dmg === "string") {
+      var parts = dmg.split("-");
+      dmg = Math.floor(Math.random() * (parseInt(parts[1]) - parseInt(parts[0]) + 1)) + parseInt(parts[0]);
+    }
     var hitRoll = d20();
     if (hitRoll < w.diff) continue; // miss
     var saveRoll = d20();
@@ -151,22 +152,30 @@ function resolveWeapon(w, targetArm) {
 }
 
 // ── Simulate one fight: team A vs team B ──
-// Each unit = { hp, armor, pa, weapons:[ weaponObj, ... ], onceUsed:[] }
 function simFight(teamA, teamB, maxTurns) {
   maxTurns = maxTurns || 15;
-  // Deep copy
+  // Deep copy — track remaining ammo for once-weapons
   var a = [], b = [];
   for (var i = 0; i < teamA.length; i++) {
+    var ammo = {};
+    for (var wi = 0; wi < teamA[i]._wObjs.length; wi++) {
+      var ww = teamA[i]._wObjs[wi];
+      if (ww && ww.once) ammo[wi] = ww.mun || 1; // e.g. rockets x3 = 3 shots total
+    }
     a.push({ hp: teamA[i].hp, arm: teamA[i].armor, pa: teamA[i].pa,
-      weapons: teamA[i]._wObjs.slice(), onceUsed: {} });
+      weapons: teamA[i]._wObjs.slice(), ammo: ammo });
   }
   for (var j = 0; j < teamB.length; j++) {
+    var ammo2 = {};
+    for (var wj = 0; wj < teamB[j]._wObjs.length; wj++) {
+      var ww2 = teamB[j]._wObjs[wj];
+      if (ww2 && ww2.once) ammo2[wj] = ww2.mun || 1;
+    }
     b.push({ hp: teamB[j].hp, arm: teamB[j].armor, pa: teamB[j].pa,
-      weapons: teamB[j]._wObjs.slice(), onceUsed: {} });
+      weapons: teamB[j]._wObjs.slice(), ammo: ammo2 });
   }
 
   for (var turn = 0; turn < maxTurns; turn++) {
-    // Each alive unit fires at random alive enemy
     var groups = [[a, b], [b, a]];
     for (var g = 0; g < 2; g++) {
       var attackers = groups[g][0];
@@ -174,36 +183,65 @@ function simFight(teamA, teamB, maxTurns) {
       for (var ai = 0; ai < attackers.length; ai++) {
         var atk = attackers[ai];
         if (atk.hp <= 0) continue;
+
+        // Count alive defenders
         var alive = [];
         for (var di = 0; di < defenders.length; di++) {
           if (defenders[di].hp > 0) alive.push(di);
         }
         if (alive.length === 0) break;
 
-        // Fire weapons (max floor(pa/2) fire actions)
+        // Fire actions: floor(pa/2) per turn
         var maxFires = Math.floor(atk.pa / 2);
-        var fired = 0;
-        for (var wi = 0; wi < atk.weapons.length && fired < maxFires; wi++) {
-          var w = atk.weapons[wi];
-          if (!w) continue;
-          // Skip if single-use and already used
-          var wKey = wi;
-          if (w.once && atk.onceUsed[wKey]) continue;
+        for (var fi = 0; fi < maxFires; fi++) {
+          // Refresh alive list
+          var alive2 = [];
+          for (var di2 = 0; di2 < defenders.length; di2++) {
+            if (defenders[di2].hp > 0) alive2.push(di2);
+          }
+          if (alive2.length === 0) break;
+
+          // Pick best available weapon
+          // Priority: once-weapons first (use them before they're wasted)
+          var bestW = null, bestWi = -1, bestPrio = -1;
+          for (var wi2 = 0; wi2 < atk.weapons.length; wi2++) {
+            var wc = atk.weapons[wi2];
+            if (!wc) continue;
+            if (wc.once) {
+              // Check remaining ammo
+              if ((atk.ammo[wi2] || 0) <= 0) continue;
+              // Once-weapons get priority (higher pen usually)
+              var prio = 100 + (wc.pen || 0);
+              if (prio > bestPrio) { bestW = wc; bestWi = wi2; bestPrio = prio; }
+            } else {
+              // Regular weapon always available
+              var prio2 = wc.pen || 0;
+              if (prio2 > bestPrio) { bestW = wc; bestWi = wi2; bestPrio = prio2; }
+            }
+          }
+          if (!bestW) break;
 
           // Pick target: focus fire on weakest
-          var tIdx = alive[0];
+          var tIdx = alive2[0];
           var minHp = defenders[tIdx].hp;
-          for (var ti = 1; ti < alive.length; ti++) {
-            if (defenders[alive[ti]].hp < minHp) {
-              tIdx = alive[ti];
+          for (var ti = 1; ti < alive2.length; ti++) {
+            if (defenders[alive2[ti]].hp < minHp) {
+              tIdx = alive2[ti];
               minHp = defenders[tIdx].hp;
             }
           }
 
-          var dmg = resolveWeapon(w, defenders[tIdx].arm);
+          // Fire!
+          var nShots;
+          if (bestW.once) {
+            nShots = 1; // 1 rocket/grenade per fire action
+            atk.ammo[bestWi]--;
+          } else {
+            nShots = bestW.mun || 1; // all mun fire at once
+          }
+
+          var dmg = resolveShots(bestW, nShots, defenders[tIdx].arm);
           defenders[tIdx].hp -= dmg;
-          if (w.once) atk.onceUsed[wKey] = true;
-          fired++;
         }
       }
     }
@@ -326,21 +364,48 @@ function analyzeUnit(unit) {
 
   // Quick theoretical stats for display
   var TARGET_ARM = 15;
-  var hitTotal = 0, penTotal = 0;
   var maxFires = Math.floor(unit.pa / 2);
-  var nFires = Math.min(su._wObjs.length, maxFires);
   var dpt = 0;
-  for (var i = 0; i < nFires; i++) {
-    var w = su._wObjs[i];
-    if (!w) continue;
-    var hitP = Math.max(0, (21 - w.diff) / 20);
-    var saveP = Math.max(0, (21 - (TARGET_ARM + w.pen)) / 20);
-    var dmg = w.dmg;
-    if (typeof dmg === "string") {
-      var pp = dmg.split("-"); dmg = (parseInt(pp[0]) + parseInt(pp[1])) / 2;
-    }
-    dpt += (w.mun || 1) * hitP * (1 - saveP) * dmg;
+
+  // Simulate ~3 turns of theoretical DPT then average
+  // once-weapons: 1 shot/action, limited total ammo (=mun)
+  // regular weapons: all mun fire in 1 action, unlimited
+  var onceAmmo = {};
+  for (var oi = 0; oi < su._wObjs.length; oi++) {
+    if (su._wObjs[oi] && su._wObjs[oi].once) onceAmmo[oi] = su._wObjs[oi].mun || 1;
   }
+
+  var totalDmg3turns = 0;
+  for (var turn = 0; turn < 3; turn++) {
+    for (var fi = 0; fi < maxFires; fi++) {
+      var bestDmg = 0, bestIdx = -1, bestOnce = false;
+      for (var i = 0; i < su._wObjs.length; i++) {
+        var w = su._wObjs[i];
+        if (!w) continue;
+        var hitP = Math.max(0, (21 - w.diff) / 20);
+        var saveP = Math.max(0, (21 - (TARGET_ARM + w.pen)) / 20);
+        var dmgVal = w.dmg;
+        if (typeof dmgVal === "string") {
+          var pp = dmgVal.split("-"); dmgVal = (parseInt(pp[0]) + parseInt(pp[1])) / 2;
+        }
+        if (w.once) {
+          if ((onceAmmo[i] || 0) <= 0) continue;
+          // 1 shot per fire action
+          var expected = hitP * (1 - saveP) * dmgVal;
+          if (expected > bestDmg) { bestDmg = expected; bestIdx = i; bestOnce = true; }
+        } else {
+          // All mun fire at once
+          var expected2 = (w.mun || 1) * hitP * (1 - saveP) * dmgVal;
+          if (expected2 > bestDmg) { bestDmg = expected2; bestIdx = i; bestOnce = false; }
+        }
+      }
+      if (bestIdx < 0) break;
+      totalDmg3turns += bestDmg;
+      if (bestOnce) onceAmmo[bestIdx]--;
+    }
+  }
+  dpt = totalDmg3turns / 3; // average DPT over 3 turns
+  var nFires = maxFires;
 
   // Survival: expected shots to kill (vs ref pen=5 weapons)
   var refHitP = Math.max(0, (21 - 15) / 20); // diff=15
@@ -359,52 +424,68 @@ function analyzeUnit(unit) {
 
 function computeRebalance(source) {
   var results = [];
+  var SIM_COUNT = 300; // sims per unit
 
+  // 1. Analyze all units + find fair prices
   for (var i = 0; i < source.length; i++) {
     var u = source[i];
     var a = analyzeUnit(u);
+    var mc = findFairPrice(a._simUnit, SIM_COUNT);
+    results.push({ unit: u, analysis: a, index: i, rawFair: mc.fairPrice, cloneWR: mc.cloneWinRate });
+  }
 
-    // Run Monte Carlo (150 sims for speed)
-    var mc = findFairPrice(a._simUnit, 150);
+  // 2. Calibration: find Clone Phase 2 and scale so its fair price = 200
+  var cloneRawFair = null;
+  for (var c = 0; c < results.length; c++) {
+    var cu = results[c].unit;
+    if (cu.hp === 2 && cu.armor === 15 && cu.pa === 5 && cu.points === 200) {
+      cloneRawFair = results[c].rawFair;
+      break;
+    }
+  }
+  var calRatio = (cloneRawFair && cloneRawFair > 0) ? (200 / cloneRawFair) : 1;
+
+  // 3. Apply calibration and compute suggestions
+  for (var s = 0; s < results.length; s++) {
+    var res = results[s];
+    var fairPrice = Math.round(res.rawFair * calRatio / 10) * 10;
+    if (fairPrice < 50) fairPrice = 50;
+    res.fairPrice = fairPrice;
 
     // Clamp to ±30% of current price
-    var maxUp = Math.round(u.points * 1.30 / 10) * 10;
-    var maxDown = Math.round(u.points * 0.70 / 10) * 10;
-    var suggested = Math.max(maxDown, Math.min(maxUp, mc.fairPrice));
+    var currentPts = res.unit.points;
+    var maxUp = Math.round(currentPts * 1.30 / 10) * 10;
+    var maxDown = Math.round(currentPts * 0.70 / 10) * 10;
+    var suggested = Math.max(maxDown, Math.min(maxUp, fairPrice));
     suggested = Math.round(suggested / 10) * 10;
     if (suggested < 50) suggested = 50;
 
-    var diff = suggested - u.points;
-    var pctDiff = u.points > 0 ? diff / u.points : 0;
+    var diff = suggested - currentPts;
+    var pctDiff = currentPts > 0 ? diff / currentPts : 0;
 
     // Status & reason
     var status, reason;
-    var clWR = mc.cloneWinRate;
+    var clWR = res.cloneWR;
     if (Math.abs(pctDiff) < 0.05) {
       status = "ok";
-      reason = "Équilibré (clones gagnent " + Math.round(clWR * 100) + "%)";
+      reason = "Équilibré (sim ~" + Math.round(clWR * 100) + "% WR)";
     } else if (diff > 0) {
       status = "up";
-      if (a.dpt > 2) reason = "Sous-coté: dégâts trop élevés (DPT " + a.dpt.toFixed(1) + ")";
-      else if (a.shotsToKill > 5) reason = "Sous-coté: survie excessive (" + a.shotsToKill.toFixed(0) + " tirs pour tuer)";
-      else reason = "Sous-coté: trop rentable vs clones (" + Math.round(clWR * 100) + "% WR)";
+      if (res.analysis.dpt > 2) reason = "Sous-coté: DPT élevé (" + res.analysis.dpt.toFixed(1) + ")";
+      else if (res.analysis.shotsToKill > 5) reason = "Sous-coté: trop résistant (" + res.analysis.shotsToKill.toFixed(0) + " tirs)";
+      else reason = "Sous-coté: bat les clones à budget égal";
     } else {
       status = "down";
-      if (a.shotsToKill < 2) reason = "Sur-coté: meurt trop vite (" + a.shotsToKill.toFixed(1) + " tirs)";
-      else if (a.dpt < 0.3) reason = "Sur-coté: dégâts faibles (DPT " + a.dpt.toFixed(2) + ")";
-      else reason = "Sur-coté: trop cher vs clones (" + Math.round(clWR * 100) + "% WR)";
+      if (res.analysis.shotsToKill < 2) reason = "Sur-coté: trop fragile (" + res.analysis.shotsToKill.toFixed(1) + " tirs)";
+      else if (res.analysis.dpt < 0.3) reason = "Sur-coté: DPT faible (" + res.analysis.dpt.toFixed(2) + ")";
+      else reason = "Sur-coté: perd vs clones à budget égal";
     }
 
-    results.push({
-      unit: u, analysis: a, index: i,
-      fairPrice: mc.fairPrice,
-      cloneWR: clWR,
-      suggested: suggested,
-      diff: diff,
-      pctDiff: pctDiff,
-      status: status,
-      reason: reason
-    });
+    res.suggested = suggested;
+    res.diff = diff;
+    res.pctDiff = pctDiff;
+    res.status = status;
+    res.reason = reason;
   }
 
   return results;

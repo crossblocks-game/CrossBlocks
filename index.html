@@ -303,7 +303,16 @@
       </div>
       <div class="admin-body" id="admin-pending" style="display:none">
         <h3>📬 Propositions en attente</h3>
+        <div id="remote-sync-box" style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:10px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:12px;font-weight:700;color:var(--accent)">🌐 Synchronisation distante</span>
+            <span id="sync-status" style="font-size:10px"></span>
+          </div>
+          <p style="font-size:10px;color:var(--text2);margin-bottom:8px">Permet de recevoir et valider les propositions faites depuis n'importe quel appareil.</p>
+          <div id="sync-controls"></div>
+        </div>
         <p class="admin-desc">Les joueurs peuvent proposer de nouvelles unités et armes. Approuvez-les pour les ajouter à la galerie.</p>
+        <div id="pending-list-area"></div>
       </div>
       <div class="admin-body" id="admin-balance" style="display:none">
         <h3>Rééquilibrage — Simulation Monte Carlo</h3>
