@@ -122,189 +122,326 @@ function renderAdmin() {
   });
 }
 
-// ═══ BALANCE ANALYSIS (Lanchester) + REBALANCER ═══
+// ═══ BALANCE ANALYSIS — Monte Carlo Micro-Simulation ═══
+// Instead of theoretical formulas, we SIMULATE actual fights:
+// "N Clones worth X pts" vs "this unit(s) worth X pts"
+// Then binary-search the price where win rate ≈ 50%.
 
-function balWeaponDmg(w, targetArm) {
+// ── D20 roll helper ──
+function d20() { return Math.floor(Math.random() * 20) + 1; }
+
+// ── Resolve one weapon firing at a target ──
+function resolveWeapon(w, targetArm) {
   if (!w) return 0;
-  var hitP = Math.max(0, (21 - w.diff) / 20);
-  var saveP = Math.max(0, (21 - (targetArm + w.pen)) / 20);
   var dmg = w.dmg;
   if (typeof dmg === "string") {
     var parts = dmg.split("-");
-    dmg = (parseInt(parts[0]) + parseInt(parts[1])) / 2;
+    dmg = Math.floor(Math.random() * (parseInt(parts[1]) - parseInt(parts[0]) + 1)) + parseInt(parts[0]);
   }
-  return (w.mun || 1) * hitP * (1 - saveP) * dmg;
+  var totalDmg = 0;
+  var mun = w.mun || 1;
+  for (var i = 0; i < mun; i++) {
+    var hitRoll = d20();
+    if (hitRoll < w.diff) continue; // miss
+    var saveRoll = d20();
+    if (saveRoll >= (targetArm + w.pen)) continue; // saved
+    totalDmg += dmg;
+  }
+  return totalDmg;
 }
 
-function analyzeUnit(unit) {
-  var TARGET_ARM = 15;
-  var REF_PEN = 5;
+// ── Simulate one fight: team A vs team B ──
+// Each unit = { hp, armor, pa, weapons:[ weaponObj, ... ], onceUsed:[] }
+function simFight(teamA, teamB, maxTurns) {
+  maxTurns = maxTurns || 15;
+  // Deep copy
+  var a = [], b = [];
+  for (var i = 0; i < teamA.length; i++) {
+    a.push({ hp: teamA[i].hp, arm: teamA[i].armor, pa: teamA[i].pa,
+      weapons: teamA[i]._wObjs.slice(), onceUsed: {} });
+  }
+  for (var j = 0; j < teamB.length; j++) {
+    b.push({ hp: teamB[j].hp, arm: teamB[j].armor, pa: teamB[j].pa,
+      weapons: teamB[j]._wObjs.slice(), onceUsed: {} });
+  }
 
-  var hp = unit.hp;
-  var arm = unit.armor;
-  var pa = unit.pa;
-  var move = unit.move;
+  for (var turn = 0; turn < maxTurns; turn++) {
+    // Each alive unit fires at random alive enemy
+    var groups = [[a, b], [b, a]];
+    for (var g = 0; g < 2; g++) {
+      var attackers = groups[g][0];
+      var defenders = groups[g][1];
+      for (var ai = 0; ai < attackers.length; ai++) {
+        var atk = attackers[ai];
+        if (atk.hp <= 0) continue;
+        var alive = [];
+        for (var di = 0; di < defenders.length; di++) {
+          if (defenders[di].hp > 0) alive.push(di);
+        }
+        if (alive.length === 0) break;
 
-  // Effective HP
-  var hpFactor = Math.pow(hp, 1.5);
-  var parade = Math.max(0, (21 - (arm + REF_PEN)) / 20);
-  var survivalMult = parade >= 1 ? 20 : parade <= 0 ? 1 : 1 / (1 - parade);
-  var effHP = hp * survivalMult;
+        // Fire weapons (max floor(pa/2) fire actions)
+        var maxFires = Math.floor(atk.pa / 2);
+        var fired = 0;
+        for (var wi = 0; wi < atk.weapons.length && fired < maxFires; wi++) {
+          var w = atk.weapons[wi];
+          if (!w) continue;
+          // Skip if single-use and already used
+          var wKey = wi;
+          if (w.once && atk.onceUsed[wKey]) continue;
 
-  // DPT
-  var maxFires = Math.floor(pa / 2);
-  var nFires = Math.min(unit.weapons.length, maxFires);
-  var wDmgs = [];
+          // Pick target: focus fire on weakest
+          var tIdx = alive[0];
+          var minHp = defenders[tIdx].hp;
+          for (var ti = 1; ti < alive.length; ti++) {
+            if (defenders[alive[ti]].hp < minHp) {
+              tIdx = alive[ti];
+              minHp = defenders[tIdx].hp;
+            }
+          }
+
+          var dmg = resolveWeapon(w, defenders[tIdx].arm);
+          defenders[tIdx].hp -= dmg;
+          if (w.once) atk.onceUsed[wKey] = true;
+          fired++;
+        }
+      }
+    }
+
+    // Check if one side is wiped
+    var aAlive = 0, bAlive = 0;
+    for (var ci = 0; ci < a.length; ci++) if (a[ci].hp > 0) aAlive++;
+    for (var cj = 0; cj < b.length; cj++) if (b[cj].hp > 0) bAlive++;
+    if (aAlive === 0) return -1; // B wins
+    if (bAlive === 0) return 1;  // A wins
+  }
+  // Timeout: count surviving HP
+  var aHp = 0, bHp = 0;
+  for (var hi = 0; hi < a.length; hi++) aHp += Math.max(0, a[hi].hp);
+  for (var hj = 0; hj < b.length; hj++) bHp += Math.max(0, b[hj].hp);
+  return aHp > bHp ? 1 : aHp < bHp ? -1 : 0;
+}
+
+// ── Build unit data with resolved weapon objects ──
+function buildSimUnit(unit) {
+  var wObjs = [];
   for (var i = 0; i < unit.weapons.length; i++) {
     var w = CONFIG.weapons[unit.weapons[i]];
-    wDmgs.push({ dmg: balWeaponDmg(w, TARGET_ARM), pen: w ? w.pen : 0 });
+    if (w) wObjs.push(w);
   }
-  wDmgs.sort(function(a, b) { return b.dmg - a.dmg; });
-
-  var dpt = 0;
-  for (var j = 0; j < nFires; j++) dpt += wDmgs[j].dmg;
-
-  // Lifetime damage
-  var lifetime = dpt * effHP;
-
-  // PA after fire
-  var paAfterFire = pa - nFires * 2;
-  var mobilityBonus = 1 + paAfterFire * 0.05 + move * 0.03;
-
-  // Combat power
-  var combatPower = lifetime * mobilityBonus;
-  var value = unit.points > 0 ? (combatPower / unit.points * 1000) : 0;
-
-  // Raw theoretical price (Lanchester formula)
-  var BASE = 40;
-  var totalPen = 0;
-  for (var k = 0; k < nFires; k++) totalPen += Math.max(0, wDmgs[k].pen - 4);
-  var weaponFactor = 1 + Math.pow(dpt, 0.8) * 0.5 + totalPen * 0.06;
-  var mobFactor = 1 + paAfterFire * 0.05 + move * 0.03;
-  var rawTheoretical = BASE * hpFactor * survivalMult * weaponFactor * mobFactor;
-
   return {
-    effHP: effHP,
-    dpt: dpt,
-    nFires: nFires,
-    paMove: paAfterFire,
-    lifetime: lifetime,
-    combatPower: combatPower,
-    value: value,
-    rawTheoretical: rawTheoretical,
-    parade: Math.round(parade * 100)
+    hp: unit.hp, armor: unit.armor, pa: unit.pa,
+    move: unit.move, points: unit.points,
+    _wObjs: wObjs
   };
 }
 
-// ═══ SMART REBALANCER ═══
-// Soft corrections: blend toward theoretical, clamped to ±25% max
-// This keeps gameplay intact while fixing the worst outliers
+// ── Reference unit: Clone Phase 2 ──
+function getRefUnit() {
+  // Find in GALLERY
+  for (var i = 0; i < GALLERY.length; i++) {
+    var g = GALLERY[i];
+    if (g.hp === 2 && g.armor === 15 && g.pa === 5 && g.points === 200) {
+      return buildSimUnit(g);
+    }
+  }
+  // Fallback: manual Clone
+  return {
+    hp: 2, armor: 15, pa: 5, move: 0, points: 200,
+    _wObjs: [CONFIG.weapons["SW Fusil laser (bleu)"] || { mun:3, diff:15, pen:5, dmg:1 }]
+  };
+}
+
+// ── Win rate: N simulations of "budget in clones" vs "budget in unit" ──
+function simWinRate(unit, budget, nSims) {
+  var ref = getRefUnit();
+  var nClones = Math.max(1, Math.round(budget / ref.points));
+  var nUnits = Math.max(1, Math.round(budget / unit.points));
+
+  var teamA = []; // Clones
+  for (var i = 0; i < nClones; i++) teamA.push(ref);
+  var teamB = []; // Test units
+  for (var j = 0; j < nUnits; j++) teamB.push(unit);
+
+  var wins = 0, losses = 0;
+  for (var s = 0; s < nSims; s++) {
+    var result = simFight(teamA, teamB);
+    if (result > 0) wins++;
+    else if (result < 0) losses++;
+    else { wins += 0.5; losses += 0.5; }
+  }
+  return { winRate: wins / nSims, nClones: nClones, nUnits: nUnits };
+}
+
+// ── Binary search for fair price ──
+// Find price P such that "P pts of clones" vs "P pts of this unit" → ~50% win rate
+function findFairPrice(unitTemplate, nSims) {
+  nSims = nSims || 150;
+  var lo = 50, hi = 3000;
+  var bestPrice = unitTemplate.points;
+  var bestDiff = 1;
+
+  // Test at several budgets to get robust estimate
+  var budgets = [1000, 1500, 2000];
+
+  for (var attempt = 0; attempt < 8; attempt++) {
+    var mid = Math.round((lo + hi) / 2 / 10) * 10;
+    if (mid < 50) mid = 50;
+
+    // Temporarily set price
+    var testUnit = {
+      hp: unitTemplate.hp, armor: unitTemplate.armor,
+      pa: unitTemplate.pa, move: unitTemplate.move,
+      points: mid, _wObjs: unitTemplate._wObjs
+    };
+
+    // Average win rate across budgets
+    var totalWR = 0;
+    for (var b = 0; b < budgets.length; b++) {
+      var r = simWinRate(testUnit, budgets[b], Math.round(nSims / budgets.length));
+      totalWR += r.winRate;
+    }
+    var avgWR = totalWR / budgets.length;
+
+    var diff = avgWR - 0.5;
+    if (Math.abs(diff) < Math.abs(bestDiff)) {
+      bestPrice = mid;
+      bestDiff = diff;
+    }
+
+    // If clones win too much (>50%), unit is overpriced → lower price
+    if (avgWR > 0.55) hi = mid;
+    // If clones lose (<50%), unit is underpriced → raise price
+    else if (avgWR < 0.45) lo = mid;
+    else break; // Close enough
+  }
+
+  return { fairPrice: bestPrice, cloneWinRate: 0.5 + bestDiff };
+}
+
+// ═══ FULL ANALYSIS ═══
+
+function analyzeUnit(unit) {
+  var su = buildSimUnit(unit);
+
+  // Quick theoretical stats for display
+  var TARGET_ARM = 15;
+  var hitTotal = 0, penTotal = 0;
+  var maxFires = Math.floor(unit.pa / 2);
+  var nFires = Math.min(su._wObjs.length, maxFires);
+  var dpt = 0;
+  for (var i = 0; i < nFires; i++) {
+    var w = su._wObjs[i];
+    if (!w) continue;
+    var hitP = Math.max(0, (21 - w.diff) / 20);
+    var saveP = Math.max(0, (21 - (TARGET_ARM + w.pen)) / 20);
+    var dmg = w.dmg;
+    if (typeof dmg === "string") {
+      var pp = dmg.split("-"); dmg = (parseInt(pp[0]) + parseInt(pp[1])) / 2;
+    }
+    dpt += (w.mun || 1) * hitP * (1 - saveP) * dmg;
+  }
+
+  // Survival: expected shots to kill (vs ref pen=5 weapons)
+  var refHitP = Math.max(0, (21 - 15) / 20); // diff=15
+  var refSaveP = Math.max(0, (21 - (unit.armor + 5)) / 20);
+  var dmgPerShot = 3 * refHitP * (1 - refSaveP) * 1; // 3 mun, pen 5, dmg 1
+  var shotsToKill = dmgPerShot > 0 ? unit.hp / dmgPerShot : 99;
+
+  return {
+    dpt: dpt,
+    nFires: nFires,
+    shotsToKill: shotsToKill,
+    paMove: unit.pa - nFires * 2,
+    _simUnit: su
+  };
+}
 
 function computeRebalance(source) {
   var results = [];
 
-  // 1. Analyze all units
   for (var i = 0; i < source.length; i++) {
     var u = source[i];
     var a = analyzeUnit(u);
-    results.push({ unit: u, analysis: a, index: i });
-  }
 
-  // 2. Calibration: anchor on Clone Phase 2 at 200pts
-  //    Find ratio between raw theoretical and actual price for the reference unit
-  var refUnit = null;
-  for (var r = 0; r < results.length; r++) {
-    if (results[r].unit.points === 200 && results[r].unit.hp === 2 && results[r].unit.armor === 15) {
-      refUnit = results[r]; break;
-    }
-  }
-  // Fallback: use average ratio of all standard infantry (≤300 pts)
-  var calibrationRatio = 1;
-  if (refUnit && refUnit.analysis.rawTheoretical > 0) {
-    calibrationRatio = 200 / refUnit.analysis.rawTheoretical;
-  } else {
-    var sum = 0, cnt = 0;
-    for (var c = 0; c < results.length; c++) {
-      if (results[c].unit.points <= 300 && results[c].analysis.rawTheoretical > 0) {
-        sum += results[c].unit.points / results[c].analysis.rawTheoretical;
-        cnt++;
-      }
-    }
-    if (cnt > 0) calibrationRatio = sum / cnt;
-  }
+    // Run Monte Carlo (150 sims for speed)
+    var mc = findFairPrice(a._simUnit, 150);
 
-  // 3. Compute suggested prices with soft correction
-  for (var s = 0; s < results.length; s++) {
-    var res = results[s];
-    var currentPts = res.unit.points;
-    var theoretical = Math.round(res.analysis.rawTheoretical * calibrationRatio / 10) * 10;
-
-    // Soft blend: move 50% toward theoretical
-    var blended = Math.round((currentPts * 0.5 + theoretical * 0.5) / 10) * 10;
-
-    // Clamp: max ±25% change from current
-    var maxUp = Math.round(currentPts * 1.25 / 10) * 10;
-    var maxDown = Math.round(currentPts * 0.75 / 10) * 10;
-    var suggested = Math.max(maxDown, Math.min(maxUp, blended));
-
-    // Round to 10
+    // Clamp to ±30% of current price
+    var maxUp = Math.round(u.points * 1.30 / 10) * 10;
+    var maxDown = Math.round(u.points * 0.70 / 10) * 10;
+    var suggested = Math.max(maxDown, Math.min(maxUp, mc.fairPrice));
     suggested = Math.round(suggested / 10) * 10;
-    if (suggested < 50) suggested = 50; // minimum price
+    if (suggested < 50) suggested = 50;
 
-    var diff = suggested - currentPts;
-    var pctDiff = currentPts > 0 ? (diff / currentPts) : 0;
+    var diff = suggested - u.points;
+    var pctDiff = u.points > 0 ? diff / u.points : 0;
 
-    // Status
+    // Status & reason
     var status, reason;
+    var clWR = mc.cloneWinRate;
     if (Math.abs(pctDiff) < 0.05) {
       status = "ok";
-      reason = "Équilibré";
+      reason = "Équilibré (clones gagnent " + Math.round(clWR * 100) + "%)";
     } else if (diff > 0) {
       status = "up";
-      reason = "Sous-coté: puissance de feu élevée pour le coût";
-      if (res.analysis.effHP > 4) reason = "Sous-coté: trop résistant pour le coût";
-      if (res.analysis.dpt > 1.5 && res.analysis.effHP > 3) reason = "Sous-coté: combo dégâts + survie trop fort";
+      if (a.dpt > 2) reason = "Sous-coté: dégâts trop élevés (DPT " + a.dpt.toFixed(1) + ")";
+      else if (a.shotsToKill > 5) reason = "Sous-coté: survie excessive (" + a.shotsToKill.toFixed(0) + " tirs pour tuer)";
+      else reason = "Sous-coté: trop rentable vs clones (" + Math.round(clWR * 100) + "% WR)";
     } else {
       status = "down";
-      reason = "Sur-coté: dégâts faibles pour le prix";
-      if (res.analysis.parade > 50) reason = "Sur-coté: armure trop faible, meurt vite";
-      if (res.analysis.paMove <= 0) reason = "Sur-coté: pas de mobilité restante";
+      if (a.shotsToKill < 2) reason = "Sur-coté: meurt trop vite (" + a.shotsToKill.toFixed(1) + " tirs)";
+      else if (a.dpt < 0.3) reason = "Sur-coté: dégâts faibles (DPT " + a.dpt.toFixed(2) + ")";
+      else reason = "Sur-coté: trop cher vs clones (" + Math.round(clWR * 100) + "% WR)";
     }
 
-    res.suggested = suggested;
-    res.diff = diff;
-    res.pctDiff = pctDiff;
-    res.status = status;
-    res.reason = reason;
-    res.theoretical = theoretical;
+    results.push({
+      unit: u, analysis: a, index: i,
+      fairPrice: mc.fairPrice,
+      cloneWR: clWR,
+      suggested: suggested,
+      diff: diff,
+      pctDiff: pctDiff,
+      status: status,
+      reason: reason
+    });
   }
 
   return results;
 }
 
 function renderBalance() {
-  renderBalanceSection(GALLERY, "balance-table", "units");
-  renderBalanceSection(VEHICLES, "balance-table-vehicles", "vehicles");
+  var container = document.getElementById("balance-table");
+  var vContainer = document.getElementById("balance-table-vehicles");
+  if (container) container.innerHTML = '<div style="color:#f0c040;font-size:11px;padding:8px">⏳ Simulation en cours (Monte Carlo)...</div>';
+  if (vContainer) vContainer.innerHTML = '';
+
+  // Run async to not freeze UI
+  setTimeout(function() {
+    renderBalanceSection(GALLERY, "balance-table", "units");
+    renderBalanceSection(VEHICLES, "balance-table-vehicles", "vehicles");
+  }, 50);
 }
 
 function renderBalanceSection(source, containerId, sourceKey) {
   var container = document.getElementById(containerId);
   if (!container) return;
+  if (source.length === 0) { container.innerHTML = '<div style="color:#888;font-size:10px">Aucune unité</div>'; return; }
 
   var results = computeRebalance(source);
 
-  // Count issues
   var issues = results.filter(function(r) { return r.status !== "ok"; }).length;
   var issueText = issues === 0
     ? '<span style="color:#3fb950">Toutes les unités sont équilibrées.</span>'
     : '<span style="color:#f59e0b">' + issues + ' ajustement(s) recommandé(s)</span>';
 
-  var html = '<div style="margin-bottom:8px;font-size:11px">' + issueText + '</div>';
+  var html = '<div style="margin-bottom:6px;font-size:10px">' + issueText +
+    ' <span style="color:#555;font-size:9px">(150 simulations/unité vs Clones Ph2)</span></div>';
 
   html += '<table class="bal-table"><thead><tr>' +
     '<th>Nom</th><th>Faction</th><th>Actuel</th>' +
-    '<th>PVeff</th><th>DPT</th><th>Théorique</th>' +
-    '<th>Conseillé</th><th>Écart</th><th>Diagnostic</th><th></th>' +
+    '<th>DPT</th><th>Survie</th><th>Clone WR</th>' +
+    '<th>Prix juste</th><th>Conseillé</th><th>Diagnostic</th><th></th>' +
     '</tr></thead><tbody>';
 
   for (var i = 0; i < results.length; i++) {
@@ -315,9 +452,11 @@ function renderBalanceSection(source, containerId, sourceKey) {
     var statusClass = r.status === "ok" ? "bal-good" : r.status === "up" ? "bal-weak" : "bal-op";
     var arrow = r.diff > 0 ? "▲" : r.diff < 0 ? "▼" : "=";
     var diffStr = r.diff === 0 ? "—" : (r.diff > 0 ? "+" : "") + r.diff;
-    var pctStr = Math.abs(r.pctDiff) < 0.01 ? "" : " (" + (r.pctDiff > 0 ? "+" : "") + Math.round(r.pctDiff * 100) + "%)";
 
-    // Apply button (only if diff ≠ 0)
+    // WR color
+    var wrPct = Math.round(r.cloneWR * 100);
+    var wrColor = wrPct > 55 ? "#f85149" : wrPct < 45 ? "#58a6ff" : "#3fb950";
+
     var applyBtn = r.diff !== 0
       ? '<button class="btn-approve" style="font-size:9px;padding:2px 6px" onclick="applyRebalance(\'' + sourceKey + '\',' + i + ',' + r.suggested + ')">Appliquer</button>'
       : '';
@@ -326,11 +465,11 @@ function renderBalanceSection(source, containerId, sourceKey) {
       '<td class="bal-name">' + u.name + '</td>' +
       '<td><span style="color:' + fac.color + '">' + u.faction + '</span></td>' +
       '<td class="bal-val">' + u.points + '</td>' +
-      '<td>' + r.analysis.effHP.toFixed(1) + '</td>' +
-      '<td>' + r.analysis.dpt.toFixed(2) + '</td>' +
-      '<td class="bal-val" style="color:#888">' + r.theoretical + '</td>' +
+      '<td>' + r.analysis.dpt.toFixed(1) + '</td>' +
+      '<td>' + r.analysis.shotsToKill.toFixed(1) + ' tirs</td>' +
+      '<td style="color:' + wrColor + ';font-weight:700">' + wrPct + '%</td>' +
+      '<td class="bal-val" style="color:#888">' + r.fairPrice + '</td>' +
       '<td class="bal-val" style="font-weight:900;color:' + (r.status === "ok" ? "#3fb950" : "#f0c040") + '">' + r.suggested + '</td>' +
-      '<td class="bal-val ' + statusClass + '">' + arrow + ' ' + diffStr + pctStr + '</td>' +
       '<td style="font-size:9px;color:' + (r.status === "ok" ? "#3fb950" : "#f59e0b") + '">' + r.reason + '</td>' +
       '<td>' + applyBtn + '</td>' +
       '</tr>';
@@ -338,11 +477,10 @@ function renderBalanceSection(source, containerId, sourceKey) {
 
   html += '</tbody></table>';
 
-  // "Apply all" button
   if (issues > 0) {
     html += '<div style="margin-top:10px;display:flex;gap:8px;align-items:center">' +
-      '<button class="btn-approve" style="padding:5px 14px;font-size:11px" onclick="applyAllRebalance(\'' + sourceKey + '\')">Appliquer tout (' + issues + ' changements)</button>' +
-      '<span style="font-size:10px;color:var(--text2)">Les points seront modifiés dans la galerie. Max ±25% par unité.</span>' +
+      '<button class="btn-approve" style="padding:5px 14px;font-size:11px" onclick="applyAllRebalance(\'' + sourceKey + '\')">Appliquer tout (' + issues + ')</button>' +
+      '<span style="font-size:9px;color:var(--text2)">Max ±30% par unité. Basé sur Monte Carlo vs Clone Phase 2.</span>' +
       '</div>';
   }
 
@@ -352,7 +490,6 @@ function renderBalanceSection(source, containerId, sourceKey) {
 function applyRebalance(sourceKey, index, newPrice) {
   var source = sourceKey === "vehicles" ? VEHICLES : GALLERY;
   if (source[index]) {
-    var old = source[index].points;
     source[index].points = newPrice;
     renderBalance();
     renderGallery();

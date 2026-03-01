@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CrossBlock — Wargame LEGO Star Wars</title>
+  <title>CrossBlocks — Wargame LEGO Star Wars</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0d1117; overflow-x: hidden; }
@@ -1593,7 +1593,8 @@ function CrossBlock(){
     <div style={{minHeight:"100vh",background:"#0d1117",color:"#e6edf3",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
       {/* HEADER */}
       <div style={{background:"#161b22",padding:"8px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"3px solid #f0c040",flexWrap:"wrap"}}>
-        <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}>🧱 CROSSBLOCK</span>
+        <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}>🧱 CROSSBLOCKS</span>
+        <a href="index.html" style={{fontSize:10,color:"#8b949e",textDecoration:"none",padding:"4px 10px",border:"1px solid #30363d",borderRadius:5,cursor:"pointer"}}>🃏 Éditeur de cartes</a>
         <div style={{display:"flex",gap:2}}>
           {[["army","⚔ Armées"],["battle","💥 Bataille"],["sim","🔬 Simulation"],["tips","⚖ Balance"]].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{padding:"4px 12px",border:"none",borderRadius:"5px 5px 0 0",fontWeight:700,cursor:"pointer",fontSize:10,background:tab===k?"#f0c040":"#21262d",color:tab===k?"#000":"#8b949e"}}>{l}</button>
