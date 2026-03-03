@@ -134,8 +134,8 @@ function d20() { return Math.floor(Math.random() * 20) + 1; }
 // Regular weapon: fires ALL mun shots at once (e.g. tourelles x3 = 12 shots)
 // Once weapon (rockets etc): fires 1 shot per fire action, limited total ammo
 function resolveShots(w, nShots, targetArm) {
-  if (!w) return 0;
-  var totalDmg = 0;
+  if (!w) return { totalDmg: 0, misses: 0 };
+  var totalDmg = 0, misses = 0;
   for (var i = 0; i < nShots; i++) {
     var dmg = w.dmg;
     if (typeof dmg === "string") {
@@ -143,12 +143,26 @@ function resolveShots(w, nShots, targetArm) {
       dmg = Math.floor(Math.random() * (parseInt(parts[1]) - parseInt(parts[0]) + 1)) + parseInt(parts[0]);
     }
     var hitRoll = d20();
-    if (hitRoll < w.diff) continue; // miss
+    if (hitRoll < w.diff) { misses++; continue; }
     var saveRoll = d20();
     if (saveRoll >= (targetArm + w.pen)) continue; // saved
     totalDmg += dmg;
   }
-  return totalDmg;
+  return { totalDmg: totalDmg, misses: misses, diff: w.diff, pen: w.pen, dmg: w.dmg, arm: targetArm };
+}
+
+// Reroll one missed die (costs 1PA) — very efficient for 1-2 shot weapons (snipers)
+function rerollOneMiss(result) {
+  var hitRoll = d20();
+  if (hitRoll < result.diff) return 0;
+  var saveRoll = d20();
+  if (saveRoll >= (result.arm + result.pen)) return 0;
+  var dmg = result.dmg;
+  if (typeof dmg === "string") {
+    var parts = dmg.split("-");
+    dmg = Math.floor(Math.random() * (parseInt(parts[1]) - parseInt(parts[0]) + 1)) + parseInt(parts[0]);
+  }
+  return dmg;
 }
 
 // ── Simulate one fight: team A vs team B ──
@@ -192,8 +206,9 @@ function simFight(teamA, teamB, maxTurns) {
         if (alive.length === 0) break;
 
         // Fire actions: floor(pa/2) per turn
-        var maxFires = Math.floor(atk.pa / 2);
-        for (var fi = 0; fi < maxFires; fi++) {
+        // PA-based action loop with rerolls
+        var remainPA = atk.pa;
+        while (remainPA >= 2) {
           // Refresh alive list
           var alive2 = [];
           for (var di2 = 0; di2 < defenders.length; di2++) {
@@ -240,8 +255,16 @@ function simFight(teamA, teamB, maxTurns) {
             nShots = bestW.mun || 1; // all mun fire at once
           }
 
-          var dmg = resolveShots(bestW, nShots, defenders[tIdx].arm);
-          defenders[tIdx].hp -= dmg;
+          var result = resolveShots(bestW, nShots, defenders[tIdx].arm);
+          defenders[tIdx].hp -= result.totalDmg;
+          remainPA -= 2;
+
+          // Reroll: spend 1PA to reroll 1 miss — efficient for 1-2 shot weapons
+          if (result.misses > 0 && remainPA >= 1 && nShots <= 2) {
+            var extraDmg = rerollOneMiss(result);
+            defenders[tIdx].hp -= extraDmg;
+            remainPA -= 1;
+          }
         }
       }
     }
