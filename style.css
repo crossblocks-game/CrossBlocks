@@ -88,6 +88,44 @@ body {
 .btn-play:hover { background:var(--accent2); }
 .btn-discord { background:#5865F2; color:#fff; border-color:#4752C4; }
 .btn-discord:hover { background:#4752C4; }
+
+/* Hero description box */
+.hero-box {
+  max-width:640px; margin:16px auto 0; text-align:left;
+}
+.hero-text {
+  color:var(--text2); font-size:13px; line-height:1.6; margin-bottom:14px;
+}
+.hero-features {
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:14px;
+}
+.hero-feature {
+  background:#0d1117; border:1px solid var(--border); border-radius:8px; padding:10px;
+  display:flex; gap:8px; align-items:flex-start;
+}
+.hero-feature .hf-icon { font-size:22px; flex-shrink:0; }
+.hero-feature div { font-size:11px; color:var(--text2); line-height:1.4; }
+.hero-feature strong { color:var(--text); font-size:12px; }
+.hero-discord {
+  display:flex; align-items:center; gap:14px;
+  background:linear-gradient(135deg, #5865F222 0%, #5865F211 100%);
+  border:1px solid #5865F244; border-radius:10px;
+  padding:14px 18px;
+}
+.hero-discord .discord-icon {
+  width:40px; height:40px; flex-shrink:0; color:#5865F2;
+}
+.hero-discord div { flex:1; font-size:12px; color:var(--text2); line-height:1.5; }
+.hero-discord strong { color:#fff; font-size:13px; }
+.btn-discord-big {
+  display:inline-flex; align-items:center; gap:8px;
+  background:#5865F2; color:#fff; border:none; border-radius:8px;
+  padding:10px 20px; font-weight:700; font-size:13px;
+  text-decoration:none; cursor:pointer; flex-shrink:0;
+  transition:background .2s, transform .1s;
+}
+.btn-discord-big:hover { background:#4752C4; transform:translateY(-1px); }
+.btn-discord-big svg { flex-shrink:0; }
 .btn-add { background:var(--green); color:#000; border-color:#2a9040; font-size:14px; font-weight:700; padding:9px 22px; }
 .btn-add:hover { background:#50d070; }
 .btn-export { background:var(--blue); color:#fff; border-color:#2a5dad; }
@@ -626,6 +664,11 @@ body {
   .site-header { padding:10px 0 8px; }
   .logo { height:40px; }
   .site-desc { font-size:12px; }
+  .hero-features { grid-template-columns:1fr; gap:8px; }
+  .hero-discord { flex-direction:column; text-align:center; padding:12px; gap:10px; }
+  .hero-discord .discord-icon { width:30px; height:30px; }
+  .hero-text { font-size:12px; }
+  .btn-discord-big { font-size:12px; padding:8px 16px; width:100%; justify-content:center; }
 
   /* Sections */
   .editor-section, .cards-section, .gallery-section, .seo-section, .suggest-section {
