@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CrossBlocks — Wargame LEGO Star Wars</title>
+  <title>CrossBlock — Wargame LEGO Star Wars</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0d1117; overflow-x: hidden; }
@@ -277,12 +277,13 @@ function simBattle(army1Defs,army2Defs){
 
   // Sim combat
   let turns=0,maxTurns=40;
-  const simFire=(att,bT,weaponList)=>{
+  const simFire=(att,bT,weaponList,canReroll)=>{
     const d2=Math.hypot(att.x+BR-(bT.x+BR),att.y+BR-(bT.y+BR));
     const cat=rCat(d2);let bW=null,bD=0;
     for(const w of weaponList){if(w.cur<=0)continue;const df=wDiff(w.key,cat);if(df>0&&(!bW||df<bD)){bW=w;bD=df;}}
     if(!bW)return null;
     const rolls=[];for(let i=0;i<bW.cur;i++)rolls.push(d20());
+    if(canReroll){let wI=-1,wV=-1;for(let ri3=0;ri3<rolls.length;ri3++){if(rolls[ri3]<bD&&rolls[ri3]>wV){wV=rolls[ri3];wI=ri3;}}if(wI>=0)rolls[wI]=d20();}
     const hits=rolls.filter(r=>r>=bD);
     let totD=0;
     for(const h of hits){const sr=d20();if(sr<bT.arm+bW.pen)totD+=(bW.dMax?ri(1,bW.dMax):bW.dmg);}
@@ -383,7 +384,7 @@ function simBattle(army1Defs,army2Defs){
               if(df>0){const sc=(21-df)*w.cur*(w.dMax||w.dmg)+(e.hp<=(w.dMax||w.dmg)?80:0);if(sc>bS){bS=sc;bT=e;}}}
           }
           if(bT){
-            const usedW=simFire(cur,bT,cur.ws);
+            const usedW=simFire(cur,bT,cur.ws,cur.act>=4);
             if(usedW){hasFired=true;cur={...cur,act:cur.act-2,ws:cur.ws.map(w=>w===usedW?{...w,cur:0}:w)};sA(cur);continue;}
           }
         }
@@ -500,7 +501,6 @@ function getBalanceTips(L){
 function CrossBlock(){
   const[phase,setPhase]=useState("setup");
   const[tab,setTab]=useState("army");
-  const[isGameAdmin,setGameAdmin]=useState(false);
   const[a1,sA1]=useState([]);const[a2,sA2]=useState([]);
   const[terr,sTerr]=useState([]);
   const[sel,sSel]=useState(null);
@@ -513,6 +513,7 @@ function CrossBlock(){
   const[dQ1,sDQ1]=useState([]);const[dQ2,sDQ2]=useState([]);
   const[dTn,sDTn]=useState(1);const[tSel,sTSel]=useState(null);
   const[paused,sPau]=useState(false);
+  const[gMode,sGMode]=useState("ai"); // "ai"=IA vs IA, "pvp"=J1 vs J2, "pve"=J1(humain) vs J2(IA)
   const[mU,sMU]=useState(null);const[mW,sMW]=useState(null);
   const[animating,sAnimating]=useState(false);
   const[learn,sLearn]=useState({g:0,w1:0,w2:0,us:{}});
@@ -813,7 +814,7 @@ function CrossBlock(){
   };
 
   /* ═══ ATTACK — DETAILED (with vehicle HP) ═══ */
-  const attackUnit=(att,def,sAt,sDf,cb2,useGw)=>{
+  const attackUnit=(att,def,sAt,sDf,cb2,useGw,rerollBudget)=>{
     const actCost=2;
     // Check action source: pilot ws or gunner gw
     const isGunnerFiring=!!useGw;
@@ -830,6 +831,14 @@ function CrossBlock(){
     if(def.prone&&cat==="melee")hitDiff=Math.max(1,bD-1);
     const bid=uid();sBul(p=>[...p,{id:bid,x1:ax,y1:ay,x2:dx2,y2:dy2,t:0}]);
     const rolls=[];for(let i=0;i<bW.cur;i++)rolls.push(d20());
+    // REROLL: spend 1PA to reroll one worst miss
+    let rerolled=false,rrIdx=-1,rrOld=-1;
+    const sparePA=isGunnerFiring?(att.gunAct-actCost):(att.act-actCost+(rerollBudget||0));
+    if(sparePA>=1){
+      let wIdx=-1,wVal=-1;
+      for(let ri2=0;ri2<rolls.length;ri2++){if(rolls[ri2]<hitDiff&&rolls[ri2]>wVal){wVal=rolls[ri2];wIdx=ri2;}}
+      if(wIdx>=0){rrOld=rolls[wIdx];rolls[wIdx]=d20();rerolled=true;rrIdx=wIdx;}
+    }
     const hits=rolls.filter(r=>r>=hitDiff);
     // Use vehicle armor if target is vehicle
     const defArm=def.isVeh&&def.vHp>0?def.arm:def.arm;
@@ -852,12 +861,14 @@ function CrossBlock(){
       }
       const nW=isGunnerFiring?att.ws:att.ws.map(w=>w===bW?{...w,cur:0}:w);
       const nGW=isGunnerFiring?att.gw.map(w=>w===bW?{...w,cur:0}:w):att.gw||[];
+      const totCost=actCost+(rerolled?1:0);
       const uA=isGunnerFiring?
-        {...att,gunAct:att.gunAct-actCost,gw:nGW}:
-        {...att,act:att.act-actCost,ws:nW};
+        {...att,gunAct:att.gunAct-totCost,gw:nGW}:
+        {...att,act:att.act-totCost,ws:nW};
       sAt(p=>p.map(u=>u.id===att.id?uA:u));
       const src=isGunnerFiring?"🎯Canonnier":"⚔";
       aL(`${src} ${att.ic}${att.name}→${def.ic}${def.name} [${bW.n}]`);
+      if(rerolled)aL(`  🔄 Relance(1PA): 🎲${rrOld}→🎲${rolls[rrIdx]}${rolls[rrIdx]>=hitDiff?" ✓":" ✗"}`);
       aL(`  Touche: 🎲${rolls.join(",")} (≥${hitDiff}${def.prone&&cat==="melee"?" couché!":""}) → ${hits.length}/${rolls.length}`);
       for(const s of saveDetails)
         aL(`  Armure(${defArm})+Pén(${bW.pen})=${s.thresh}: 🎲${s.sr} ${s.ok?"✓Paré":"✗"+(s.d1||bW.dmg)+"dmg"}`);
@@ -886,7 +897,10 @@ function CrossBlock(){
 
   /* ═══ MANUAL CONTROL ═══ */
   const takeCtrl=(u)=>{
-    if(!paused||u.done||u.hp<=0||!u.dep)return;
+    const canCtrl=paused||isHuman(curP);
+    if(!canCtrl||u.done||u.hp<=0||!u.dep)return;
+    // In PvP/PvE, only allow controlling own units
+    if(isHuman(curP)&&u.pl!==curP){aL(`⚠ C'est au tour de J${curP}!`);return;}
     const fresh=all.find(x=>x.id===u.id)||u;
     sMU(fresh);sMW(null);showLos(fresh);
     const vInfo=fresh.isVeh&&fresh.vHp>0?` Véh:${fresh.vHp}/${fresh.vMHp}`:"";
@@ -992,13 +1006,23 @@ function CrossBlock(){
     }
     (uu.pl===1?sA1:sA2)(p=>p.map(a=>a.id===uu.id?{...a,done:true}:a));
     aL(`${uu.ic}${uu.name} terminé`);sMU(null);sMW(null);sLos([]);
-    if(paused){
+    // Handle turn switching for PvP/PvE and paused mode
+    const humanMode=isHuman(curP);
+    if(paused||humanMode){
       const oP=uu.pl===1?2:1;
       const oLeft=(oP===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep);
       const sLeft=(uu.pl===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep&&a.id!==uu.id);
-      if(oLeft.length>0)aL(`💡 J${oP} a ${oLeft.length} unité(s) — cliquez-en une`);
-      else if(sLeft.length>0)aL(`💡 J${uu.pl}: ${sLeft.length} unité(s) restante(s)`);
-      else aL("💡 Tour fini — cliquez ▶ pour continuer");
+      if(humanMode){
+        // Real player switching
+        if(oLeft.length>0){sCP(oP);aL(`━━ Tour de J${oP} ━━`);}
+        else if(sLeft.length>0){aL(`💡 J${uu.pl}: ${sLeft.length} unité(s) restante(s)`);}
+        else if(!oLeft.length&&!sLeft.length){sTurn(t=>t+1);aL("═══ NOUVEAU TOUR ═══");setTimeout(()=>rollInit(),400);}
+      } else {
+        // Paused AI mode hints
+        if(oLeft.length>0)aL(`💡 J${oP} a ${oLeft.length} unité(s) — cliquez-en une`);
+        else if(sLeft.length>0)aL(`💡 J${uu.pl}: ${sLeft.length} unité(s) restante(s)`);
+        else aL("💡 Tour fini — cliquez ▶ pour continuer");
+      }
     }
   };
 
@@ -1007,9 +1031,27 @@ function CrossBlock(){
     else{sPau(false);sMU(null);sMW(null);sLos([]);aL("▶ IA RELANCÉE");}
   };
 
+  // Is current player human?
+  const isHuman=(pl)=>gMode==="pvp"||(gMode==="pve"&&pl===1);
+
   /* ═══ AI ═══ */
   useEffect(()=>{
     if(phase!=="battle"||winner||paused||animating)return;
+    // If current player is human, don't auto-play — wait for manual input
+    if(isHuman(curP)){
+      // Auto-select first available unit if none selected
+      if(!mU){
+        const army=curP===1?a1:a2;
+        const active=army.filter(u=>u.hp>0&&!u.done&&u.dep);
+        if(!active.length){
+          const o=curP===1?2:1;
+          const oA=(o===1?a1:a2).filter(u=>u.hp>0&&!u.done&&u.dep);
+          if(!oA.length){sTurn(t=>t+1);aL("═══ NOUVEAU TOUR ═══");setTimeout(()=>rollInit(),400);}
+          else sCP(o);
+        }
+      }
+      return;
+    }
     aiRef.current=setTimeout(()=>{
       const army=curP===1?a1:a2;
       const air=army.find(u=>u.air&&!u.dep&&u.hp>0);
@@ -1041,7 +1083,7 @@ function CrossBlock(){
       const u=pickBest(active);sSel(u);showLos(u);setTimeout(()=>aiPlay(u),500);
     },900);
     return()=>{if(aiRef.current)clearTimeout(aiRef.current);};
-  },[phase,curP,a1,a2,ev1,ev2,turn,winner,paused,animating]);
+  },[phase,curP,a1,a2,ev1,ev2,turn,winner,paused,animating,gMode,mU]);
 
   const pickBest=(active)=>{
     let best=active[0],bs=-1e9;
@@ -1068,111 +1110,109 @@ function CrossBlock(){
     if(!en.length){endAi(u);return;}
     let cur={...u};const sA=cur.pl===1?sA1:sA2;const sD=cur.pl===1?sA2:sA1;
 
-    // Helper: can fire from position?
-    const canFireFrom=(px,py,ws)=>{
-      for(const e of en.filter(e=>e.hp>0)){
-        const d=Math.hypot(px-(e.x+BR),py-(e.y+BR));
+    // ── Helpers ──
+    const wPow=(w)=>{const s=WEAPS[w.key]||VWEAPS[w.key];return s?(w.cur||s.mun)*(s.dMax||s.dmg)*Math.max(s.pen,1):0;};
+    const canFireFrom2=(px,py,ws)=>{
+      for(const e of en.filter(e=>e.hp>0)){const d=Math.hypot(px-(e.x+BR),py-(e.y+BR));
         if(blocked(px,py,e.x+BR,e.y+BR,terr))continue;
-        const cat=rCat(d);for(const w of ws){if(w.cur>0&&wDiff(w.key,cat)>0)return true;}
-      }return false;
-    };
-
-    // Optimal range: distance where best weapon has lowest difficulty
-    const getOptRange=()=>{
-      let best=C1*SEG_PX*0.7,bestD=99;
-      for(const w of cur.ws){const src=WEAPS[w.key]||VWEAPS[w.key];if(!src)continue;
-        const cats=[{d:src.melee,r:BASE*4},{d:src.cat1,r:C1*SEG_PX*0.7},{d:src.cat2,r:(C1+C2)/2*SEG_PX*0.5},{d:src.catP,r:C2*SEG_PX*0.9}];
-        for(const c of cats){if(c.d>0&&c.d<bestD){bestD=c.d;best=c.r;}}
-      }return best;
-    };
-    const optRange=getOptRange();
-
-    // Closest enemy distance
-    const closestEnDist=()=>en.filter(e=>e.hp>0).reduce((m,e)=>Math.min(m,Math.hypot(cur.x+BR-(e.x+BR),cur.y+BR-(e.y+BR))),1e9);
+        const cat=rCat(d);for(const w of ws){if(w.cur>0&&wDiff(w.key,cat)>0)return true;}}return false;};
+    const bestTgt=(px,py,ws)=>{let bT=null,bS=-1e9;
+      for(const e of en.filter(e=>e.hp>0)){const d=Math.hypot(px-(e.x+BR),py-(e.y+BR));
+        if(blocked(px,py,e.x+BR,e.y+BR,terr))continue;
+        const cat=rCat(d);for(const w of ws){if(w.cur<=0)continue;const df=wDiff(w.key,cat);const wd=w.dMax||w.dmg;
+          if(df>0){const sc=(21-df)*w.cur*wd+(e.hp<=wd?80:0);if(sc>bS){bS=sc;bT=e;}}}}return{t:bT,s:bS};};
+    const threatAt=(px,py)=>{let t=0;
+      for(const e of en.filter(e=>e.hp>0)){const d=Math.hypot(px-(e.x+BR),py-(e.y+BR));
+        if(!blocked(px,py,e.x+BR,e.y+BR,terr)){
+          for(const w of e.ws||[]){const df=wDiff(w.key,rCat(d));if(df>0)t+=((21-df)/20)*(w.cur||1);}}}return t;};
+    const getOptR=()=>{let b=C1*SEG_PX*0.7,bd=99;
+      for(const w of cur.ws){const s=WEAPS[w.key]||VWEAPS[w.key];if(!s)continue;
+        const cs=[{d:s.melee,r:BASE*4},{d:s.cat1,r:C1*SEG_PX*0.7},{d:s.cat2,r:(C1+C2)/2*SEG_PX*0.5},{d:s.catP,r:C2*SEG_PX*0.9}];
+        for(const c of cs){if(c.d>0&&c.d<bd){bd=c.d;b=c.r;}}}return b;};
+    const optR=getOptR();
+    const clEnD=()=>en.filter(e=>e.hp>0).reduce((m,e)=>Math.min(m,Math.hypot(cur.x+BR-(e.x+BR),cur.y+BR-(e.y+BR))),1e9);
 
     const step=(n)=>{
-      if(n>10||cur.act<=0){
-        if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}
-        endAi(cur);return;
+      if(n>10||cur.act<=0){if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}endAi(cur);return;}
+      const cx3=cur.x+BR,cy3=cur.y+BR;
+      const bt=bestTgt(cx3,cy3,cur.ws);
+
+      // ═══ PHASE 1: ATTACK (priority — reroll if we have spare PA) ═══
+      if(cur.act>=2&&bt.t){
+        // Reroll: worth 1PA if unit has 3+ PA (saves 2PA vs re-attacking)
+        const doReroll=cur.act>=3?1:0;
+        attackUnit(cur,bt.t,sA,sD,(uA)=>{if(uA){cur=uA;sSel(cur);showLos(cur);}setTimeout(()=>step(n+1),700);},false,doReroll);
+        return;
       }
 
-      // ── PHASE 1: ATTACK (always try first if 2+ PA) ──
-      if(cur.act>=2){
-        const cx=cur.x+BR,cy=cur.y+BR;let bT=null,bS=-1e9;
-        for(const e of en.filter(e=>e.hp>0)){
-          const d=Math.hypot(cx-(e.x+BR),cy-(e.y+BR));
-          if(blocked(cx,cy,e.x+BR,e.y+BR,terr))continue;
-          const cat=rCat(d);for(const w of cur.ws){if(w.cur<=0)continue;const df=wDiff(w.key,cat);const wd=w.dMax||w.dmg;
-            if(df>0){const sc=(21-df)*w.cur*wd+(e.hp<=wd?80:0);if(sc>bS){bS=sc;bT=e;}}}
-        }
-        if(bT){
-          attackUnit(cur,bT,sA,sD,(uA)=>{if(uA){cur=uA;sSel(cur);showLos(cur);}setTimeout(()=>step(n+1),700);});
-          return;
+      // ═══ PHASE 2: PICKUP nearby weapon (better or dual-wield) ═══
+      if(cur.act>=1&&!cur.isVeh){
+        const nd=drops.filter(d=>d.pickable&&Math.hypot((d.x+2)-cx3,(d.y+2)-cy3)<=BASE*2.5);
+        if(nd.length>0){
+          const cbp=cur.ws.reduce((m,w)=>Math.max(m,wPow(w)),0);
+          let pk=null,ps=-1;
+          for(const d of nd){const w=WEAPS[d.key];if(!w)continue;
+            const pw=(w.mun||1)*(w.dMax||w.dmg)*Math.max(w.pen,1);
+            const same=cur.ws.some(c=>c.key===d.key);
+            const sc=pw+(same?pw*0.8:0);
+            if(sc>ps&&(pw>cbp*0.7||same)){ps=sc;pk=d;}}
+          if(pk){
+            const wd=WEAPS[pk.key];const same=cur.ws.some(c=>c.key===pk.key);
+            sA(p=>p.map(a=>a.id===cur.id?{...a,ws:[...a.ws,{key:pk.key,...wd,cur:wd.mun}],act:a.act-1}:a));
+            sDrops(p=>p.filter(d=>d.id!==pk.id));
+            cur={...cur,ws:[...cur.ws,{key:pk.key,...wd,cur:wd.mun}],act:cur.act-1};
+            aL("\uD83D\uDD2B "+cur.ic+cur.name+" ramasse "+pk.name+(same?" (tir dual!)":"")+"!");
+            sSel(cur);showLos(cur);setTimeout(()=>step(n+1),400);return;
+          }
         }
       }
 
-      // ── PHASE 2: ALWAYS ADVANCE toward optimal firing range ──
+      // ═══ PHASE 3: MOVE only if can't attack or not at optimal ═══
       if(cur.act>=1){
-        const ceDist=closestEnDist();
-        const canFireHere=canFireFrom(cur.x+BR,cur.y+BR,cur.ws);
-        const atOptimal=Math.abs(ceDist-optRange)<SEG_PX*2;
+        const ced=clEnD();const cfH=canFireFrom2(cx3,cy3,cur.ws);
+        const atOpt=Math.abs(ced-optR)<SEG_PX*2;const cTh=threatAt(cx3,cy3);
+        // Stay if can fire AND at optimal range
+        if(cfH&&atOpt){if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}endAi(cur);return;}
 
-        // Only stay if: can fire AND roughly at optimal range
-        if(canFireHere&&atOptimal){
-          if(cur.isVeh&&cur.hasGunner&&!cur.gunDone&&cur.gunAct>=2){aiGunner(cur);return;}
-          endAi(cur);return;
-        }
+        let bDe=null,bDS=-1e9,cl=null,clD2=1e9;
+        for(const e of en.filter(e=>e.hp>0)){const d=Math.hypot(e.x-cur.x,e.y-cur.y);if(d<clD2){clD2=d;cl=e;}}
 
-        // ── Find best move position ──
-        let bDe=null,bDS=-1e9;
-        // Closest enemy for direct approach
-        let cl=null,clD=1e9;for(const e of en.filter(e=>e.hp>0)){const d=Math.hypot(e.x-cur.x,e.y-cur.y);if(d<clD){clD=d;cl=e;}}
-
-        const candidates=[];
-        // 30 random positions
-        for(let i=0;i<30;i++){
-          const a=Math.random()*Math.PI*2,mp=(2+cur.mm)*SEG_PX*(0.4+Math.random()*0.6);
+        const cands=[];
+        // 40 random positions for better coverage
+        for(let i=0;i<40;i++){
+          const a=Math.random()*Math.PI*2,mp=(2+cur.mm)*SEG_PX*(0.3+Math.random()*0.7);
           const c2=clamp(cur.x+Math.cos(a)*mp,cur.y+Math.sin(a)*mp);
           if((!cur.fly&&(onTerr(c2.x,c2.y,terr)||blocked(cur.x+BR,cur.y+BR,c2.x+BR,c2.y+BR,terr)))||overlap(c2.x,c2.y,all,cur.id))continue;
-          candidates.push(c2);
+          cands.push(c2);
         }
-        // Direct approach toward closest enemy — aim for optimal range distance
-        if(cl){
-          const ag=Math.atan2(cl.y-cur.y,cl.x-cur.x);
-          const ms=(2+cur.mm)*SEG_PX;
-          const c2=clamp(cur.x+Math.cos(ag)*ms,cur.y+Math.sin(ag)*ms);
-          if(!overlap(c2.x,c2.y,all,cur.id)&&(cur.fly||(!onTerr(c2.x,c2.y,terr)&&!blocked(cur.x+BR,cur.y+BR,c2.x+BR,c2.y+BR,terr))))
-            candidates.push(c2);
-          // Also try 80% and 60% of max speed
-          for(const f of [0.8,0.6]){
-            const c3=clamp(cur.x+Math.cos(ag)*ms*f,cur.y+Math.sin(ag)*ms*f);
-            if(!overlap(c3.x,c3.y,all,cur.id)&&(cur.fly||(!onTerr(c3.x,c3.y,terr)&&!blocked(cur.x+BR,cur.y+BR,c3.x+BR,c3.y+BR,terr))))
-              candidates.push(c3);
-          }
+        // Direct + partial speeds + flanking
+        if(cl){const ag=Math.atan2(cl.y-cur.y,cl.x-cur.x);const ms=(2+cur.mm)*SEG_PX;
+          for(const f of[1,0.8,0.6,0.4]){
+            const c2=clamp(cur.x+Math.cos(ag)*ms*f,cur.y+Math.sin(ag)*ms*f);
+            if(!overlap(c2.x,c2.y,all,cur.id)&&(cur.fly||(!onTerr(c2.x,c2.y,terr)&&!blocked(cur.x+BR,cur.y+BR,c2.x+BR,c2.y+BR,terr))))cands.push(c2);}
+          for(const off of[Math.PI/4,-Math.PI/4,Math.PI/3,-Math.PI/3]){
+            const c2=clamp(cur.x+Math.cos(ag+off)*ms*0.8,cur.y+Math.sin(ag+off)*ms*0.8);
+            if(!overlap(c2.x,c2.y,all,cur.id)&&(cur.fly||(!onTerr(c2.x,c2.y,terr)&&!blocked(cur.x+BR,cur.y+BR,c2.x+BR,c2.y+BR,terr))))cands.push(c2);}
         }
 
-        for(const c2 of candidates){
-          let sc=0;const px2=c2.x+BR,py2=c2.y+BR;
-          // Can fire from new position? Big bonus
-          for(const e of en.filter(e=>e.hp>0)){
-            const d=Math.hypot(px2-(e.x+BR),py2-(e.y+BR));
-            if(!blocked(px2,py2,e.x+BR,e.y+BR,terr)){
-              const cat=rCat(d);for(const w of cur.ws)if(w.cur>0&&wDiff(w.key,cat)>0)sc+=60;
-            }
-          }
-          // How close to optimal range? Strong bonus
-          const newDist=en.filter(e=>e.hp>0).reduce((m,e)=>Math.min(m,Math.hypot(px2-(e.x+BR),py2-(e.y+BR))),1e9);
-          const optDelta=Math.abs(newDist-optRange);
-          sc+=Math.max(0,40-optDelta/SEG_PX*5);
-          // Reward advancing toward enemy (very important — drives engagement)
-          if(newDist<ceDist)sc+=25;
-          // Small threat penalty (units accept risk to fight)
-          // sc-=threatAt(px2,py2)*5; // almost zero — fighting is the point
+        for(const c2 of cands){let sc=0;const px2=c2.x+BR,py2=c2.y+BR;
+          // Can fire from there?
+          const bt2=bestTgt(px2,py2,cur.ws);if(bt2.t)sc+=70;
+          // Distance to optimal range
+          const nd2=en.filter(e=>e.hp>0).reduce((m,e)=>Math.min(m,Math.hypot(px2-(e.x+BR),py2-(e.y+BR))),1e9);
+          sc+=Math.max(0,50-Math.abs(nd2-optR)/SEG_PX*6);
+          // Reward approaching but not past optimal
+          if(nd2<ced&&nd2>=optR*0.5)sc+=20;
+          // Threat penalty: don't rush into a crowd
+          const nt=threatAt(px2,py2);if(nt>cTh+1)sc-=(nt-cTh)*12;
+          if(nd2<optR*0.4)sc-=30;
+          // Nearby weapon pickup?
+          const nwp=drops.filter(d=>d.pickable&&Math.hypot((d.x+2)-px2,(d.y+2)-py2)<=BASE*3);
+          if(nwp.length>0)sc+=15;
           if(sc>bDS){bDS=sc;bDe=c2;}
         }
 
-        // ALWAYS move if not at optimal range — even with negative score
-        if(bDe){
+        if(bDe&&bDS>-10){
           moveUnit(cur,bDe.x,bDe.y,sA,(r)=>{if(r){cur=r;sSel(cur);showLos(cur);setTimeout(()=>step(n+1),400);}else endAi(cur);});return;
         }
       }
@@ -1181,7 +1221,7 @@ function CrossBlock(){
     };step(0);
   };
 
-  /* Gunner AI — fires vehicle gunner weapons */
+    /* Gunner AI — fires vehicle gunner weapons */
   const aiGunner=(veh)=>{
     const en=all.filter(e=>e.pl!==veh.pl&&e.hp>0&&e.dep);
     if(!en.length||!veh.gw||veh.gunAct<2){endAi(veh);return;}
@@ -1203,23 +1243,25 @@ function CrossBlock(){
   };
 
   const endAi=(u)=>{
-    // Auto-pickup: if unit has actions left and there's a pickable weapon at contact, grab the best one
+    // Auto-pickup: grab best nearby weapon (better or dual-wield)
     if(u.act>=1&&!u.isVeh&&u.hp>0){
-      const nearby=drops.filter(d=>d.pickable&&Math.hypot((d.x+2)-(u.x+BR),(d.y+2)-(u.y+BR))<=BASE*2);
+      const nearby=drops.filter(d=>d.pickable&&Math.hypot((d.x+2)-(u.x+BR),(d.y+2)-(u.y+BR))<=BASE*2.5);
       if(nearby.length>0){
-        // Score weapons: higher = better (mun * dmg * pen as rough power)
+        const curBP=u.ws.reduce((m,w)=>{const s=WEAPS[w.key];return Math.max(m,s?(s.mun||1)*(s.dMax||s.dmg)*Math.max(s.pen,1):0);},0);
         let best=null,bs=-1;
         for(const d of nearby){
           const w=WEAPS[d.key];if(!w)continue;
-          const sc=w.mun*(w.dMax||w.dmg)*Math.max(w.pen,1);
-          if(sc>bs){bs=sc;best=d;}
+          const pw=(w.mun||1)*(w.dMax||w.dmg)*Math.max(w.pen,1);
+          const hasSame=u.ws.some(cw=>cw.key===d.key);
+          const sc=pw+(hasSame?pw*0.5:0);
+          if(sc>bs&&(pw>curBP*0.5||hasSame)){bs=sc;best=d;}
         }
         if(best){
-          const wData=WEAPS[best.key];
+          const wData=WEAPS[best.key];const hasSame=u.ws.some(cw=>cw.key===best.key);
           const sA=u.pl===1?sA1:sA2;
           sA(p=>p.map(a=>a.id===u.id?{...a,ws:[...a.ws,{key:best.key,...wData,cur:wData.mun}],done:true,act:0,gunDone:true}:a));
           sDrops(p=>p.filter(d=>d.id!==best.id));
-          aL(`🔫 ${u.ic}${u.name} ramasse ${best.name} en fin de tour!`);
+          aL(`🔫 ${u.ic}${u.name} ramasse ${best.name}${hasSame?" (dual!)":""}!`);
           sSel(null);sLos([]);
           const o=curP===1?2:1;
           const oA=(o===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep);
@@ -1337,7 +1379,7 @@ function CrossBlock(){
     if(phase==="battle"){
       for(const u of all){
         if(u.dep&&u.hp>0&&x>=u.x-2&&x<=u.x+BASE+2&&y>=u.y-2&&y<=u.y+BASE+2){
-          if(paused&&!u.done)takeCtrl(u);
+          if((paused||isHuman(curP))&&!u.done)takeCtrl(u);
           else showLos(u);
           return;
         }
@@ -1594,16 +1636,14 @@ function CrossBlock(){
     <div style={{minHeight:"100vh",background:"#0d1117",color:"#e6edf3",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
       {/* HEADER */}
       <div style={{background:"#161b22",padding:"8px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"3px solid #f0c040",flexWrap:"wrap"}}>
-        <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}>🧱 CROSSBLOCKS</span>
-        <a href="index.html" style={{fontSize:10,color:"#8b949e",textDecoration:"none",padding:"4px 10px",border:"1px solid #30363d",borderRadius:5,cursor:"pointer"}}>🃏 Éditeur de cartes</a>
+        <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}>🧱 CROSSBLOCK</span>
         <div style={{display:"flex",gap:2}}>
-          {[["army","⚔ Armées"],["battle","💥 Bataille"],["sim","🔬 Simulation"],isGameAdmin&&["tips","⚖ Balance"]].filter(Boolean).map(([k,l])=>(
+          {[["army","⚔ Armées"],["battle","💥 Bataille"],["sim","🔬 Simulation"],["tips","⚖ Balance"]].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{padding:"4px 12px",border:"none",borderRadius:"5px 5px 0 0",fontWeight:700,cursor:"pointer",fontSize:10,background:tab===k?"#f0c040":"#21262d",color:tab===k?"#000":"#8b949e"}}>{l}</button>
           ))}
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-          {!isGameAdmin&&<button onClick={()=>{var p=prompt("Mot de passe admin :");if(p==="crossblocks123")setGameAdmin(true);else if(p!==null)alert("Incorrect");}} style={{...BS("#21262d"),fontSize:10,padding:"4px 10px",color:"#8b949e"}}>🔒 Admin</button>}
-          {phase==="battle"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?"▶ RELANCER":"⏸ PAUSE"}</button>}
+          {phase==="battle"&&gMode==="ai"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?"▶ RELANCER":"⏸ PAUSE"}</button>}
           {phase!=="setup"&&<button onClick={resetGame} style={{...BS("#6e1010"),fontSize:13,padding:"6px 16px"}}>🔄 NOUVELLE PARTIE</button>}
         </div>
       </div>
@@ -2155,7 +2195,17 @@ function CrossBlock(){
 
           {phase==="deploy_choice"&&(
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:20,gap:12}}>
-              <h2 style={{color:"#f0c040",fontSize:20,margin:0}}>Mode de déploiement</h2>
+              <h2 style={{color:"#f0c040",fontSize:20,margin:0}}>Mode de jeu</h2>
+              <div style={{display:"flex",gap:10,marginBottom:8}}>
+                {[["ai","🤖 vs 🤖","IA vs IA"],["pve","🎮 vs 🤖","Joueur vs IA"],["pvp","🎮 vs 🎮","Joueur vs Joueur"]].map(([k,ic,lb])=>(
+                  <button key={k} onClick={()=>sGMode(k)} style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"10px 18px",borderRadius:8,border:`2px solid ${gMode===k?"#f0c040":"#30363d"}`,background:gMode===k?"#f0c04022":"#0d1117",color:"#e6edf3",cursor:"pointer",gap:4,transition:"all .2s"}}>
+                    <span style={{fontSize:22}}>{ic}</span><span style={{fontSize:11,fontWeight:700}}>{lb}</span>
+                  </button>
+                ))}
+              </div>
+              {gMode==="pve"&&<p style={{color:"#58a6ff",fontSize:10,margin:0}}>Vous contrôlez J1 (bleu), l'IA joue J2 (rouge)</p>}
+              {gMode==="pvp"&&<p style={{color:"#58a6ff",fontSize:10,margin:0}}>Chaque joueur contrôle ses unités à tour de rôle sur le même écran</p>}
+              <h3 style={{color:"#8b949e",fontSize:14,margin:"8px 0 4px"}}>Déploiement</h3>
               <p style={{color:"#8b949e",fontSize:10,margin:0}}>Plateau 2×3 portées. Unités au bord.</p>
               <div style={{display:"flex",gap:14}}>
                 <button onClick={()=>startDeploy("manual")} style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 28px",borderRadius:8,border:"2px solid #238636",background:"#238636"+"33",color:"#e6edf3",cursor:"pointer",gap:4}}>
@@ -2195,19 +2245,35 @@ function CrossBlock(){
             <div style={{background:"#161b22",border:"1px solid #30363d",borderRadius:5,padding:6,marginBottom:5,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",fontSize:11}}>
               <span style={{color:"#f0c040",fontWeight:700}}>Tour {turn}</span>
               <span style={{color:"#8b949e"}}>🎲J1:{ini.p1} J2:{ini.p2}</span>
-              <span style={{color:curP===1?"#58a6ff":"#f85149",fontWeight:700}}>→J{curP}</span>
+              <span style={{color:curP===1?"#58a6ff":"#f85149",fontWeight:700}}>→J{curP}{isHuman(curP)?" 🎮":" 🤖"}</span>
               <span style={{color:"#58a6ff"}}>J1: {a1.filter(u=>u.hp>0).length}u</span>
               <span style={{color:"#f85149"}}>J2: {a2.filter(u=>u.hp>0).length}u</span>
+              {gMode!=="ai"&&<span style={{color:"#8b949e",fontSize:9,border:"1px solid #30363d",borderRadius:3,padding:"1px 4px"}}>{gMode==="pvp"?"🎮vs🎮":"🎮vs🤖"}</span>}
               {paused&&<span style={{color:"#f0c040",fontWeight:900}}>⏸ PAUSE</span>}
               {winner&&<span style={{color:"#f0c040",fontSize:16,fontWeight:900}}>🏆 J{winner} GAGNE!</span>}
             </div>
           )}
 
+          {/* PLAYER TURN BANNER (PvP/PvE) */}
+          {phase==="battle"&&!winner&&isHuman(curP)&&!mU&&(
+            <div style={{background:curP===1?"#0d2240":"#2a0d0d",border:`2px solid ${curP===1?"#58a6ff":"#f85149"}`,borderRadius:8,padding:"12px 16px",marginBottom:5,textAlign:"center"}}>
+              <div style={{fontSize:18,fontWeight:900,color:curP===1?"#58a6ff":"#f85149"}}>🎮 JOUEUR {curP} — À VOUS!</div>
+              <div style={{fontSize:11,color:"#8b949e",marginTop:4}}>Cliquez sur une de vos unités pour la contrôler</div>
+              <button onClick={()=>{
+                const army=curP===1?a1:a2;
+                army.filter(u=>u.hp>0&&!u.done&&u.dep).forEach(u=>(curP===1?sA1:sA2)(p=>p.map(a=>a.id===u.id?{...a,done:true}:a)));
+                const o=curP===1?2:1;const oA=(o===1?a1:a2).filter(u=>u.hp>0&&!u.done&&u.dep);
+                if(oA.length>0){sCP(o);aL(`━━ Tour de J${o} ━━`);}
+                else{sTurn(t=>t+1);aL("═══ NOUVEAU TOUR ═══");setTimeout(()=>rollInit(),400);}
+              }} style={{...BS("#b35900"),fontSize:11,padding:"4px 14px",marginTop:6}}>⏭ Passer mon tour</button>
+            </div>
+          )}
+
           {/* MANUAL PANEL */}
-          {paused&&mU&&(
-            <div style={{background:"#1a1a0a",border:"3px solid #f0c040",borderRadius:8,padding:10,marginBottom:5}}>
+          {(paused||isHuman(curP))&&mU&&(
+            <div style={{background:"#1a1a0a",border:`3px solid ${curP===1?"#58a6ff":"#f85149"}`,borderRadius:8,padding:10,marginBottom:5}}>
               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
-                <span style={{fontWeight:900,color:"#f0c040",fontSize:15}}>🎮 {mU.ic} {mU.name} (J{mU.pl})</span>
+                <span style={{fontWeight:900,color:curP===1?"#58a6ff":"#f85149",fontSize:15}}>🎮 {mU.ic} {mU.name} (J{mU.pl})</span>
                 <span style={{color:"#58a6ff",fontWeight:700}}>PA:{mU.act}/{mU.mAct}</span>
                 <span style={{color:"#3fb950"}}>PV:{mU.hp}/{mU.mHp}</span>
                 {mU.isVeh&&mU.vHp>0&&<span style={{color:"#f0c040",fontWeight:700}}>Véh:{mU.vHp}/{mU.vMHp}</span>}
@@ -2238,15 +2304,15 @@ function CrossBlock(){
               {mW&&<div style={{marginTop:4,color:"#f0c040",fontSize:11,fontWeight:700}}>{mW==="move"?"➡ Cliquez la destination sur la carte":mW==="gunner"?"🎯 Canonnier: cliquez sur un ennemi":mW==="squadfire"?"👥 TIR GROUPÉ: cliquez l'ennemi cible":"🎯 Cliquez sur un ennemi"}</div>}
             </div>
           )}
-          {paused&&!mU&&phase==="battle"&&(
-            <div style={{background:"#1a1a0a",border:"2px solid #f0c040",borderRadius:6,padding:8,marginBottom:5,color:"#f0c040",fontSize:12,fontWeight:700}}>
-              🎮 Cliquez sur N'IMPORTE quelle unité non-activée pour la contrôler
+          {(paused||isHuman(curP))&&!mU&&phase==="battle"&&(
+            <div style={{background:curP===1?"#0d2240":"#2a0d0d",border:`2px solid ${isHuman(curP)?(curP===1?"#58a6ff":"#f85149"):"#f0c040"}`,borderRadius:6,padding:8,marginBottom:5,color:isHuman(curP)?(curP===1?"#58a6ff":"#f85149"):"#f0c040",fontSize:12,fontWeight:700}}>
+              🎮 {isHuman(curP)?`J${curP}: Cliquez une de vos unités`:"Cliquez sur N'IMPORTE quelle unité non-activée"}
             </div>
           )}
 
           {/* ═══ BOARD 3D ═══ */}
           {showBoard&&(
-            <div style={{overflow:"auto",maxWidth:"100%",perspective:"900px",perspectiveOrigin:"50% 30%",display:"flex",justifyContent:"center"}}>
+            <div style={{overflow:"auto",maxWidth:"100%",perspective:"900px",perspectiveOrigin:"50% 30%"}}>
               <svg ref={bRef} viewBox={`0 0 ${BW} ${BH}`}
                 width={Math.min(BW,typeof window!=='undefined'?window.innerWidth-24:500)}
                 height={Math.min(BH,(typeof window!=='undefined'?window.innerWidth-24:500)*BH/BW)}
@@ -2359,6 +2425,13 @@ function CrossBlock(){
                   </g>);
                 })}
 
+                {/* ═══ SQUAD LINKS ═══ */}
+                {(()=>{const sqG={};all.filter(u=>u.dep&&u.hp>0&&u.sqId).forEach(u=>{if(!sqG[u.sqId])sqG[u.sqId]=[];sqG[u.sqId].push(u);});
+                  return Object.entries(sqG).map(([sid,members])=>{if(members.length<2)return null;const sc=sqColor(sid);
+                    return <g key={"sq_"+sid} opacity={0.3}>{members.map((m,i)=>{if(i===0)return null;const p=members[i-1];
+                      return <line key={"sql_"+m.id} x1={p.x+BR} y1={p.y+BR} x2={m.x+BR} y2={m.y+BR} stroke={sc} strokeWidth={0.8} strokeDasharray="3,2"/>;
+                    })}</g>;}).filter(Boolean);
+                })()}
                 {/* ═══ LEGO MINIFIGURES & VEHICLES ═══ */}
                 {all.filter(u=>u.dep&&u.hp>0).map(u=>{
                   const cx=u.x+BR,cy=u.y+BR;
@@ -2372,8 +2445,12 @@ function CrossBlock(){
                       {isSel&&<ellipse cx={cx} cy={cy+2} rx={BR+5+VR} ry={BR*0.5+3} fill="none" stroke="#f0c040" strokeWidth={1} opacity={0.5}>
                         <animate attributeName="rx" values={`${BR+4+VR};${BR+7+VR};${BR+4+VR}`} dur="1s" repeatCount="indefinite"/>
                       </ellipse>}
-                      {/* Squad ring */}
-                      {sC&&<ellipse cx={cx} cy={cy+1} rx={BR+3} ry={BR*0.4} fill="none" stroke={sC} strokeWidth={1.2} opacity={0.6}/>}
+                      {/* Squad ring + label */}
+                      {sC&&<>
+                        <ellipse cx={cx} cy={cy+1} rx={BR+3} ry={BR*0.4} fill="none" stroke={sC} strokeWidth={1.5} opacity={0.7} strokeDasharray="2,1"/>
+                        <rect x={cx-4} y={u.y-H-5} width={8} height={3} rx={1} fill={sC} opacity={0.6}/>
+                        <text x={cx} y={u.y-H-2.8} textAnchor="middle" fontSize={2} fill="#000" fontWeight="bold">{u.sqId?u.sqId.replace("sq_","").substring(0,4).toUpperCase():""}</text>
+                      </>}
                       {/* Ground shadow */}
                       <ellipse cx={cx+0.5} cy={cy+H*0.3+3} rx={BR+(u.isVeh?5:2)} ry={BR*(u.isVeh?0.5:0.4)} fill="rgba(0,0,0,0.3)"/>
 
@@ -2456,8 +2533,6 @@ function CrossBlock(){
   );
 }
 
-
-// Mount the app
 
 // Mount the app
 const root = ReactDOM.createRoot(document.getElementById('root'));
