@@ -9,7 +9,7 @@ function promptAdmin() {
   if (pwd === ADMIN_PASSWORD) {
     isAdmin = true;
     var btn = document.getElementById("admin-btn");
-    if (btn) { btn.textContent = "🔓 Admin"; btn.style.borderColor = "var(--accent)"; btn.style.color = "var(--accent)"; }
+    if (btn) { btn.textContent = " Admin"; btn.style.borderColor = "var(--accent)"; btn.style.color = "var(--accent)"; }
     openAdmin();
   }
   else if (pwd !== null) alert("Mot de passe incorrect.");
