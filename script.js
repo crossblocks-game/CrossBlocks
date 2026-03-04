@@ -237,10 +237,7 @@ function loadToEditor(index) {
 
  // Set weapons
  selectedWeapons = unit.weapons.slice();
- var cbs = document.querySelectorAll("#weapon-selector input[type=checkbox]");
- for (var i = 0; i < cbs.length; i++) {
- cbs[i].checked = selectedWeapons.indexOf(cbs[i].value) >= 0;
- }
+ refreshWeaponCounters();
  updatePreview();
  // Scroll to editor
  document.querySelector(".editor-section").scrollIntoView({ behavior:"smooth" });
@@ -299,13 +296,9 @@ function populateWeapons() {
  for (var i = 0; i < weaponNames.length; i++) {
  var name = weaponNames[i];
  var w = CONFIG.weapons[name];
- var label = document.createElement("label");
- label.className = "weapon-option";
-
- var cb = document.createElement("input");
- cb.type = "checkbox";
- cb.value = name;
- cb.onchange = (function(cbRef) { return function() { toggleWeapon(cbRef); }; })(cb);
+ var row = document.createElement("div");
+ row.className = "weapon-option";
+ row.setAttribute("data-weapon", name);
 
  var nameSpan = document.createElement("span");
  nameSpan.className = "w-name";
@@ -313,7 +306,7 @@ function populateWeapons() {
  if (w._pending) {
  var badge = document.createElement("span");
  badge.className = "w-pending";
- badge.textContent = "non validé";
+ badge.textContent = "non valid\u00e9";
  nameSpan.appendChild(badge);
  }
 
@@ -321,20 +314,66 @@ function populateWeapons() {
  statsSpan.className = "w-stats";
  statsSpan.textContent = w.mun + "d p" + w.pen + " d" + w.dmg;
 
- label.appendChild(cb);
- label.appendChild(nameSpan);
- label.appendChild(statsSpan);
- grid.appendChild(label);
+ var ctrWrap = document.createElement("span");
+ ctrWrap.className = "w-counter";
+
+ var btnMinus = document.createElement("button");
+ btnMinus.type = "button";
+ btnMinus.textContent = "\u2212";
+ btnMinus.className = "w-btn w-btn-minus";
+ btnMinus.onclick = (function(n) { return function() { changeWeaponCount(n, -1); }; })(name);
+
+ var countSpan = document.createElement("span");
+ countSpan.className = "w-count";
+ countSpan.id = "wcount-" + name.replace(/[^a-zA-Z0-9]/g, "_");
+ countSpan.textContent = "0";
+
+ var btnPlus = document.createElement("button");
+ btnPlus.type = "button";
+ btnPlus.textContent = "+";
+ btnPlus.className = "w-btn w-btn-plus";
+ btnPlus.onclick = (function(n) { return function() { changeWeaponCount(n, 1); }; })(name);
+
+ ctrWrap.appendChild(btnMinus);
+ ctrWrap.appendChild(countSpan);
+ ctrWrap.appendChild(btnPlus);
+
+ row.appendChild(nameSpan);
+ row.appendChild(statsSpan);
+ row.appendChild(ctrWrap);
+ grid.appendChild(row);
  }
 }
 
-function toggleWeapon(cb) {
- if (cb.checked) {
- selectedWeapons.push(cb.value);
- } else {
- selectedWeapons = selectedWeapons.filter(w => w !== cb.value);
- }
+function getWeaponCount(name) {
+ return selectedWeapons.filter(function(w) { return w === name; }).length;
+}
+
+function changeWeaponCount(name, delta) {
+ var cur = getWeaponCount(name);
+ var next = Math.max(0, cur + delta);
+ // Rebuild selectedWeapons: remove all of this weapon, add 'next' copies
+ selectedWeapons = selectedWeapons.filter(function(w) { return w !== name; });
+ for (var i = 0; i < next; i++) selectedWeapons.push(name);
+ refreshWeaponCounters();
  updatePreview();
+}
+
+function refreshWeaponCounters() {
+ var weaponNames = Object.keys(CONFIG.weapons);
+ for (var i = 0; i < weaponNames.length; i++) {
+ var name = weaponNames[i];
+ var el = document.getElementById("wcount-" + name.replace(/[^a-zA-Z0-9]/g, "_"));
+ if (el) {
+ var ct = getWeaponCount(name);
+ el.textContent = ct;
+ el.style.color = ct > 0 ? "#f0c040" : "#555";
+ el.style.fontWeight = ct > 0 ? "700" : "400";
+ // Highlight row
+ var row = el.closest(".weapon-option");
+ if (row) row.style.borderColor = ct > 0 ? "#f0c040" : "#30363d";
+ }
+ }
 }
 
 // ── Live Preview ──
@@ -420,8 +459,7 @@ function clearForm() {
  document.getElementById("ed-move").value = "0";
  document.getElementById("ed-pa").value = "5";
  selectedWeapons = [];
- var cbs = document.querySelectorAll("#weapon-selector input[type=checkbox]");
- for (var i = 0; i < cbs.length; i++) cbs[i].checked = false;
+ refreshWeaponCounters();
  updatePreview();
 }
 
@@ -885,7 +923,7 @@ function getRemoteId() {
 
 function setupRemoteSync() {
  var statusEl = document.getElementById("sync-status");
- if (statusEl) statusEl.textContent = "⏳ Création...";
+ if (statusEl) statusEl.textContent = " Création...";
 
  fetch("https://jsonblob.com/api/jsonBlob", {
  method: "POST",
@@ -938,7 +976,7 @@ function manualRemoteId() {
 
 function forceSyncNow() {
  var statusEl = document.getElementById("sync-status");
- if (statusEl) statusEl.textContent = "⏳ Sync...";
+ if (statusEl) statusEl.textContent = " Sync...";
 
  fetchRemoteSuggestions(function(remote) {
  if (remote) {

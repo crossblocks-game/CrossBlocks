@@ -517,7 +517,7 @@ function computeRebalance(source) {
 function renderBalance() {
   var container = document.getElementById("balance-table");
   var vContainer = document.getElementById("balance-table-vehicles");
-  if (container) container.innerHTML = '<div style="color:#f0c040;font-size:11px;padding:8px">⏳ Simulation en cours (Monte Carlo)...</div>';
+  if (container) container.innerHTML = '<div style="color:#f0c040;font-size:11px;padding:8px"> Simulation en cours (Monte Carlo)...</div>';
   if (vContainer) vContainer.innerHTML = '';
 
   // Run async to not freeze UI

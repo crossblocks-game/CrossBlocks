@@ -21,8 +21,7 @@
  <!-- Babel standalone for JSX transpilation -->
  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 
- <script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef, useCallback, useMemo } = React;
+ <script type="text/babel" data-presets="react">const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* === CONSTANTS === */
 const SPX=2.8, SEG=13, SEG_PX=SEG*SPX, RS=6;
@@ -493,7 +492,7 @@ function getBalanceTips(L){
  if(sr>0.8)tips.push(` ${UDEFS[t].ic}${UDEFS[t].n} survit ${Math.round(sr*100)}% → +30pts`);
  if(sr<0.2)tips.push(` ${UDEFS[t].ic}${UDEFS[t].n} meurt ${Math.round((1-sr)*100)}% → -30pts`);
  }}
- if(!tips.length)tips.push(" Équilibrage correct.");
+ if(!tips.length)tips.push("Équilibrage correct.");
  return tips;
 }
 
@@ -507,7 +506,7 @@ function CrossBlock(){
  const[curP,_sCP]=useState(1);const[turn,sTurn]=useState(1);
  const sCP=(v)=>{realCP.current=v;_sCP(v);};
  const[ini,sIni]=useState({p1:0,p2:0});
- const[log,sLog]=useState([" Bienvenue dans CrossBlock !"]);
+ const[log,sLog]=useState(["Bienvenue dans CrossBlock !"]);
  const[bul,sBul]=useState([]);const[los,sLos]=useState([]);
  const[winner,sWin]=useState(null);
  const[p1,sP1]=useState(0);const[p2,sP2]=useState(0);
@@ -911,7 +910,7 @@ function CrossBlock(){
 
  const manAction=(a)=>{
  if(!mU)return;
- if(a==="move"){if(mU.act<1){aL("0PA");return;}sMW("move");aL("> Cliquez destination");}
+ if(a==="move"){if(mU.act<1){aL("0PA");return;}sMW("move");aL(">Cliquez destination");}
  else if(a==="attack"){if(mU.act<2){aL("2PA");return;}sMW("attack");aL("Cliquez ennemi");}
  else if(a==="gunner"){if(!mU.isVeh||mU.gunAct<2){aL("Canonnier: 2PA requis");return;}sMW("gunner");aL("Canonnier: cliquez ennemi");}
  else if(a==="prone"){
@@ -1310,7 +1309,7 @@ function CrossBlock(){
 
  const resetGame=()=>{
  setPhase("setup");setTab("army");sA1([]);sA2([]);sTerr([]);sSel(null);sCP(1);sTurn(1);
- sIni({p1:0,p2:0});sLog([" Bienvenue dans CrossBlock !"]);sBul([]);sLos([]);sWin(null);
+ sIni({p1:0,p2:0});sLog(["Bienvenue dans CrossBlock !"]);sBul([]);sLos([]);sWin(null);
  sP1(0);sP2(0);sDQ1([]);sDQ2([]);sDTn(1);sTSel(null);sPau(false);sMU(null);sMW(null);
  sAnimating(false);sDrops([]);sEv1([]);sEv2([]);if(aiRef.current)clearTimeout(aiRef.current);
  };
@@ -1659,15 +1658,15 @@ function CrossBlock(){
  <div style={{minHeight:"100vh",background:"#0d1117",color:"#e6edf3",fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
  {/* HEADER */}
  <div style={{background:"#161b22",padding:"8px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"3px solid #f0c040",flexWrap:"wrap"}}>
- <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}> CROSSBLOCK</span>
+ <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}>CROSSBLOCK</span>
  <div style={{display:"flex",gap:2}}>
  {[["army","Armées"],["battle","Bataille"],["sim","Simulation"],["tips","Balance"]].map(([k,l])=>(
  <button key={k} onClick={()=>setTab(k)} style={{padding:"4px 12px",border:"none",borderRadius:"5px 5px 0 0",fontWeight:700,cursor:"pointer",fontSize:10,background:tab===k?"#f0c040":"#21262d",color:tab===k?"#000":"#8b949e"}}>{l}</button>
  ))}
  </div>
  <div style={{marginLeft:"auto",display:"flex",gap:6}}>
- {phase==="battle"&&gMode==="ai"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?" RELANCER":" PAUSE"}</button>}
- {phase!=="setup"&&<button onClick={resetGame} style={{...BS("#6e1010"),fontSize:13,padding:"6px 16px"}}> NOUVELLE PARTIE</button>}
+ {phase==="battle"&&gMode==="ai"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?"RELANCER":"PAUSE"}</button>}
+ {phase!=="setup"&&<button onClick={resetGame} style={{...BS("#6e1010"),fontSize:13,padding:"6px 16px"}}>NOUVELLE PARTIE</button>}
  </div>
  </div>
 
@@ -1737,7 +1736,7 @@ function CrossBlock(){
  return(
  <div style={{padding:12,maxWidth:800,margin:"0 auto"}}>
  <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
- {[["theory"," Théorie"],["curves"," Courbes"],["parade"," Parade"],["units"," Valeur"],["propose"," Rééquilibrage"]].map(([k,l])=>(
+ {[["theory","Théorie"],["curves","Courbes"],["parade","Parade"],["units","Valeur"],["propose","Rééquilibrage"]].map(([k,l])=>(
  <button key={k} onClick={()=>sBalTab(k)} style={subBS(k)}>{l}</button>
  ))}
  </div>
@@ -1745,7 +1744,7 @@ function CrossBlock(){
  {/* ── THEORY ── */}
  {balTab==="theory"&&<div>
  <div style={C}>
- <p style={H}> Pourquoi 1000 soldats à 1PV battent 1 monstre à 1000PV ?</p>
+ <p style={H}>Pourquoi 1000 soldats à 1PV battent 1 monstre à 1000PV ?</p>
  <p style={S}>Imagine deux armées à coût égal :</p>
  <p style={{...S,color:"#f85149",fontWeight:700}}>• Armée A : 1 monstre — 10 PV, 1 arme</p>
  <p style={{...S,color:"#3fb950",fontWeight:700}}>• Armée B : 10 soldats — 1 PV, 1 arme chacun</p>
@@ -1756,19 +1755,19 @@ function CrossBlock(){
  </div>
  </div>
  <div style={C}>
- <p style={H}> La Loi de Lanchester (1916)</p>
+ <p style={H}>La Loi de Lanchester (1916)</p>
  <p style={S}>Pour le combat à distance, la puissance de combat = <b style={{color:"#f0c040"}}>N² × P</b></p>
  <p style={S}>(N = nombre d'unités, P = puissance individuelle)</p>
  <p style={S}>Pourquoi le <b>carré</b> ? Chaque unité supplémentaire :</p>
- <p style={S}>① <b>Ajoute</b> sa puissance de feu (×N)</p>
- <p style={S}>② <b>Dilue</b> le feu ennemi (survie ×N)</p>
- <p style={S}>→ N × N = <b>N²</b>. Doubler les unités <b>quadruple</b> la puissance.</p>
+ <p style={S}>① <b>Ajoute</b>sa puissance de feu (×N)</p>
+ <p style={S}>② <b>Dilue</b>le feu ennemi (survie ×N)</p>
+ <p style={S}>→ N × N = <b>N²</b>. Doubler les unités <b>quadruple</b>la puissance.</p>
  </div>
  <div style={C}>
- <p style={H}> Conséquence pour les points</p>
- <p style={S}>• 10 Clones (2PV chacun) = <b>100P</b> de puissance → 2000pts</p>
+ <p style={H}>Conséquence pour les points</p>
+ <p style={S}>• 10 Clones (2PV chacun) = <b>100P</b>de puissance → 2000pts</p>
  <p style={S}>• 1 unité à 20PV = seulement <b>~10-20P</b> (1 tir/tour !)</p>
- <p style={{...S,color:"#f85149"}}>→ Le coût doit augmenter <b>exponentiellement</b> avec les PV :</p>
+ <p style={{...S,color:"#f85149"}}>→ Le coût doit augmenter <b>exponentiellement</b>avec les PV :</p>
  <div style={{background:"#0d1117",borderRadius:4,padding:8,margin:"4px 0",textAlign:"center"}}>
  <span style={{color:"#f0c040",fontSize:14,fontWeight:900}}>Coût = Base × HP^1.5 × (1 + DPS) × (1 + Parade)</span>
  </div>
@@ -1798,7 +1797,7 @@ function CrossBlock(){
  {/* ── PARADE TABLE ── */}
  {balTab==="parade"&&<div>
  <div style={C}>
- <p style={H}> Probabilité de parade (arm + pen → seuil d20)</p>
+ <p style={H}>Probabilité de parade (arm + pen → seuil d20)</p>
  <p style={{...S,color:"#888",fontSize:9}}>Jet d20 ≥ arm+pen → dégât évité</p>
  <div style={{overflowX:"auto"}}>
  <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
@@ -1934,7 +1933,7 @@ function CrossBlock(){
  {/* ── REBALANCE ── */}
  {balTab==="propose"&&<div>
  <div style={C}>
- <p style={H}> Proposition de rééquilibrage</p>
+ <p style={H}>Proposition de rééquilibrage</p>
  <div style={{background:"#0d1117",borderRadius:4,padding:6,margin:"0 0 8px",fontSize:9}}>
  <p style={{color:"#f0c040",margin:"2px 0"}}>Principes :</p>
  <p style={{color:"#ccc",margin:"1px 0"}}>① HP exponentiel : <b>HP^1.5 × base</b> (Lanchester)</p>
@@ -1966,7 +1965,7 @@ function CrossBlock(){
  </div>
  </div>
  <div style={C}>
- <p style={H}> Armes à modifier</p>
+ <p style={H}>Armes à modifier</p>
  <div style={{fontSize:10}}>
  <p style={{color:"#f85149",margin:"2px 0"}}>tourelle_x3 mun: 12 → <b>8</b> (nerf Tri-Droïde)</p>
  <p style={{color:"#f85149",margin:"2px 0"}}>rocket_x3 mun: 3 → <b>2</b> (nerf Tri-Droïde)</p>
@@ -1974,7 +1973,7 @@ function CrossBlock(){
  </div>
  </div>
  <div style={C}>
- <p style={H}> Armées à ~2000pts (proposé)</p>
+ <p style={H}>Armées à ~2000pts (proposé)</p>
  <div style={{fontSize:10}}>
  {[
  "10 Clones = 2000pts",
@@ -1995,7 +1994,7 @@ function CrossBlock(){
  {tab==="sim"&&(
  <div style={{padding:12}}>
  <div style={{background:"#161b22",border:"1px solid #30363d",borderRadius:6,padding:12}}>
- <h3 style={{color:"#f0c040",margin:"0 0 8px",fontSize:16}}> Simulateur de batailles</h3>
+ <h3 style={{color:"#f0c040",margin:"0 0 8px",fontSize:16}}>Simulateur de batailles</h3>
  <p style={{color:"#8b949e",fontSize:10,margin:"0 0 10px"}}>Lance des batailles IA vs IA instantanément pour tester l'équilibre des armées.</p>
 
  {/* Army builders */}
@@ -2010,8 +2009,8 @@ function CrossBlock(){
  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
  <span style={{color:c,fontWeight:700,fontSize:12}}>J{pl} — {pts}pts ({sArmy.length}u)</span>
  <div style={{display:"flex",gap:3}}>
- <button onClick={()=>{const pr=pl===1?["clone","clone","clone","sniper","spec","officer","airborne","fives"]:["b1","b1","b1","b1","b1","b1","b1","b2","b2","b2"];setSArmy(pr);}} style={{...BS("#30363d"),fontSize:8,padding:"2px 6px"}}> Preset</button>
- <button onClick={()=>setSArmy([])} style={{...BS("#30363d"),fontSize:8,padding:"2px 6px"}}></button>
+ <button onClick={()=>{const pr=pl===1?["clone","clone","clone","sniper","spec","officer","airborne","fives"]:["b1","b1","b1","b1","b1","b1","b1","b2","b2","b2"];setSArmy(pr);}} style={{...BS("#30363d"),fontSize:8,padding:"2px 6px"}}>Preset</button>
+ <button onClick={()=>setSArmy([])} style={{...BS("#30363d"),fontSize:8,padding:"2px 6px",color:"#f44"}}>X</button>
  </div>
  </div>
  <div style={{display:"flex",flexWrap:"wrap",gap:2,marginBottom:3}}>
@@ -2063,7 +2062,7 @@ function CrossBlock(){
  sSimRes(res);sSimRunning(false);
  },50);
  }} disabled={simRunning} style={{...BS(simRunning?"#333":"#238636"),fontSize:13,padding:"6px 20px",opacity:simRunning?0.5:1}}>
- {simRunning?"⏳ Calcul...":" LANCER"}
+ {simRunning?"Calcul...":"LANCER"}
  </button>
  </div>
 
@@ -2143,7 +2142,7 @@ function CrossBlock(){
 
  {/* Recommendations */}
  <div style={{background:"#0d1117",borderRadius:6,padding:10,marginTop:10}}>
- <div style={{color:"#f0c040",fontWeight:700,fontSize:12,marginBottom:4}}> Recommandations d'équilibrage</div>
+ <div style={{color:"#f0c040",fontWeight:700,fontSize:12,marginBottom:4}}>Recommandations d'équilibrage</div>
  {(()=>{
  const tips=[];const r=simRes.w1/simRes.n;
  if(r>0.6)tips.push(`J1 gagne ${(r*100).toFixed(0)}% → Retirez une unité J1 ou ajoutez +1 B1 à J2`);
@@ -2154,7 +2153,7 @@ function CrossBlock(){
  if(rate>0.75)tips.push(`${def.ic} ${def.n} survit ${(rate*100).toFixed(0)}% → trop résistant, +30pts`);
  if(rate<0.15)tips.push(`${def.ic} ${def.n} meurt ${((1-rate)*100).toFixed(0)}% → trop fragile, -30pts`);
  }
- if(!tips.length)tips.push(" L'équilibre semble bon ! Essayez 500+ batailles pour confirmer.");
+ if(!tips.length)tips.push("L'équilibre semble bon ! Essayez 500+ batailles pour confirmer.");
  return tips.map((t,i)=><div key={i} style={{color:"#e6edf3",fontSize:10,margin:"3px 0",padding:"2px 0",borderBottom:"1px solid #21262d"}}>{t}</div>);
  })()}
  </div>
@@ -2173,7 +2172,7 @@ function CrossBlock(){
  return(<div key={pl} style={{flex:1,minWidth:240,background:"#161b22",border:`1px solid ${c}`,borderRadius:6,padding:8}}>
  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
  <span style={{color:c,fontWeight:700,fontSize:12}}>J{pl} — {pts}pts ({army.length}u)</span>
- <button onClick={()=>preset(pl)} style={BS("#30363d")}> Preset</button>
+ <button onClick={()=>preset(pl)} style={BS("#30363d")}>Preset</button>
  </div>
  <div style={{display:"flex",flexWrap:"wrap",gap:2,marginBottom:4}}>
  {Object.entries(UDEFS).filter(([,v])=>fac.includes(v.fac)).map(([k,v])=>(
@@ -2182,7 +2181,7 @@ function CrossBlock(){
  </div>
  {/* Vehicle buttons */}
  <div style={{borderTop:"1px solid #30363d",paddingTop:4,marginTop:2,marginBottom:4}}>
- <span style={{color:"#f0c040",fontSize:9,fontWeight:700}}> Véhicules:</span>
+ <span style={{color:"#f0c040",fontSize:9,fontWeight:700}}>Véhicules:</span>
  <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:2}}>
  {Object.entries(VDEFS).filter(([,v])=>v.fac===vFac).map(([k,v])=>(
  <button key={k} onClick={()=>addV(pl,k)} style={{...BS("#2a1f00"),fontSize:9,padding:"2px 5px",border:"1px solid #f0c04055"}}>{v.ic}{v.n}({v.pts})</button>
@@ -2201,7 +2200,7 @@ function CrossBlock(){
  </div>
  <div style={{marginTop:8,display:"flex",gap:6}}>
  <span style={{color:"#8b949e",fontSize:10}}>Écart: {Math.abs(p1-p2)}pts {Math.abs(p1-p2)>50?"":""}</span>
- <button onClick={()=>{if(!a1.length)preset(1);if(!a2.length)preset(2);setPhase("deploy_choice");setTab("battle");}} style={BS("#238636")}> Déploiement</button>
+ <button onClick={()=>{if(!a1.length)preset(1);if(!a2.length)preset(2);setPhase("deploy_choice");setTab("battle");}} style={BS("#238636")}>Déploiement</button>
  </div>
  </div>
  )}
@@ -2212,7 +2211,7 @@ function CrossBlock(){
  {phase==="setup"&&(
  <div style={{textAlign:"center",padding:20}}>
  <p style={{color:"#8b949e",margin:"0 0 10px"}}>Construisez vos armées ou démarrez vite!</p>
- <button onClick={()=>{preset(1);preset(2);setPhase("deploy_choice");}} style={{...BS("#238636"),fontSize:14,padding:"10px 24px"}}> Démarrage rapide</button>
+ <button onClick={()=>{preset(1);preset(2);setPhase("deploy_choice");}} style={{...BS("#238636"),fontSize:14,padding:"10px 24px"}}>Démarrage rapide</button>
  </div>
  )}
 
@@ -2244,9 +2243,9 @@ function CrossBlock(){
  {/* TERRAIN BAR */}
  {(phase==="terr_p1"||phase==="terr_p2")&&(
  <div style={{background:"#161b22",border:"2px solid #f0c040",borderRadius:5,padding:8,marginBottom:6,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
- <span style={{color:"#f0c040",fontWeight:700,fontSize:12}}> J{phase==="terr_p1"?1:2}: Placez décors</span>
- <button onClick={nextTerr} style={{...BS("#238636"),fontSize:14,padding:"6px 18px"}}> SUIVANT</button>
- <button onClick={delTerr} disabled={!tSel} style={{...BS(tSel?"#b35900":"#333"),fontSize:14,padding:"6px 18px",opacity:tSel?1:0.4}}> SUPPRIMER</button>
+ <span style={{color:"#f0c040",fontWeight:700,fontSize:12}}>J{phase==="terr_p1"?1:2}: Placez décors</span>
+ <button onClick={nextTerr} style={{...BS("#238636"),fontSize:14,padding:"6px 18px"}}>SUIVANT</button>
+ <button onClick={delTerr} disabled={!tSel} style={{...BS(tSel?"#b35900":"#333"),fontSize:14,padding:"6px 18px",opacity:tSel?1:0.4}}>SUPPRIMER</button>
  {tSel&&<span style={{color:"#ff0",fontSize:10}}>* sélectionné</span>}
  </div>
  )}
@@ -2256,7 +2255,7 @@ function CrossBlock(){
  <div style={{background:"#161b22",border:"2px solid #f0c040",borderRadius:5,padding:8,marginBottom:6}}>
  <span style={{color:"#f0c040",fontWeight:700,fontSize:13}}>J{dTn}: Placez {getCurDU()?`${getCurDU().ic} ${getCurDU().name}`:""}
  {dTn===1?" — bord BAS":" — bord HAUT"}
- {(dTn===1?ev1:ev2).length>0&&<span style={{color:"#b45309"}}> ou cliquez véhicule</span>}
+ {(dTn===1?ev1:ev2).length>0&&<span style={{color:"#b45309"}}>ou cliquez véhicule</span>}
  </span>
  <span style={{color:"#8b949e",fontSize:10,marginLeft:10}}>Restant J1:{dQ1.length} J2:{dQ2.length}</span>
  </div>
@@ -2272,7 +2271,7 @@ function CrossBlock(){
  <span style={{color:"#f85149"}}>J2: {a2.filter(u=>u.hp>0).length}u</span>
  {gMode!=="ai"&&<span style={{color:"#8b949e",fontSize:9,border:"1px solid #30363d",borderRadius:3,padding:"1px 4px"}}>{gMode==="pvp"?"vs":"vs"}</span>}
  {paused&&<span style={{color:"#f0c040",fontWeight:900}}>PAUSE</span>}
- {winner&&<span style={{color:"#f0c040",fontSize:16,fontWeight:900}}> J{winner} GAGNE!</span>}
+ {winner&&<span style={{color:"#f0c040",fontSize:16,fontWeight:900}}>J{winner} GAGNE!</span>}
  </div>
  )}
 
@@ -2306,9 +2305,9 @@ function CrossBlock(){
  <span style={{color:"#3fb950"}}>PV:{mU.hp}/{mU.mHp}</span>
  {mU.isVeh&&mU.vHp>0&&<span style={{color:"#f0c040",fontWeight:700}}>Véh:{mU.vHp}/{mU.vMHp}</span>}
  {mU.isVeh&&mU.hasGunner&&<span style={{color:"#d2a8ff",fontWeight:700}}>Canon:{mU.gunAct}PA</span>}
- {mU.fly&&<span style={{color:"#58a6ff",fontSize:10}}> Vol</span>}
- {mU.prone&&<span style={{color:"#60a5fa",fontSize:10}}> Couché</span>}
- {mU.sqId&&<span style={{color:sqColor(mU.sqId)||"#aaa",fontSize:10,border:`1px solid ${sqColor(mU.sqId)||"#555"}`,borderRadius:3,padding:"0 3px"}}> Escouade</span>}
+ {mU.fly&&<span style={{color:"#58a6ff",fontSize:10}}>Vol</span>}
+ {mU.prone&&<span style={{color:"#60a5fa",fontSize:10}}>Couché</span>}
+ {mU.sqId&&<span style={{color:sqColor(mU.sqId)||"#aaa",fontSize:10,border:`1px solid ${sqColor(mU.sqId)||"#555"}`,borderRadius:3,padding:"0 3px"}}>Escouade</span>}
  </div>
  {/* WEAPONS INFO */}
  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
@@ -2332,13 +2331,13 @@ function CrossBlock(){
  {!mU.isVeh&&(mU.pl===1?ev1:ev2).some(v=>Math.hypot((v.x+BR)-(mU.x+BR),(v.y+BR)-(mU.y+BR))<=SEG_PX*1.5)&&
  <button onClick={()=>manAction("board")} style={{...BS("#b45309"),fontSize:12,padding:"6px 14px"}}>EMBARQUER (all PA)</button>}
  {/* DISMOUNT */}
- {mU.isVeh&&<button onClick={()=>manAction("dismount")} disabled={mU.act<1} style={{...BS(mU.act>=1?"#dc2626":"#333"),fontSize:12,padding:"6px 14px",opacity:mU.act<1?0.3:1}}> DÉBARQUER (1PA)</button>}
+ {mU.isVeh&&<button onClick={()=>manAction("dismount")} disabled={mU.act<1} style={{...BS(mU.act>=1?"#dc2626":"#333"),fontSize:12,padding:"6px 14px",opacity:mU.act<1?0.3:1}}>DÉBARQUER (1PA)</button>}
  {/* PICK UP WEAPON */}
  {!mU.isVeh&&drops.some(d=>d.pickable&&Math.hypot((d.x+2)-(mU.x+BR),(d.y+2)-(mU.y+BR))<=SEG_PX)&&
  <button onClick={()=>manAction("pickup")} style={{...BS("#059669"),fontSize:12,padding:"6px 14px"}}>RAMASSER (all PA)</button>}
  <button onClick={()=>manAction("end")} style={{...BS("#555"),fontSize:13,padding:"7px 18px"}}>TERMINER</button>
  </div>
- {mU.prone&&<div style={{color:"#60a5fa",fontSize:10,marginTop:3}}> Couché — MM−4, invisible derrière petits décors</div>}
+ {mU.prone&&<div style={{color:"#60a5fa",fontSize:10,marginTop:3}}>Couché — MM−4, invisible derrière petits décors</div>}
  {mW&&<div style={{marginTop:4,color:"#f0c040",fontSize:11,fontWeight:700}}>{mW==="move"?"Cliquez la destination sur la carte":mW==="gunner"?"Canonnier: cliquez sur un ennemi":mW==="squadfire"?"TIR GROUPÉ: cliquez l'ennemi cible":"Cliquez sur un ennemi"}</div>}
  </div>
  )}

@@ -217,13 +217,19 @@ body {
 .weapon-grid::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
 .weapon-option {
-  display:grid; grid-template-columns:18px 1fr auto;
+  display:grid; grid-template-columns:1fr auto 80px;
   align-items:center; gap:6px;
-  padding:5px 8px; border-radius:4px; cursor:pointer;
-  transition:background .12s; font-size:12px;
+  padding:5px 8px; border-radius:4px;
+  transition:background .12s, border-color .2s; font-size:12px;
+  border:1px solid #30363d;
 }
 .weapon-option:hover { background:var(--surface2); }
-.weapon-option input[type="checkbox"] { accent-color:var(--accent); cursor:pointer; width:14px; height:14px; }
+.w-counter { display:flex; align-items:center; gap:2px; justify-content:flex-end; }
+.w-btn { width:22px; height:22px; border:1px solid #30363d; border-radius:3px; background:#21262d; color:#e6edf3; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; }
+.w-btn:hover { background:#30363d; }
+.w-btn-plus { color:#3fb950; }
+.w-btn-minus { color:#f85149; }
+.w-count { min-width:20px; text-align:center; font-size:12px; color:#555; }
 .weapon-option .w-name { color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .weapon-option .w-stats { color:var(--text2); font-size:9px; white-space:nowrap; text-align:right; }
 .w-pending {
@@ -687,7 +693,7 @@ body {
     grid-template-columns:1fr;
     max-height:150px;
   }
-  .weapon-option { padding:5px 6px; font-size:12px; }
+  .weapon-option { padding:5px 6px; font-size:12px; grid-template-columns:1fr auto 70px; }
 
   /* Form actions: stack buttons */
   .form-actions {
@@ -756,9 +762,7 @@ body {
 @media (hover: none) and (pointer: coarse) {
   .btn { min-height:40px; padding:8px 16px; }
   .weapon-option { min-height:36px; padding:6px 8px; }
-  .weapon-option input[type="checkbox"] {
-    width:18px; height:18px;
-  }
+  .w-btn { width:28px; height:28px; font-size:16px; }
   .gallery-card { min-height:44px; }
   .gc-add { width:32px; height:32px; font-size:18px; }
   .card-delete { width:28px; height:28px; font-size:16px; opacity:1; }
