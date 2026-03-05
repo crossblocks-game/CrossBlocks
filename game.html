@@ -513,7 +513,9 @@ function CrossBlock(){
   const[a1,sA1]=useState([]);const[a2,sA2]=useState([]);
   const[terr,sTerr]=useState([]);
   const[sel,sSel]=useState(null);
-  const[curP,sCP]=useState(1);const[turn,sTurn]=useState(1);
+  const[curP,_sCP]=useState(1);const[turn,sTurn]=useState(1);
+  const realCP=useRef(1);
+  const sCP=(v)=>{realCP.current=v;_sCP(v);};
   const[ini,sIni]=useState({p1:0,p2:0});
   const[log,sLog]=useState(["🧱 Bienvenue dans CrossBlock !"]);
   const[bul,sBul]=useState([]);const[los,sLos]=useState([]);
@@ -522,6 +524,7 @@ function CrossBlock(){
   const[dQ1,sDQ1]=useState([]);const[dQ2,sDQ2]=useState([]);
   const[dTn,sDTn]=useState(1);const[tSel,sTSel]=useState(null);
   const[paused,sPau]=useState(false);
+  const[gMode,sGMode]=useState("ai"); // "ai"=IA vs IA, "pvp"=J vs J, "pve"=J1(humain) vs J2(IA)
   const[mU,sMU]=useState(null);const[mW,sMW]=useState(null);
   const[animating,sAnimating]=useState(false);
   const[learn,sLearn]=useState({g:0,w1:0,w2:0,us:{}});
@@ -895,12 +898,15 @@ function CrossBlock(){
 
   /* ═══ MANUAL CONTROL ═══ */
   const takeCtrl=(u)=>{
-    if(!paused||u.done||u.hp<=0||!u.dep)return;
+    const canCtrl=paused||isHuman(realCP.current);
+    if(!canCtrl||u.done||u.hp<=0||!u.dep)return;
+    // In PvP/PvE, only allow controlling own units
+    if(isHuman(realCP.current)&&u.pl!==realCP.current){aL(`C'est au tour de J${realCP.current}!`);return;}
     const fresh=all.find(x=>x.id===u.id)||u;
     sMU(fresh);sMW(null);showLos(fresh);
     const vInfo=fresh.isVeh&&fresh.vHp>0?` Véh:${fresh.vHp}/${fresh.vMHp}`:"";
     const gInfo=fresh.isVeh&&fresh.hasGunner?` Canon:${fresh.gunAct}PA`:"";
-    aL(`🎮 ${fresh.ic}${fresh.name}(J${fresh.pl}) PA:${fresh.act}${vInfo}${gInfo}`);
+    aL(`${fresh.ic}${fresh.name}(J${fresh.pl}) PA:${fresh.act}${vInfo}${gInfo}`);
   };
 
   const manAction=(a)=>{
@@ -1001,24 +1007,49 @@ function CrossBlock(){
     }
     (uu.pl===1?sA1:sA2)(p=>p.map(a=>a.id===uu.id?{...a,done:true}:a));
     aL(`${uu.ic}${uu.name} terminé`);sMU(null);sMW(null);sLos([]);
-    if(paused){
+    // Handle turn switching for PvP/PvE and paused mode
+    const humanMode=isHuman(realCP.current);
+    if(paused||humanMode){
       const oP=uu.pl===1?2:1;
       const oLeft=(oP===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep);
       const sLeft=(uu.pl===1?a1:a2).filter(a=>a.hp>0&&!a.done&&a.dep&&a.id!==uu.id);
-      if(oLeft.length>0)aL(`💡 J${oP} a ${oLeft.length} unité(s) — cliquez-en une`);
-      else if(sLeft.length>0)aL(`💡 J${uu.pl}: ${sLeft.length} unité(s) restante(s)`);
-      else aL("💡 Tour fini — cliquez ▶ pour continuer");
+      if(humanMode){
+        if(oLeft.length>0){sCP(oP);aL(`━━ Tour de J${oP} ━━`);}
+        else if(sLeft.length>0){aL(`J${uu.pl}: ${sLeft.length} unité(s) restante(s)`);}
+        else if(!oLeft.length&&!sLeft.length){sTurn(t=>t+1);aL("═══ NOUVEAU TOUR ═══");setTimeout(()=>rollInit(),400);}
+      } else {
+        if(oLeft.length>0)aL(`J${oP} a ${oLeft.length} unité(s) — cliquez-en une`);
+        else if(sLeft.length>0)aL(`J${uu.pl}: ${sLeft.length} unité(s) restante(s)`);
+        else aL("Tour fini — cliquez RELANCER pour continuer");
+      }
     }
   };
 
   const togglePause=()=>{
-    if(!paused){sPau(true);if(aiRef.current){clearTimeout(aiRef.current);aiRef.current=null;}aL("⏸ PAUSE — Cliquez n'importe quelle unité");}
-    else{sPau(false);sMU(null);sMW(null);sLos([]);aL("▶ IA RELANCÉE");}
+    if(!paused){sPau(true);if(aiRef.current){clearTimeout(aiRef.current);aiRef.current=null;}aL("PAUSE — Cliquez n'importe quelle unité");}
+    else{sPau(false);sMU(null);sMW(null);sLos([]);aL("IA RELANCÉE");}
   };
+
+  // Is current player human?
+  const isHuman=(pl)=>gMode==="pvp"||(gMode==="pve"&&pl===1);
 
   /* ═══ AI ═══ */
   useEffect(()=>{
     if(phase!=="battle"||winner||paused||animating)return;
+    // If current player is human, don't auto-play — wait for manual input
+    if(isHuman(realCP.current)){
+      if(!mU){
+        const army=realCP.current===1?a1:a2;
+        const active=army.filter(u=>u.hp>0&&!u.done&&u.dep);
+        if(!active.length){
+          const o=realCP.current===1?2:1;
+          const oA=(o===1?a1:a2).filter(u=>u.hp>0&&!u.done&&u.dep);
+          if(!oA.length){sTurn(t=>t+1);aL("═══ NOUVEAU TOUR ═══");setTimeout(()=>rollInit(),400);}
+          else sCP(o);
+        }
+      }
+      return;
+    }
     aiRef.current=setTimeout(()=>{
       const army=curP===1?a1:a2;
       const air=army.find(u=>u.air&&!u.dep&&u.hp>0);
@@ -1034,8 +1065,8 @@ function CrossBlock(){
             boarded.x=v.x;boarded.y=v.y;boarded.done=false;boarded.act=nearby.mAct;
             sA(p=>p.map(u=>u.id===nearby.id?boarded:u));
             sEv(p=>p.filter(e=>e.id!==v.id));
-            aL(`🤖 ${nearby.ic}${nearby.name}(J${curP}) embarque → ${v.name}`);
-            return; // re-trigger AI loop after state update
+            aL(`${nearby.ic}${nearby.name}(J${curP}) embarque → ${v.name}`);
+            return;
           }
         }
       }
@@ -1050,7 +1081,7 @@ function CrossBlock(){
       const u=pickBest(active);sSel(u);showLos(u);setTimeout(()=>aiPlay(u),500);
     },900);
     return()=>{if(aiRef.current)clearTimeout(aiRef.current);};
-  },[phase,curP,a1,a2,ev1,ev2,turn,winner,paused,animating]);
+  },[phase,curP,a1,a2,ev1,ev2,turn,winner,paused,animating,gMode,mU]);
 
   const pickBest=(active)=>{
     let best=active[0],bs=-1e9;
@@ -1278,7 +1309,7 @@ function CrossBlock(){
     setPhase("setup");setTab("army");sA1([]);sA2([]);sTerr([]);sSel(null);sCP(1);sTurn(1);
     sIni({p1:0,p2:0});sLog(["🧱 Bienvenue dans CrossBlock !"]);sBul([]);sLos([]);sWin(null);
     sP1(0);sP2(0);sDQ1([]);sDQ2([]);sDTn(1);sTSel(null);sPau(false);sMU(null);sMW(null);
-    sAnimating(false);sDrops([]);sEv1([]);sEv2([]);if(aiRef.current)clearTimeout(aiRef.current);
+    sAnimating(false);sDrops([]);sEv1([]);sEv2([]);sGMode("ai");if(aiRef.current)clearTimeout(aiRef.current);
   };
 
   /* Board click */
@@ -1346,7 +1377,7 @@ function CrossBlock(){
     if(phase==="battle"){
       for(const u of all){
         if(u.dep&&u.hp>0&&x>=u.x-2&&x<=u.x+BASE+2&&y>=u.y-2&&y<=u.y+BASE+2){
-          if(paused&&!u.done)takeCtrl(u);
+          if((paused||isHuman(realCP.current))&&!u.done)takeCtrl(u);
           else showLos(u);
           return;
         }
@@ -1609,9 +1640,10 @@ function CrossBlock(){
             <button key={k} onClick={()=>setTab(k)} style={{padding:"4px 12px",border:"none",borderRadius:"5px 5px 0 0",fontWeight:700,cursor:"pointer",fontSize:10,background:tab===k?"#f0c040":"#21262d",color:tab===k?"#000":"#8b949e"}}>{l}</button>
           ))}
         </div>
-        <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-          {phase==="battle"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?"▶ RELANCER":"⏸ PAUSE"}</button>}
-          {phase!=="setup"&&<button onClick={resetGame} style={{...BS("#6e1010"),fontSize:13,padding:"6px 16px"}}>🔄 NOUVELLE PARTIE</button>}
+        <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center"}}>
+          {phase==="battle"&&gMode==="ai"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?"RELANCER":"PAUSE"}</button>}
+          {phase==="battle"&&(gMode==="pvp"||gMode==="pve")&&<span style={{color:curP===1?"#58a6ff":"#f85149",fontWeight:900,fontSize:13}}>→J{curP}{isHuman(curP)?" (vous)":gMode==="pve"?" (IA)":""} T{turn}</span>}
+          {phase!=="setup"&&<button onClick={resetGame} style={{...BS("#6e1010"),fontSize:13,padding:"6px 16px"}}>NOUVELLE PARTIE</button>}
         </div>
       </div>
 
@@ -2162,14 +2194,19 @@ function CrossBlock(){
 
           {phase==="deploy_choice"&&(
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:20,gap:12}}>
-              <h2 style={{color:"#f0c040",fontSize:20,margin:0}}>Mode de déploiement</h2>
-              <p style={{color:"#8b949e",fontSize:10,margin:0}}>Plateau 2×3 portées. Unités au bord.</p>
+              <h2 style={{color:"#f0c040",fontSize:20,margin:0}}>Mode de jeu</h2>
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                {[["ai","IA vs IA"],["pve","J vs IA"],["pvp","J vs J"]].map(([k,l])=>(
+                  <button key={k} onClick={()=>sGMode(k)} style={{...BS(gMode===k?"#f0c040":"#21262d"),color:gMode===k?"#000":"#e6edf3",fontSize:12,padding:"6px 14px",fontWeight:gMode===k?900:400}}>{l}</button>
+                ))}
+              </div>
+              <p style={{color:"#8b949e",fontSize:10,margin:0}}>Plateau 2x3 portées. Unités au bord.</p>
               <div style={{display:"flex",gap:14}}>
                 <button onClick={()=>startDeploy("manual")} style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 28px",borderRadius:8,border:"2px solid #238636",background:"#238636"+"33",color:"#e6edf3",cursor:"pointer",gap:4}}>
-                  <span style={{fontSize:28}}>🎯</span><span style={{fontSize:14,fontWeight:700}}>Manuel</span>
+                  <span style={{fontSize:14,fontWeight:700}}>Manuel</span>
                 </button>
                 <button onClick={()=>startDeploy("auto")} style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 28px",borderRadius:8,border:"2px solid #1f6feb",background:"#1f6feb33",color:"#e6edf3",cursor:"pointer",gap:4}}>
-                  <span style={{fontSize:28}}>🤖</span><span style={{fontSize:14,fontWeight:700}}>Auto</span>
+                  <span style={{fontSize:14,fontWeight:700}}>Auto</span>
                 </button>
               </div>
             </div>
@@ -2247,7 +2284,21 @@ function CrossBlock(){
           )}
           {paused&&!mU&&phase==="battle"&&(
             <div style={{background:"#1a1a0a",border:"2px solid #f0c040",borderRadius:6,padding:8,marginBottom:5,color:"#f0c040",fontSize:12,fontWeight:700}}>
-              🎮 Cliquez sur N'IMPORTE quelle unité non-activée pour la contrôler
+              Cliquez sur N'IMPORTE quelle unité non-activée pour la contrôler
+            </div>
+          )}
+
+          {/* PvP/PvE turn banner */}
+          {isHuman(curP)&&!mU&&phase==="battle"&&!winner&&(
+            <div style={{background:curP===1?"#0a1a2a":"#2a0a0a",border:`2px solid ${curP===1?"#58a6ff":"#f85149"}`,borderRadius:6,padding:8,marginBottom:5,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
+              <span style={{color:curP===1?"#58a6ff":"#f85149",fontWeight:900,fontSize:14}}>TOUR J{curP} — Sélectionnez une unité</span>
+              <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                {(curP===1?a1:a2).filter(u=>u.hp>0&&!u.done&&u.dep).map(u=>(
+                  <button key={u.id} onClick={()=>takeCtrl(u)} style={{...BS(curP===1?"#1a3a5a":"#3a1a1a"),fontSize:8,padding:"2px 6px",border:`1px solid ${curP===1?"#58a6ff44":"#f8514944"}`}}>
+                    {u.ic}{u.name} ({u.act}PA)
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -2374,7 +2425,7 @@ function CrossBlock(){
                   const H=u.isVeh?9:u.prone?3:7;
                   const VR=u.isVeh?BR+3:0;
                   return(
-                    <g key={u.id} onClick={e=>{e.stopPropagation();if(paused&&!u.done)takeCtrl(u);else showLos(u);}} style={{cursor:"pointer"}} filter="url(#unitSh)">
+                    <g key={u.id} onClick={e=>{e.stopPropagation();if((paused||isHuman(realCP.current))&&!u.done)takeCtrl(u);else showLos(u);}} style={{cursor:"pointer"}} filter="url(#unitSh)">
                       {/* Selection pulse */}
                       {isSel&&<ellipse cx={cx} cy={cy+2} rx={BR+5+VR} ry={BR*0.5+3} fill="none" stroke="#f0c040" strokeWidth={1} opacity={0.5}>
                         <animate attributeName="rx" values={`${BR+4+VR};${BR+7+VR};${BR+4+VR}`} dur="1s" repeatCount="indefinite"/>
@@ -2432,7 +2483,7 @@ function CrossBlock(){
           {phase==="battle"&&(
             <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:4}}>
               {all.filter(u=>u.hp>0&&u.dep).map(u=>(
-                <div key={u.id} onClick={()=>{if(paused)takeCtrl(u);else showLos(u);}}
+                <div key={u.id} onClick={()=>{if(paused||isHuman(realCP.current))takeCtrl(u);else showLos(u);}}
                   style={{padding:"1px 5px",borderRadius:3,fontSize:8,cursor:u.done&&!paused?"default":"pointer",
                     background:mU?.id===u.id?"rgba(240,192,64,0.2)":"#161b22",
                     borderLeft:`3px solid ${u.pl===1?"#3388ff":"#ff4444"}`,
