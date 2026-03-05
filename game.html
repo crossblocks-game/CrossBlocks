@@ -531,6 +531,7 @@ function CrossBlock(){
   const[simN,sSimN]=useState(100);
   const[simRes,sSimRes]=useState(null);
   const[simRunning,sSimRunning]=useState(false);
+  const[isAdm,sIsAdm]=useState(false);
   const[simA1,sSimA1]=useState([]);
   const[simA2,sSimA2]=useState([]);
   const[balArm,sBalArm]=useState(15);
@@ -1636,9 +1637,10 @@ function CrossBlock(){
       <div style={{background:"#161b22",padding:"8px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"3px solid #f0c040",flexWrap:"wrap"}}>
         <span style={{fontSize:20,fontWeight:900,color:"#f0c040",letterSpacing:2}}>🧱 CROSSBLOCK</span>
         <div style={{display:"flex",gap:2}}>
-          {[["army","⚔ Armées"],["battle","💥 Bataille"],["sim","🔬 Simulation"],["tips","⚖ Balance"]].map(([k,l])=>(
+          {[["army","Armées"],["battle","Bataille"],["sim","Simulation"],["tips","Balance"]].filter(([k])=>k!=="tips"||isAdm).map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{padding:"4px 12px",border:"none",borderRadius:"5px 5px 0 0",fontWeight:700,cursor:"pointer",fontSize:10,background:tab===k?"#f0c040":"#21262d",color:tab===k?"#000":"#8b949e"}}>{l}</button>
           ))}
+          {!isAdm&&<button onClick={()=>{const p=prompt("Mot de passe admin:");if(p==="crossblocks123"){sIsAdm(true);aL("Admin débloqué");}else if(p!==null)aL("Mot de passe incorrect");}} style={{padding:"4px 8px",border:"none",borderRadius:"5px 5px 0 0",cursor:"pointer",fontSize:10,background:"#21262d",color:"#484f58"}}>Admin</button>}
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center"}}>
           {phase==="battle"&&gMode==="ai"&&<button onClick={togglePause} style={{...BS(paused?"#238636":"#b35900"),fontSize:13,padding:"6px 16px"}}>{paused?"RELANCER":"PAUSE"}</button>}
@@ -1648,7 +1650,7 @@ function CrossBlock(){
       </div>
 
       {/* ═══ BALANCE TAB ═══ */}
-      {tab==="tips"&&(()=>{
+      {tab==="tips"&&isAdm&&(()=>{
         const ud=balUnitData(balArm);
         const vd=balVehData(balArm);
         const maxVal=Math.max(...ud.map(u=>u.value),1);
