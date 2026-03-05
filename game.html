@@ -2304,7 +2304,7 @@ function CrossBlock(){
 
           {/* ═══ BOARD 3D ═══ */}
           {showBoard&&(
-            <div style={{overflow:"auto",maxWidth:"100%",perspective:"900px",perspectiveOrigin:"50% 30%"}}>
+            <div style={{overflow:"auto",maxWidth:"100%",perspective:"900px",perspectiveOrigin:"50% 30%",display:"flex",justifyContent:"center"}}>
               <svg ref={bRef} viewBox={`0 0 ${BW} ${BH}`}
                 width={Math.min(BW,typeof window!=='undefined'?window.innerWidth-24:500)}
                 height={Math.min(BH,(typeof window!=='undefined'?window.innerWidth-24:500)*BH/BW)}
