@@ -5,25 +5,25 @@ const CONFIG = {
   themes: ["metal","dark","military","parchment","clone","empire","rebel","neon","industrial","wood"],
 
   weapons: {
-    "SW Fusil laser (bleu)":              { mun:3, diff:15, pen:5, dmg:1, portee:"Cat.1/Cat.2" },
-    "SW Fusil laser (rouge)":             { mun:3, diff:15, pen:4, dmg:1, portee:"Cat.1/Cat.2" },
-    "SW Blaster laser (bleu)":            { mun:3, diff:14, pen:5, dmg:1, portee:"Cat.1" },
-    "SW Blaster laser (rouge)":           { mun:3, diff:14, pen:4, dmg:1, portee:"Cat.1" },
-    "SW Pistolet laser (bleu)":           { mun:5, diff:17, pen:4, dmg:1, portee:"Mêlée/Cat.1" },
-    "SW Pistolet laser (rouge)":          { mun:5, diff:17, pen:3, dmg:1, portee:"Mêlée/Cat.1" },
-    "SW Sniper laser lourd (bleu)":       { mun:1, diff:13, pen:7, dmg:2, portee:"Cat.2/Préc." },
-    "SW Double fusil laser lourd (bleu)": { mun:2, diff:13, pen:6, dmg:1, portee:"Cat.1/Cat.2" },
-    "SW Pistolet automatique lourd laser (bleu)":{ mun:5, diff:15, pen:4, dmg:2, portee:"Mêlée/Cat.1" },
-    "SW Fusil de poing laser (rouge)":    { mun:2, diff:16, pen:3, dmg:1, portee:"Cat.1/Cat.2" },
-    "x2 SW Fusils de poing laser (rouge)":{ mun:4, diff:16, pen:3, dmg:1, portee:"Cat.1/Cat.2" },
-    "x3 SW Tourelles rotatives laser":    { mun:12, diff:14, pen:3, dmg:1, portee:"Cat.1/Cat.2" },
-    "x3 SW Rockets laser (usage unique)": { mun:3, diff:11, pen:10, dmg:"1-4", portee:"Cat.2/Préc.", once:true },
-    "SW Canon anti-char lourd monté (bleu)":{ mun:1, diff:10, pen:10, dmg:4, portee:"Cat.2/Préc." },
-    "x2 SW Canons laser STAP (rouge)":    { mun:8, diff:12, pen:5, dmg:1, portee:"Cat.1/Cat.2" },
-    "x2 SW Snipers laser lourds montés (bleu)":{ mun:2, diff:13, pen:7, dmg:2, portee:"Cat.2/Préc." },
-    "SW Blaster à répétition monté (bleu)":{ mun:6, diff:14, pen:6, dmg:1, portee:"Cat.1/Cat.2" },
-    "SW Canon laser monté (bleu)":        { mun:2, diff:12, pen:7, dmg:2, portee:"Cat.1/Cat.2" },
-    "x2 SW Fusils laser de Motojet (bleu)":{ mun:6, diff:15, pen:4, dmg:1, portee:"Cat.1/Cat.2" },
+    "SW Fusil laser (bleu)":              { mun:3, pen:5, dmg:1, melee:0, cat1:15, cat2:16, catP:0 },
+    "SW Fusil laser (rouge)":             { mun:3, pen:4, dmg:1, melee:0, cat1:15, cat2:16, catP:0 },
+    "SW Blaster laser (bleu)":            { mun:3, pen:5, dmg:1, melee:0, cat1:14, cat2:17, catP:0 },
+    "SW Blaster laser (rouge)":           { mun:3, pen:4, dmg:1, melee:0, cat1:14, cat2:17, catP:0 },
+    "SW Pistolet laser (bleu)":           { mun:5, pen:4, dmg:1, melee:17, cat1:17, cat2:0, catP:0 },
+    "SW Pistolet laser (rouge)":          { mun:5, pen:3, dmg:1, melee:17, cat1:17, cat2:0, catP:0 },
+    "SW Sniper laser lourd (bleu)":       { mun:1, pen:7, dmg:2, melee:0, cat1:0, cat2:13, catP:15 },
+    "SW Double fusil laser lourd (bleu)": { mun:2, pen:6, dmg:1, melee:0, cat1:13, cat2:16, catP:0 },
+    "SW Pistolet automatique lourd laser (bleu)":{ mun:5, pen:4, dmg:2, melee:15, cat1:15, cat2:0, catP:0 },
+    "SW Fusil de poing laser (rouge)":    { mun:2, pen:3, dmg:1, melee:0, cat1:16, cat2:16, catP:0 },
+    "x2 SW Fusils de poing laser (rouge)":{ mun:4, pen:3, dmg:1, melee:0, cat1:16, cat2:16, catP:0 },
+    "x3 SW Tourelles rotatives laser":    { mun:12, pen:3, dmg:1, melee:0, cat1:14, cat2:14, catP:0 },
+    "x3 SW Rockets laser (usage unique)": { mun:3, pen:10, dmg:"1-4", melee:0, cat1:0, cat2:11, catP:11, once:true },
+    "SW Canon anti-char lourd monté (bleu)":{ mun:1, pen:10, dmg:4, melee:0, cat1:0, cat2:10, catP:10 },
+    "x2 SW Canons laser STAP (rouge)":    { mun:8, pen:5, dmg:1, melee:0, cat1:12, cat2:14, catP:0 },
+    "x2 SW Snipers laser lourds montés (bleu)":{ mun:2, pen:7, dmg:2, melee:0, cat1:0, cat2:13, catP:15 },
+    "SW Blaster à répétition monté (bleu)":{ mun:6, pen:6, dmg:1, melee:0, cat1:14, cat2:17, catP:0 },
+    "SW Canon laser monté (bleu)":        { mun:2, pen:7, dmg:2, melee:0, cat1:12, cat2:14, catP:0 },
+    "x2 SW Fusils laser de Motojet (bleu)":{ mun:6, pen:4, dmg:1, melee:0, cat1:15, cat2:15, catP:0 },
   },
 
   factions: {
@@ -37,10 +37,5 @@ const CONFIG = {
   siteName: "CrossBlocks",
 
   // ═══ REMOTE SUGGESTIONS (jsonblob.com) ═══
-  // Pour activer les suggestions distantes :
-  // 1. Ouvrez un terminal et lancez :
-  //    curl -X POST https://jsonblob.com/api/jsonBlob -H "Content-Type: application/json" -d "[]"
-  // 2. Copiez l'ID du blob depuis l'URL retournée (ex: "1234567890")
-  // 3. Collez-le ci-dessous :
-  remoteSuggestionsId: null  // ex: "1234567890123456789"
+  remoteSuggestionsId: null
 };

@@ -292,6 +292,17 @@ function populateWeapons() {
  var grid = document.getElementById("weapon-selector");
  if (!grid) return;
  grid.innerHTML = "";
+ // Header row
+ var hdr = document.createElement("div");
+ hdr.className = "weapon-option w-header";
+ hdr.innerHTML = '<span class="w-name" style="font-size:8px;opacity:.6">Arme</span>' +
+ '<span class="w-stats" style="font-size:7px;opacity:.6">Stats</span>' +
+ '<span class="w-range"><span class="wr-v" style="opacity:.6;color:#8b949e">Mel</span>' +
+ '<span class="wr-v" style="opacity:.6;color:#8b949e">C1</span>' +
+ '<span class="wr-v" style="opacity:.6;color:#8b949e">C2</span>' +
+ '<span class="wr-v" style="opacity:.6;color:#8b949e">CP</span></span>' +
+ '<span class="w-counter" style="font-size:7px;opacity:.6;justify-content:center">Qté</span>';
+ grid.appendChild(hdr);
  var weaponNames = Object.keys(CONFIG.weapons);
  for (var i = 0; i < weaponNames.length; i++) {
  var name = weaponNames[i];
@@ -313,6 +324,17 @@ function populateWeapons() {
  var statsSpan = document.createElement("span");
  statsSpan.className = "w-stats";
  statsSpan.textContent = w.mun + "d p" + w.pen + " d" + w.dmg;
+
+ var rangeSpan = document.createElement("span");
+ rangeSpan.className = "w-range";
+ var mel = w.melee ? w.melee : "x";
+ var c1 = w.cat1 ? w.cat1 : "x";
+ var c2 = w.cat2 ? w.cat2 : "x";
+ var cP = w.catP ? w.catP : "x";
+ rangeSpan.innerHTML = '<span class="wr-v' + (mel==="x"?" wr-x":"") + '">' + mel + '</span>' +
+ '<span class="wr-v' + (c1==="x"?" wr-x":"") + '">' + c1 + '</span>' +
+ '<span class="wr-v' + (c2==="x"?" wr-x":"") + '">' + c2 + '</span>' +
+ '<span class="wr-v' + (cP==="x"?" wr-x":"") + '">' + cP + '</span>';
 
  var ctrWrap = document.createElement("span");
  ctrWrap.className = "w-counter";
@@ -340,6 +362,7 @@ function populateWeapons() {
 
  row.appendChild(nameSpan);
  row.appendChild(statsSpan);
+ row.appendChild(rangeSpan);
  row.appendChild(ctrWrap);
  grid.appendChild(row);
  }
@@ -418,10 +441,21 @@ function updatePreview() {
  wDiv.innerHTML = selectedWeapons.map(function(wName) {
  const w = CONFIG.weapons[wName];
  if (!w) return "";
+ var mel = w.melee ? w.melee : "x";
+ var c1 = w.cat1 ? w.cat1 : "x";
+ var c2 = w.cat2 ? w.cat2 : "x";
+ var cP = w.catP ? w.catP : "x";
  return '<div class="card-weapon">' +
- '<span class="cw-name">' + wName + '</span>' +
- '<span class="cw-stat">' + w.mun + '\uD83C\uDFB2 P' + w.pen + ' D' + w.dmg + '</span>' +
- '</div>';
+ '<div class="cw-top"><span class="cw-name">' + wName + '</span>' +
+ '<span class="cw-stat">' + w.mun + 'd P' + w.pen + ' D' + w.dmg + '</span></div>' +
+ '<table class="cw-range"><tr>' +
+ '<td class="cw-rh">Mel</td><td class="cw-rh">C1</td><td class="cw-rh">C2</td><td class="cw-rh">CP</td>' +
+ '</tr><tr>' +
+ '<td class="cw-rv' + (mel === "x" ? " cw-rx" : "") + '">' + mel + '</td>' +
+ '<td class="cw-rv' + (c1 === "x" ? " cw-rx" : "") + '">' + c1 + '</td>' +
+ '<td class="cw-rv' + (c2 === "x" ? " cw-rx" : "") + '">' + c2 + '</td>' +
+ '<td class="cw-rv' + (cP === "x" ? " cw-rx" : "") + '">' + cP + '</td>' +
+ '</tr></table></div>';
  }).join("");
  }
 }
@@ -501,10 +535,21 @@ function displayCards() {
  c.weapons.forEach(function(wName) {
  var w = CONFIG.weapons[wName];
  if (!w) return;
+ var mel = w.melee ? w.melee : "x";
+ var c1 = w.cat1 ? w.cat1 : "x";
+ var c2 = w.cat2 ? w.cat2 : "x";
+ var cP = w.catP ? w.catP : "x";
  weaponHTML += '<div class="card-weapon">' +
- '<span class="cw-name">' + wName + '</span>' +
- '<span class="cw-stat">' + w.mun + '\uD83C\uDFB2 P' + w.pen + ' D' + w.dmg + '</span>' +
- '</div>';
+ '<div class="cw-top"><span class="cw-name">' + wName + '</span>' +
+ '<span class="cw-stat">' + w.mun + 'd P' + w.pen + ' D' + w.dmg + '</span></div>' +
+ '<table class="cw-range"><tr>' +
+ '<td class="cw-rh">Mel</td><td class="cw-rh">C1</td><td class="cw-rh">C2</td><td class="cw-rh">CP</td>' +
+ '</tr><tr>' +
+ '<td class="cw-rv' + (mel === "x" ? " cw-rx" : "") + '">' + mel + '</td>' +
+ '<td class="cw-rv' + (c1 === "x" ? " cw-rx" : "") + '">' + c1 + '</td>' +
+ '<td class="cw-rv' + (c2 === "x" ? " cw-rx" : "") + '">' + c2 + '</td>' +
+ '<td class="cw-rv' + (cP === "x" ? " cw-rx" : "") + '">' + cP + '</td>' +
+ '</tr></table></div>';
  });
  }
 
