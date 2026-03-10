@@ -92,9 +92,12 @@ const VDEFS={
 };
 
 const TERRK=[
-  {n:"Ruines",e:"🏚",c:"#8B8682",a:2,b:4},{n:"Rochers",e:"🪨",c:"#696969",a:2,b:3},
-  {n:"Maison",e:"🏠",c:"#CD853F",a:3,b:5},{n:"Mur",e:"🧱",c:"#A0522D",a:5,b:8,wall:1},
-  {n:"Tour",e:"🏰",c:"#708090",a:2,b:3},{n:"Forêt",e:"🌲",c:"#228B22",a:2,b:4},
+  {n:"Ruines",e:"R",c:"#8B8682",a:2,b:4,h3d:10,tex:"ruin"},
+  {n:"Rochers",e:"X",c:"#696969",a:2,b:3,h3d:12,tex:"rock"},
+  {n:"Maison",e:"M",c:"#CD853F",a:3,b:5,h3d:18,tex:"house"},
+  {n:"Mur",e:"=",c:"#A0522D",a:5,b:8,wall:1,h3d:8,tex:"wall"},
+  {n:"Tour",e:"T",c:"#708090",a:2,b:3,h3d:24,tex:"tower"},
+  {n:"Forêt",e:"F",c:"#228B22",a:2,b:4,h3d:14,tex:"forest"},
 ];
 
 const SQC=["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#F7DC6F","#98D8C8"];
@@ -228,7 +231,13 @@ function dismountVehUnit(vU){
 }
 /* Weapon droppability: B2 fpoing, tri-droid turrets/rockets = not pickable */
 const NOT_PICKABLE=["f_poing_x2","tourelle_x3","rocket_x3"];
-function mkTerr(cx,cy,half){const k=TERRK[ri(0,TERRK.length-1)];const w=ri(k.a,k.b)*SEG_PX;const h=(k.wall?ri(1,2):ri(k.a,k.b))*SEG_PX*0.6;const mY=half===1?HALF+6:6;const xY=half===1?BH-h-6:HALF-h-6;return{id:uid(),x:Math.max(6,Math.min(BW-w-6,cx-w/2)),y:Math.max(mY,Math.min(xY,cy-h/2)),w,h,kind:k.n,color:k.c,emoji:k.e};}
+function mkTerr(cx,cy,half){const k=TERRK[ri(0,TERRK.length-1)];const w=ri(k.a,k.b)*SEG_PX;const h=(k.wall?ri(1,2):ri(k.a,k.b))*SEG_PX*0.6;const mY=half===1?HALF+6:6;const xY=half===1?BH-h-6:HALF-h-6;
+  const t={id:uid(),x:Math.max(6,Math.min(BW-w-6,cx-w/2)),y:Math.max(mY,Math.min(xY,cy-h/2)),w,h,kind:k.n,color:k.c,emoji:k.e,h3d:k.h3d||8,tex:k.tex||""};
+  // Pre-generate tree positions for forests (avoid flickering)
+  if(k.tex==="forest"){const nt=Math.max(1,Math.floor(w*h/200));t.trees=[];for(let i=0;i<nt;i++)t.trees.push({dx:4+ri(0,Math.max(1,Math.floor(w-8))),dy:4+ri(0,Math.max(1,Math.floor(h-8))),sz:2+ri(0,2),g:100+ri(0,60)});}
+  // Pre-generate window positions for houses
+  if(k.tex==="house"){t.wins=[];const nw=Math.max(1,Math.floor(w/14));const nh=Math.max(1,Math.floor((k.h3d||18)/10));for(let iy=0;iy<nh;iy++)for(let ix=0;ix<nw;ix++)t.wins.push({ix,iy,nw,nh});}
+  return t;}
 function sqAssign(army){const g={};army.forEach(u=>{if(!g[u.type])g[u.type]=[];g[u.type].push(u.id);});return army.map(u=>({...u,sqId:g[u.type]&&g[u.type].length>=2?`sq_${u.type}`:null}));}
 function sqColor(s){if(!s)return null;return SQC[Array.from(s).reduce((a,c)=>a+c.charCodeAt(0),0)%SQC.length];}
 
@@ -855,7 +864,7 @@ function CrossBlock(){
     if(pilotHp<=0){
       aL(`  💀 Pilote tué dans l'explosion!`);
       sDf(p=>p.map(u=>u.id===def.id?{...u,vHp:0,hp:0,isVeh:false,name:"Épave "+def.name,ic:"🔥",done:true}:u));
-      sTerr(t=>[...t,{id:uid(),x:def.x-2,y:def.y-2,w:BASE+4,h:BASE+4,kind:"Épave",color:"#333",emoji:"🔥"}]);
+      sTerr(t=>[...t,{id:uid(),x:def.x-2,y:def.y-2,w:BASE+4,h:BASE+4,kind:"Épave",color:"#333",emoji:"",h3d:4,tex:"ruin"}]);
       // Drop pilot weapons on death
       for(const wk of bd.w){const pick=!NOT_PICKABLE.includes(wk);const wn=WEAPS[wk]?.n||"Arme";
         sDrops(p=>[...p,{id:uid(),x:def.x+ri(-3,3),y:def.y+ri(-3,3),key:wk,pickable:pick,name:wn}]);
@@ -871,7 +880,7 @@ function CrossBlock(){
         gw:[],hasGunner:false,gunDone:true,gunAct:0,
         done:true
       }:u));
-      sTerr(t=>[...t,{id:uid(),x:def.x-2,y:def.y-2,w:BASE+4,h:BASE+4,kind:"Épave",color:"#333",emoji:"🔥"}]);
+      sTerr(t=>[...t,{id:uid(),x:def.x-2,y:def.y-2,w:BASE+4,h:BASE+4,kind:"Épave",color:"#333",emoji:"",h3d:4,tex:"ruin"}]);
     }
   };
 
@@ -2404,11 +2413,11 @@ function CrossBlock(){
                 <span style={{color:"#484f58",fontSize:8}}>{Math.round(camSt.z*100)}%</span>
               </div>
               <div style={{width:"100%",height:"100%",display:"flex",justifyContent:"center",alignItems:"center",perspective:"1200px",perspectiveOrigin:"50% 50%"}}>
-              <div style={{transform:`translate3d(${camSt.px}px, ${camSt.py}px, 0) scale(${camSt.z}) rotateX(${camSt.rx}deg) rotateY(${camSt.ry}deg)`,transformOrigin:"50% 50%",transformStyle:"preserve-3d",transition:dragRef.current?"none":"transform 0.12s ease-out"}}>
+              {(()=>{const dispW=Math.min(BW,typeof window!=='undefined'?window.innerWidth-40:500);const dispH=dispW*BH/BW;const sc=dispW/BW;return(
+              <div style={{transform:`translate3d(${camSt.px}px, ${camSt.py}px, 0) scale(${camSt.z}) rotateX(${camSt.rx}deg) rotateY(${camSt.ry}deg)`,transformOrigin:"50% 50%",transformStyle:"preserve-3d",transition:dragRef.current?"none":"transform 0.12s ease-out",position:"relative",width:dispW,height:dispH}}>
               <svg ref={bRef} viewBox={`0 0 ${BW} ${BH}`}
-                width={Math.min(BW,typeof window!=='undefined'?window.innerWidth-40:500)}
-                height={Math.min(BH,(typeof window!=='undefined'?window.innerWidth-40:500)*BH/BW)}
-                onClick={onBoardClick} style={{background:"linear-gradient(180deg,#1a3d16 0%,#2d5a27 30%,#3a6b30 70%,#2a5020 100%)",borderRadius:6,border:"4px solid #5C3317",cursor:"crosshair",display:"block",boxShadow:"0 30px 60px rgba(0,0,0,0.6), inset 0 0 80px rgba(0,0,0,0.3)"}}>
+                width={dispW} height={dispH}
+                onClick={onBoardClick} style={{position:"absolute",top:0,left:0,background:"linear-gradient(180deg,#1a3d16 0%,#2d5a27 30%,#3a6b30 70%,#2a5020 100%)",borderRadius:6,border:"4px solid #5C3317",cursor:"crosshair",display:"block",boxShadow:"0 30px 60px rgba(0,0,0,0.6), inset 0 0 80px rgba(0,0,0,0.3)"}}>
 
                 {/* 3D defs */}
                 <defs>
@@ -2426,8 +2435,8 @@ function CrossBlock(){
                   <filter id="unitSh" x="-50%" y="-50%" width="200%" height="200%">
                     <feDropShadow dx={1.5} dy={2.5} stdDeviation={1.2} floodColor="#000" floodOpacity={0.5}/>
                   </filter>
-                  <filter id="terrSh" x="-20%" y="-20%" width="140%" height="160%">
-                    <feDropShadow dx={2} dy={3} stdDeviation={1.5} floodColor="#000" floodOpacity={0.4}/>
+                  <filter id="terrSh" x="-30%" y="-30%" width="170%" height="200%">
+                    <feDropShadow dx={3} dy={5} stdDeviation={2.5} floodColor="#000" floodOpacity={0.45}/>
                   </filter>
                   <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation={1.5} result="blur"/>
@@ -2439,7 +2448,11 @@ function CrossBlock(){
                 <rect width={BW} height={BH} fill="url(#studs)"/>
                 <rect width={BW} height={BH} fill="url(#grid)"/>
                 <rect width={BW} height={BH} fill="url(#groundG)"/>
+                {/* Board edge bevel */}
                 <rect x={0} y={0} width={BW} height={BH} fill="none" stroke="#654321" strokeWidth={PAD}/>
+                <rect x={1} y={1} width={BW-2} height={BH-2} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={1}/>
+                {/* Half-field line */}
+                <line x1={PAD} y1={HALF} x2={BW-PAD} y2={HALF} stroke="rgba(255,255,255,0.06)" strokeWidth={1} strokeDasharray="8,4"/>
                 {/* Board edge 3D bevel */}
                 <line x1={0} y1={BH} x2={BW} y2={BH} stroke="#3a2510" strokeWidth={3}/>
                 <line x1={BW} y1={0} x2={BW} y2={BH} stroke="#4a3520" strokeWidth={2}/>
@@ -2457,31 +2470,13 @@ function CrossBlock(){
                 {phase==="terr_p1"&&<rect x={0} y={0} width={BW} height={HALF} fill="#0d1117" opacity={0.8}/>}
                 {phase==="terr_p2"&&<rect x={0} y={HALF} width={BW} height={HALF} fill="#0d1117" opacity={0.8}/>}
 
-                {/* ═══ 3D TERRAIN ═══ */}
-                {terr.map(t=>{
-                  const D=6; // 3D depth
-                  const darkC=t.color.replace(/^#/,'');
-                  const r=Math.max(0,parseInt(darkC.slice(0,2),16)-50);
-                  const g=Math.max(0,parseInt(darkC.slice(2,4),16)-50);
-                  const b2=Math.max(0,parseInt(darkC.slice(4,6),16)-50);
-                  const sideC=`rgb(${r},${g},${b2})`;
-                  const frontC=`rgb(${Math.max(0,r-20)},${Math.max(0,g-20)},${Math.max(0,b2-20)})`;
-                  return(
-                  <g key={t.id} onClick={e=>{if(phase.startsWith("terr")){e.stopPropagation();sTSel(t.id);}}} filter="url(#terrSh)">
-                    {/* Front face (3D depth) */}
-                    <polygon points={`${t.x},${t.y+t.h} ${t.x+D},${t.y+t.h+D} ${t.x+t.w+D},${t.y+t.h+D} ${t.x+t.w},${t.y+t.h}`} fill={frontC} opacity={0.9}/>
-                    {/* Right face */}
-                    <polygon points={`${t.x+t.w},${t.y} ${t.x+t.w+D},${t.y+D} ${t.x+t.w+D},${t.y+t.h+D} ${t.x+t.w},${t.y+t.h}`} fill={sideC} opacity={0.85}/>
-                    {/* Top face */}
-                    <rect x={t.x} y={t.y} width={t.w} height={t.h} fill={t.color} stroke={tSel===t.id?"#ff0":"#444"} strokeWidth={tSel===t.id?2:0.5} rx={1} opacity={0.9}/>
-                    {/* Highlight edge */}
-                    <line x1={t.x} y1={t.y} x2={t.x+t.w} y2={t.y} stroke="rgba(255,255,255,0.15)" strokeWidth={0.5}/>
-                    <line x1={t.x} y1={t.y} x2={t.x} y2={t.y+t.h} stroke="rgba(255,255,255,0.1)" strokeWidth={0.3}/>
-                    {/* Emoji */}
-                    <text x={t.x+t.w/2} y={t.y+t.h/2+1} textAnchor="middle" dominantBaseline="middle" fontSize={Math.min(t.w,t.h)*0.35} style={{pointerEvents:"none"}}>{t.emoji}</text>
+                {/* ═══ TERRAIN FOOTPRINTS (3D volume is CSS) ═══ */}
+                {terr.map(t=>(
+                  <g key={t.id} onClick={e=>{if(phase.startsWith("terr")){e.stopPropagation();sTSel(t.id);}}} >
+                    <rect x={t.x} y={t.y} width={t.w} height={t.h} fill={t.color} stroke={tSel===t.id?"#ff0":"#333"} strokeWidth={tSel===t.id?2:0.5} rx={1} opacity={0.5}/>
+                    <text x={t.x+t.w/2} y={t.y+t.h/2+1} textAnchor="middle" dominantBaseline="middle" fontSize={Math.min(t.w,t.h)*0.22} fill="rgba(255,255,255,0.3)" fontWeight="700" style={{pointerEvents:"none"}}>{t.kind}</text>
                   </g>
-                  );
-                })}
+                ))}
 
                 {/* LOS lines — with glow */}
                 {los.map((l,i)=>(
@@ -2526,15 +2521,11 @@ function CrossBlock(){
                   const VR=u.isVeh?BR+3:0;
                   return(
                     <g key={u.id} onClick={e=>{e.stopPropagation();if((paused||isHuman(realCP.current))&&!u.done)takeCtrl(u);else showLos(u);}} style={{cursor:"pointer"}} filter="url(#unitSh)">
-                      {/* Selection pulse */}
                       {isSel&&<ellipse cx={cx} cy={cy+2} rx={BR+5+VR} ry={BR*0.5+3} fill="none" stroke="#f0c040" strokeWidth={1} opacity={0.5}>
                         <animate attributeName="rx" values={`${BR+4+VR};${BR+7+VR};${BR+4+VR}`} dur="1s" repeatCount="indefinite"/>
                       </ellipse>}
-                      {/* Squad ring */}
                       {sC&&<ellipse cx={cx} cy={cy+1} rx={BR+3} ry={BR*0.4} fill="none" stroke={sC} strokeWidth={1.2} opacity={0.6}/>}
-                      {/* Ground shadow */}
                       <ellipse cx={cx+0.5} cy={cy+H*0.3+3} rx={BR+(u.isVeh?5:2)} ry={BR*(u.isVeh?0.5:0.4)} fill="rgba(0,0,0,0.3)"/>
-
                       {u.isVeh?
                         drawVeh(u.vtype,cx,cy-H+1,0.8,u.pl,1)
                       :u.prone?
@@ -2576,7 +2567,61 @@ function CrossBlock(){
                   </g>);
                 })}
               </svg>
+
+              {/* ═══ CSS 3D TERRAIN BOXES ═══ */}
+              {terr.map(t=>{
+                const h3=t.h3d||8;const hPx=h3*sc;
+                const dc=t.color.replace(/^#/,'');
+                const r0=parseInt(dc.slice(0,2),16),g0=parseInt(dc.slice(2,4),16),b0=parseInt(dc.slice(4,6),16);
+                const topC=t.color;
+                const frC=`rgb(${Math.max(0,r0-50)},${Math.max(0,g0-50)},${Math.max(0,b0-50)})`;
+                const sdC=`rgb(${Math.max(0,r0-30)},${Math.max(0,g0-30)},${Math.max(0,b0-30)})`;
+                const ltC=`rgb(${Math.min(255,r0+20)},${Math.min(255,g0+20)},${Math.min(255,b0+20)})`;
+                const sel3=tSel===t.id;
+                return(
+                <div key={"t3d_"+t.id} onClick={e=>{if(phase.startsWith("terr")){e.stopPropagation();sTSel(t.id);}}}
+                  style={{position:"absolute",left:t.x*sc,top:t.y*sc,width:t.w*sc,height:t.h*sc,transformStyle:"preserve-3d",pointerEvents:phase.startsWith("terr")?"auto":"none"}}>
+                  {/* Top face */}
+                  <div style={{position:"absolute",width:"100%",height:"100%",transform:`translateZ(${hPx}px)`,background:topC,borderRadius:2,border:sel3?"2px solid #ff0":"1px solid rgba(255,255,255,0.15)",boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{color:"rgba(255,255,255,0.5)",fontSize:Math.min(t.w,t.h)*sc*0.22,fontWeight:700,fontFamily:"sans-serif"}}>{t.kind}</span>
+                    {t.tex==="forest"&&t.trees&&t.trees.map((tr,i)=>(
+                      <div key={i} style={{position:"absolute",left:tr.dx/(t.w||1)*100+"%",top:tr.dy/(t.h||1)*100+"%",width:tr.sz*sc*2,height:tr.sz*sc*2,borderRadius:"50%",background:`rgb(20,${tr.g},15)`,opacity:0.75,transform:"translate(-50%,-50%)"}}/>
+                    ))}
+                  </div>
+                  {/* Front face */}
+                  <div style={{position:"absolute",bottom:0,left:0,width:"100%",height:hPx,transformOrigin:"bottom",transform:"rotateX(-90deg)",background:frC,borderBottom:sel3?"2px solid #ff0":"none"}}/>
+                  {/* Back face */}
+                  <div style={{position:"absolute",top:0,left:0,width:"100%",height:hPx,transformOrigin:"top",transform:"rotateX(90deg)",background:`rgb(${Math.max(0,r0-40)},${Math.max(0,g0-40)},${Math.max(0,b0-40)})`}}/>
+                  {/* Right face */}
+                  <div style={{position:"absolute",top:0,right:0,width:hPx,height:"100%",transformOrigin:"right",transform:"rotateY(90deg)",background:sdC}}/>
+                  {/* Left face */}
+                  <div style={{position:"absolute",top:0,left:0,width:hPx,height:"100%",transformOrigin:"left",transform:"rotateY(-90deg)",background:ltC}}/>
+                </div>);
+              })}
+
+              {/* ═══ CSS 3D UNIT BASES ═══ */}
+              {all.filter(u=>u.dep&&u.hp>0).map(u=>{
+                const uh=u.isVeh?6:3.5;const uhPx=uh*sc;
+                const pC=u.pl===1?"#2255aa":"#aa2222";
+                const pCd=u.pl===1?"#112244":"#551111";
+                const pCl=u.pl===1?"#3377cc":"#cc3333";
+                return(
+                <div key={"u3d_"+u.id} style={{position:"absolute",left:(u.x-1)*sc,top:(u.y-1)*sc,width:(BASE+2)*sc,height:(BASE+2)*sc,transformStyle:"preserve-3d",pointerEvents:"none"}}>
+                  {/* Base top */}
+                  <div style={{position:"absolute",width:"100%",height:"100%",transform:`translateZ(${uhPx}px)`,background:pC,borderRadius:"50%",border:(sel?.id===u.id||mU?.id===u.id)?"2px solid #f0c040":"1px solid rgba(255,255,255,0.2)",boxSizing:"border-box",boxShadow:"0 0 4px rgba(0,0,0,0.5)"}}/>
+                  {/* Base front */}
+                  <div style={{position:"absolute",bottom:0,left:"10%",width:"80%",height:uhPx,transformOrigin:"bottom",transform:"rotateX(-90deg)",background:pCd,borderRadius:"0 0 2px 2px"}}/>
+                  {/* Base back */}
+                  <div style={{position:"absolute",top:0,left:"10%",width:"80%",height:uhPx,transformOrigin:"top",transform:"rotateX(90deg)",background:pCd}}/>
+                  {/* Base right */}
+                  <div style={{position:"absolute",top:"10%",right:0,width:uhPx,height:"80%",transformOrigin:"right",transform:"rotateY(90deg)",background:pCl}}/>
+                  {/* Base left */}
+                  <div style={{position:"absolute",top:"10%",left:0,width:uhPx,height:"80%",transformOrigin:"left",transform:"rotateY(-90deg)",background:pCl}}/>
+                </div>);
+              })}
+
               </div>
+              )})()}
               </div>
             </div>
           )}
