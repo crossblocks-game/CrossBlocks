@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- SEO: Title -->
-<title>CrossBlocks — Wargame tactique avec des LEGO | Éditeur de cartes gratuit</title>
+<title>CrossBlocks — Wargame tactique avec des LEGO | Éditeur de fiches d'unités gratuit</title>
 
 <!-- SEO: Meta description -->
-<meta name="description" content="CrossBlocks : le wargame tactique à base de LEGO. Créez vos cartes d'unités, simulez des batailles et exportez en PDF. Règles et communauté sur Discord !">
+<meta name="description" content="CrossBlocks : le wargame tactique à base de LEGO. Créez vos fiches d'unités, simulez des batailles et exportez en PDF. Règles et communauté sur Discord !">
 
 <!-- SEO: Keywords -->
-<meta name="keywords" content="wargame LEGO, CrossBlocks jeu, créer cartes wargame, jeu stratégie LEGO, cartes unités LEGO, wargame figurines, jeu de guerre LEGO, simulateur bataille, wargame briques, tabletop game LEGO">
+<meta name="keywords" content="wargame LEGO, CrossBlocks jeu, créer fiches wargame, jeu stratégie LEGO, fiches unités LEGO, wargame figurines, jeu de guerre LEGO, simulateur bataille, wargame briques, tabletop game LEGO">
 
 <!-- SEO: Auteur et robots -->
 <meta name="author" content="CrossBlocks">
@@ -30,7 +30,7 @@
 <!-- SEO: Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="CrossBlocks — Wargame tactique LEGO">
-<meta name="twitter:description" content="Le wargame gratuit à base de LEGO. Créez vos cartes, simulez des batailles, rejoignez la communauté Discord !">
+<meta name="twitter:description" content="Le wargame gratuit à base de LEGO. Créez vos fiches, simulez des batailles, rejoignez la communauté Discord !">
 <meta name="twitter:image" content="https://crossblocks-game.github.io/CrossBlocks/logo.svg">
 
 <!-- SEO: Schema.org JSON-LD -->
@@ -39,7 +39,7 @@
  "@context": "https://schema.org",
  "@type": "WebApplication",
  "name": "CrossBlocks",
- "description": "Wargame tactique à base de LEGO — éditeur de cartes, simulateur de batailles et communauté en ligne",
+ "description": "Wargame tactique à base de LEGO — éditeur de fiches d'unités, simulateur de batailles et communauté en ligne",
  "url": "https://crossblocks-game.github.io/CrossBlocks/",
  "applicationCategory": "GameApplication",
  "operatingSystem": "Web",
@@ -64,7 +64,7 @@
 <nav class="site-nav">
  <a href="index.html" class="nav-title">CROSSBLOCKS</a>
  <span class="nav-sep">|</span>
- <a href="index.html" class="nav-active"> Éditeur de cartes</a>
+ <a href="index.html" class="nav-active"> Éditeur de fiches d'unités</a>
  <a href="game.html"> Simulateur</a>
 </nav>
 
@@ -81,12 +81,12 @@
  <p class="site-desc" itemprop="description">Le <strong>wargame tactique à base de LEGO</strong> — 100% gratuit, 100% personnalisable.</p>
 
  <div class="hero-box">
- <p class="hero-text"><strong>CrossBlocks</strong> est un jeu de guerre sur table qui transforme vos LEGO en véritable champ de bataille. Construisez vos armées avec n'importe quelles minifigurines — inventez vos factions, créez vos propres unités avec des stats uniques (PV, armure, armes, actions) et imprimez vos cartes. Déployez vos troupes, lancez les dés au D20, et affrontez vos amis dans des combats tactiques intenses. Tout ce qu'il vous faut, c'est vos LEGO et un peu de stratégie.</p>
+ <p class="hero-text"><strong>CrossBlocks</strong> est un jeu de guerre sur table qui transforme vos LEGO en véritable champ de bataille. Construisez vos armées avec n'importe quelles minifigurines — inventez vos factions, créez vos propres unités avec des stats uniques (PV, armure, armes, actions) et imprimez vos fiches. Déployez vos troupes, lancez les dés au D20, et affrontez vos amis dans des combats tactiques intenses. Tout ce qu'il vous faut, c'est vos LEGO et un peu de stratégie.</p>
 
  <div class="hero-features">
  <div class="hero-feature">
  <span class="hf-icon">🃏</span>
- <div><strong>Éditeur de cartes</strong><br>Créez et personnalisez vos fiches d'unités avec l'éditeur en ligne, puis exportez-les en PDF au format A6 prêt à imprimer.</div>
+ <div><strong>Éditeur de fiches d'unités</strong><br>Créez et personnalisez vos fiches d'unités avec l'éditeur en ligne, puis exportez-les en PDF au format A6 prêt à imprimer.</div>
  </div>
  <div class="hero-feature">
  <span class="hf-icon"></span>
@@ -114,7 +114,7 @@
 
  <!-- ═══ ÉDITEUR ═══ -->
  <section class="editor-section">
- <h2 class="section-title"> Éditeur de fiches</h2>
+ <h2 class="section-title"> Éditeur de fiches d'unités</h2>
 
  <div class="editor-layout">
 
@@ -168,7 +168,8 @@
  </div>
 
  <div class="form-actions">
- <button class="btn btn-add" onclick="addCard()"> Ajouter la carte</button>
+ <button class="btn btn-add" onclick="addCard()"> Ajouter fiche d'unité</button>
+ <button class="btn btn-suggest" onclick="submitUnitForValidation()"> Soumettre pour validation admin</button>
  <button class="btn btn-calc" onclick="calcPrice()"> Calculer le prix</button>
  <button class="btn btn-secondary" onclick="clearForm()"> Vider le formulaire</button>
  </div>
@@ -216,12 +217,12 @@
  <div id="gallery-grid" class="gallery-grid"></div>
  </section>
 
- <!-- ═══ CARTES GÉNÉRÉES ═══ -->
+ <!-- ═══ FICHES D'UNITÉS GÉNÉRÉES ═══ -->
  <section class="cards-section">
  <div class="cards-toolbar">
- <h2 class="section-title">🃏 Cartes générées</h2>
+ <h2 class="section-title">🃏 Fiches d'unités générées</h2>
  <div class="cards-actions">
- <span id="card-count" class="card-counter">0 carte(s)</span>
+ <span id="card-count" class="card-counter">0 fiche(s)</span>
  <span id="army-total" class="army-total"></span>
  <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled> Exporter PDF</button>
  <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none"> Tout supprimer</button>
@@ -229,44 +230,56 @@
  </div>
  <div id="save-indicator" class="save-indicator"> Sauvegarde auto activée</div>
  <div id="cards-container" class="cards-grid">
- <div class="cards-empty">Aucune carte pour l'instant. Utilisez l'éditeur ou la galerie ci-dessus !</div>
+ <div class="cards-empty">Aucune fiche pour l'instant. Utilisez l'éditeur ou la galerie ci-dessus !</div>
  </div>
  </section>
 
- <!-- ═══ PROPOSER UNE UNITÉ ═══ -->
+ <!-- Hidden fields for unit suggestion compatibility with script.js -->
+ <div id="suggest-unit" style="display:none">
+ <input id="sg-name"><select id="sg-faction"></select>
+ <input id="sg-pts" type="number"><input id="sg-hp" type="number">
+ <input id="sg-arm" type="number"><input id="sg-mm" type="number">
+ <input id="sg-pa" type="number"><input id="sg-weapons"><input id="sg-notes">
+ </div>
+
+ <!-- ═══ ID CRÉATEUR ═══ -->
+ <section class="editor-section" style="margin-top:16px;padding:12px 16px">
+ <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+ <span style="color:var(--accent);font-weight:700;font-size:13px"> Votre ID créateur</span>
+ <input id="creator-id" placeholder="Entrez un pseudo" style="background:var(--card);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 10px;font-size:12px;width:150px" oninput="saveCreatorId()">
+ <span id="creator-status" style="font-size:10px;color:var(--text2)">Vos créations sont sauvegardées localement sous cet ID</span>
+ </div>
+ </section>
+
+ <!-- ═══ ÉDITEUR D'ARMES ═══ -->
  <section class="suggest-section">
- <h2 class="section-title"> Proposer une unité ou arme</h2>
- <p class="suggest-desc">Envoyez vos créations ! Elles seront visibles après validation par l'admin.</p>
- <div class="suggest-tabs">
- <button class="btn btn-stab active" onclick="switchSuggestTab('unit',this)"> Unité</button>
- <button class="btn btn-stab" onclick="switchSuggestTab('weapon',this)"> Arme</button>
- </div>
- <div id="suggest-unit" class="suggest-form">
- <div class="form-row"><div class="form-group"><label>Nom</label><input id="sg-name" placeholder="Ex: Clone Commandant Cody"></div>
- <div class="form-group"><label>Faction</label><select id="sg-faction"></select></div></div>
- <div class="form-row form-row-4">
- <div class="form-group"><label> Points</label><input id="sg-pts" type="number" value="200"></div>
- <div class="form-group"><label> PV</label><input id="sg-hp" type="number" value="2"></div>
- <div class="form-group"><label> Armure</label><input id="sg-arm" type="number" value="15"></div>
- <div class="form-group"><label> M.M.</label><input id="sg-mm" type="number" value="0"></div>
- </div>
- <div class="form-row"><div class="form-group"><label> PA</label><input id="sg-pa" type="number" value="5"></div>
- <div class="form-group"><label> Armes (séparées par virgule)</label><input id="sg-weapons" placeholder="SW Fusil laser (bleu)"></div></div>
- <div class="form-group"><label> Notes / Capacité spéciale</label><input id="sg-notes" placeholder="Ex: Largage, Vol, Kit de soin..."></div>
- <button class="btn btn-suggest" onclick="submitSuggestion('unit')"> Envoyer la proposition</button>
- </div>
- <div id="suggest-weapon" class="suggest-form" style="display:none">
- <div class="form-row"><div class="form-group"><label>Nom complet</label><input id="sgw-name" placeholder="SW Canon laser (bleu)"></div>
- <div class="form-group"><label> Difficulté</label><input id="sgw-diff" type="number" value="15"></div></div>
+ <h2 class="section-title"> Éditeur d'armes</h2>
+ <p class="suggest-desc">Créez vos armes personnalisées. Elles seront disponibles dans l'éditeur de fiches d'unités. Soumettez-les pour validation par l'admin.</p>
+
+ <div id="weapon-editor-form" class="suggest-form">
+ <div class="form-row"><div class="form-group"><label>Nom complet</label><input id="sgw-name" placeholder="Ex: SW Canon laser (bleu)"></div>
+ <div class="form-group"><label> Difficulté (d20)</label><input id="sgw-diff" type="number" value="15"></div></div>
  <div class="form-row form-row-4">
  <div class="form-group"><label> Mun</label><input id="sgw-mun" type="number" value="3"></div>
  <div class="form-group"><label> Pén</label><input id="sgw-pen" type="number" value="5"></div>
  <div class="form-group"><label> Dégâts</label><input id="sgw-dmg" type="number" value="1"></div>
- <div class="form-group"><label> Portée</label><input id="sgw-portee" placeholder="Cat.1/Cat.2"></div>
+ <div class="form-group"><label> Usage unique</label><select id="sgw-once"><option value="0">Non</option><option value="1">Oui</option></select></div>
  </div>
- <div class="form-group"><label> Notes</label><input id="sgw-notes" placeholder="Ex: Usage unique, monté sur véhicule..."></div>
- <button class="btn btn-suggest" onclick="submitSuggestion('weapon')"> Envoyer la proposition</button>
+ <div class="form-row form-row-4">
+ <div class="form-group"><label>Mêlée (0=non)</label><input id="sgw-mel" type="number" value="0"></div>
+ <div class="form-group"><label>Cat.1 (0=non)</label><input id="sgw-cat1" type="number" value="15"></div>
+ <div class="form-group"><label>Cat.2 (0=non)</label><input id="sgw-cat2" type="number" value="0"></div>
+ <div class="form-group"><label>Cat.P (0=non)</label><input id="sgw-catp" type="number" value="0"></div>
  </div>
+ <div class="form-group"><label> Notes</label><input id="sgw-notes" placeholder="Ex: Monté sur véhicule, anti-blindage..."></div>
+ <div class="form-actions" style="gap:8px">
+ <button class="btn btn-add" onclick="createCustomWeapon()"> Créer l'arme</button>
+ <button class="btn btn-suggest" onclick="submitSuggestion('weapon')"> Envoyer la proposition à l'admin</button>
+ </div>
+ </div>
+
+ <!-- Liste des armes créées -->
+ <div id="custom-weapons-list" style="margin-top:12px"></div>
  <div id="suggest-count" class="suggest-count"></div>
  <div id="suggest-remote-status" style="font-size:10px;margin-top:4px"></div>
  </section>
@@ -275,9 +288,9 @@
  <section class="seo-section">
  <h2 class="section-title"> Qu'est-ce que CrossBlocks ?</h2>
  <p>CrossBlocks est un <strong>wargame tactique à base de LEGO</strong>. 
- Créez vos propres <strong>cartes d'unités</strong> avec des statistiques personnalisées 
+ Créez vos propres <strong>fiches d'unités</strong> avec des statistiques personnalisées 
  (points de vie, armure, armes, points d'action), simulez des <strong>batailles stratégiques</strong> 
- et imprimez vos cartes au format A6. Utilisez vos minifigurines LEGO comme unités de combat !</p>
+ et imprimez vos fiches au format A6. Utilisez vos minifigurines LEGO comme unités de combat !</p>
  <p>L'éditeur en ligne est <strong>100% gratuit</strong> — pas d'inscription, pas de téléchargement. 
  Que vous jouiez avec des <strong>minifigures LEGO</strong>, des figurines peintes ou du papier, 
  CrossBlocks s'adapte à votre style de jeu. Les <strong>règles complètes du jeu</strong> sont disponibles 
@@ -287,7 +300,7 @@
  <ol>
  <li><strong>Rejoignez le Discord</strong> — lisez les règles complètes et posez vos questions à la communauté</li>
  <li><strong>Créez vos unités</strong> — utilisez l'éditeur ci-dessus pour définir les caractéristiques de chaque figurine</li>
- <li><strong>Imprimez vos cartes</strong> — exportez en PDF A6 pour avoir vos fiches pendant la partie</li>
+ <li><strong>Imprimez vos fiches</strong> — exportez en PDF A6 pour avoir vos fiches pendant la partie</li>
  <li><strong>Composez votre armée</strong> — choisissez vos unités avec un budget en points</li>
  <li><strong>Jouez !</strong> — déployez vos LEGO sur un plateau et affrontez vos amis</li>
  </ol>
@@ -305,7 +318,7 @@
  <footer class="site-footer">
  <button class="btn btn-admin-visible" id="admin-btn" onclick="promptAdmin()"> Admin</button>
  <nav class="footer-links">
- <a href="index.html">Éditeur de cartes</a> ·
+ <a href="index.html">Éditeur de fiches d'unités</a> ·
  <a href="game.html">Simulateur de batailles</a> ·
  <a href="https://discord.gg/CMntzhndfs" target="_blank" rel="noopener" style="color:#5865F2;display:inline-flex;align-items:center;gap:4px"><svg width="14" height="11" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53.05s5-12.68 11.45-12.68S53.98 46.1 53.9 53.05c0 6.95-5.11 12.64-11.45 12.64Zm42.24 0C78.41 65.69 73.25 60 73.25 53.05s5-12.68 11.44-12.68S96.23 46.1 96.14 53.05c0 6.95-5.09 12.64-11.45 12.64Z"/></svg> Discord</a>
  </nav>
@@ -322,6 +335,7 @@
  <div class="admin-tabs">
  <button class="btn btn-admtab active" onclick="switchAdminTab('config',this)"> Config</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('pending',this)"> Propositions</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('creations',this)"> Créations utilisateurs</button>
  <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)"> Balance</button>
  </div>
  <div class="admin-body" id="admin-config">
@@ -343,6 +357,18 @@
  <p class="admin-desc">Les joueurs peuvent proposer de nouvelles unités et armes. Approuvez-les pour les ajouter à la galerie.</p>
  <div id="pending-list-area"></div>
  </div>
+ <div class="admin-body" id="admin-creations" style="display:none">
+ <h3> Créations par utilisateur</h3>
+ <p class="admin-desc">Vue des unités et armes créées localement par chaque utilisateur. Ces créations sont visibles uniquement par leur auteur et l'admin.</p>
+ <div style="margin-bottom:12px">
+ <h4 style="color:var(--accent);font-size:12px;margin:8px 0 4px">Unités créées (galerie personnalisée)</h4>
+ <div id="admin-custom-units"></div>
+ </div>
+ <div>
+ <h4 style="color:var(--accent);font-size:12px;margin:8px 0 4px">Armes créées</h4>
+ <div id="admin-custom-weapons"></div>
+ </div>
+ </div>
  <div class="admin-body" id="admin-balance" style="display:none">
  <h3>Rééquilibrage — Simulation Monte Carlo</h3>
  <p class="admin-desc">Système intelligent : chaque unité est testée en combat simulé (150 batailles) contre des Clones Phase 2 à budget égal. Le prix est ajusté pour que le taux de victoire soit ~50%. Max ±30% de changement par unité.</p>
@@ -363,6 +389,216 @@
 
 <script src="script.js"></script>
 <script src="admin.js"></script>
+
+<script>
+// ═══ CREATOR ID SYSTEM ═══
+(function(){
+  const idEl=document.getElementById('creator-id');
+  if(idEl){idEl.value=localStorage.getItem('cb_creatorId')||'';}
+  window.saveCreatorId=function(){
+    const v=(idEl?.value||'').replace(/[^a-zA-Z0-9_-]/g,'');
+    if(idEl)idEl.value=v;
+    localStorage.setItem('cb_creatorId',v);
+  };
+
+  // ═══ CUSTOM WEAPONS ═══
+  function getCustomWeapons(){try{return JSON.parse(localStorage.getItem('cb_customWeapons')||'{}');}catch{return{};}}
+  function saveCustomWeapons(w){localStorage.setItem('cb_customWeapons',JSON.stringify(w));}
+
+  window.createCustomWeapon=function(){
+    const name=document.getElementById('sgw-name')?.value?.trim();
+    if(!name){alert('Nom requis');return;}
+    const w={
+      n:name,
+      diff:+(document.getElementById('sgw-diff')?.value||15),
+      mun:+(document.getElementById('sgw-mun')?.value||1),
+      pen:+(document.getElementById('sgw-pen')?.value||5),
+      dmg:+(document.getElementById('sgw-dmg')?.value||1),
+      once:document.getElementById('sgw-once')?.value==='1',
+      melee:+(document.getElementById('sgw-mel')?.value||0),
+      cat1:+(document.getElementById('sgw-cat1')?.value||0),
+      cat2:+(document.getElementById('sgw-cat2')?.value||0),
+      catP:+(document.getElementById('sgw-catp')?.value||0),
+      notes:document.getElementById('sgw-notes')?.value||'',
+      creator:localStorage.getItem('cb_creatorId')||'anonyme',
+      date:new Date().toISOString().slice(0,10)
+    };
+    const key='cw_'+name.toLowerCase().replace(/\s+/g,'_')+'_'+Date.now();
+    const all=getCustomWeapons();
+    all[key]=w;
+    saveCustomWeapons(all);
+    renderCustomWeapons();
+    // Add to weapon selector in editor
+    addWeaponToSelector(key,w);
+    alert('Arme "'+name+'" créée et ajoutée au sélecteur d\'armes !');
+  };
+
+  function addWeaponToSelector(key,w){
+    const grid=document.getElementById('weapon-selector');
+    if(!grid)return;
+    if(grid.querySelector('[data-wkey="'+key+'"]'))return;
+    const label=document.createElement('label');
+    label.className='weapon-option';
+    label.dataset.wkey=key;
+    label.innerHTML='<input type="checkbox" value="'+key+'" onchange="updatePreview()"><span class="wo-name">'+w.n+'</span><span class="wo-info">Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+'</span>';
+    label.style.borderColor='#f0c040';
+    grid.appendChild(label);
+  }
+
+  function renderCustomWeapons(){
+    const list=document.getElementById('custom-weapons-list');
+    if(!list)return;
+    const all=getCustomWeapons();
+    const keys=Object.keys(all);
+    if(!keys.length){list.innerHTML='<p style="color:var(--text2);font-size:11px">Aucune arme créée</p>';return;}
+    list.innerHTML='<h3 style="color:var(--accent);font-size:13px;margin:0 0 6px">Armes créées ('+keys.length+')</h3>'+
+      keys.map(k=>{const w=all[k];return '<div style="display:inline-block;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin:3px;font-size:10px">'+
+        '<strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+(w.once?' (unique)':'')+
+        ' <span style="color:var(--text2)">par '+w.creator+'</span>'+
+        ' <button onclick="deleteCustomWeapon(\''+k+'\')" style="color:#f44;cursor:pointer;background:none;border:none;font-size:10px">×suppr</button>'+
+        '</div>';}).join('');
+  }
+
+  window.deleteCustomWeapon=function(key){
+    const all=getCustomWeapons();delete all[key];saveCustomWeapons(all);renderCustomWeapons();
+    const el=document.querySelector('[data-wkey="'+key+'"]');if(el)el.remove();
+  };
+
+  // ═══ SUBMIT UNIT FOR VALIDATION ═══
+  window.submitUnitForValidation=function(){
+    const creatorId=localStorage.getItem('cb_creatorId');
+    if(!creatorId){alert('Entrez votre ID créateur en haut de page d\'abord !');return;}
+    const name=document.getElementById('ed-name')?.value?.trim();
+    if(!name){alert('Remplissez au moins le nom de l\'unité');return;}
+    // Reuse existing submitSuggestion logic by filling sg- fields
+    const sgName=document.getElementById('sg-name');
+    const sgFac=document.getElementById('sg-faction');
+    const sgPts=document.getElementById('sg-pts');
+    const sgHp=document.getElementById('sg-hp');
+    const sgArm=document.getElementById('sg-arm');
+    const sgMm=document.getElementById('sg-mm');
+    const sgPa=document.getElementById('sg-pa');
+    const sgWeapons=document.getElementById('sg-weapons');
+    if(sgName)sgName.value=name;
+    if(sgFac)sgFac.value=document.getElementById('ed-faction')?.value||'';
+    if(sgPts)sgPts.value=document.getElementById('ed-points')?.value||'200';
+    if(sgHp)sgHp.value=document.getElementById('ed-hp')?.value||'2';
+    if(sgArm)sgArm.value=document.getElementById('ed-armor')?.value||'15';
+    if(sgMm)sgMm.value=document.getElementById('ed-move')?.value||'0';
+    if(sgPa)sgPa.value=document.getElementById('ed-pa')?.value||'5';
+    // Get selected weapons
+    const checks=document.querySelectorAll('#weapon-selector input:checked');
+    if(sgWeapons)sgWeapons.value=Array.from(checks).map(c=>c.parentElement.querySelector('.wo-name')?.textContent||c.value).join(', ');
+    // Call existing submitSuggestion
+    if(typeof submitSuggestion==='function')submitSuggestion('unit');
+    else alert('Proposition de "'+name+'" enregistrée (ID: '+creatorId+')');
+  };
+
+  // ═══ HOOK INTO addCard TO ALSO ADD TO GALLERY ═══
+  const origAddCard=window.addCard;
+  window.addCard=function(){
+    // Call original
+    if(origAddCard)origAddCard();
+    // Also add to gallery as custom unit
+    const name=document.getElementById('ed-name')?.value?.trim();
+    if(!name)return;
+    const faction=document.getElementById('ed-faction')?.value||'République';
+    const pts=+(document.getElementById('ed-points')?.value||200);
+    const hp=+(document.getElementById('ed-hp')?.value||2);
+    const arm=+(document.getElementById('ed-armor')?.value||15);
+    const mm=+(document.getElementById('ed-move')?.value||0);
+    const pa=+(document.getElementById('ed-pa')?.value||5);
+    const checks=document.querySelectorAll('#weapon-selector input:checked');
+    const weapons=Array.from(checks).map(c=>c.parentElement.querySelector('.wo-name')?.textContent||c.value);
+    const customGallery=JSON.parse(localStorage.getItem('cb_customGallery')||'[]');
+    // Avoid duplicates by name
+    if(!customGallery.find(u=>u.name===name)){
+      customGallery.push({name,faction,pts,hp,arm,mm,pa,weapons,creator:localStorage.getItem('cb_creatorId')||'local',date:new Date().toISOString().slice(0,10)});
+      localStorage.setItem('cb_customGallery',JSON.stringify(customGallery));
+      addCustomUnitToGallery({name,faction,pts,hp,arm,mm,pa,weapons});
+    }
+  };
+
+  function addCustomUnitToGallery(u){
+    const grid=document.getElementById('gallery-grid');
+    if(!grid)return;
+    const facMap={'République':'cl','Séparatistes':'sep','Rebelles':'reb'};
+    const fac=facMap[u.faction]||'cl';
+    const card=document.createElement('div');
+    card.className='gallery-card';
+    card.dataset.faction=u.faction;
+    card.style.borderColor='#f0c040';
+    card.innerHTML='<div class="gc-name" style="color:#f0c040">'+u.name+' ★</div>'+
+      '<div class="gc-stats">'+u.pts+'pts | PV:'+u.hp+' Arm:'+u.arm+' PA:'+u.pa+'</div>'+
+      '<div class="gc-weapons" style="font-size:9px;color:var(--text2)">'+u.weapons.join(', ')+'</div>'+
+      '<button class="btn btn-gallery-add" onclick="addGalleryUnit(\'custom_'+u.name.replace(/\'/g,'')+'\')">+ Ajouter</button>';
+    grid.appendChild(card);
+  }
+
+  // ═══ ADMIN: CREATIONS TAB ═══
+  const origSwitchAdmin=window.switchAdminTab;
+  window.switchAdminTab=function(tab,btn){
+    // Handle new 'creations' tab
+    const crDiv=document.getElementById('admin-creations');
+    if(crDiv){crDiv.style.display=tab==='creations'?'block':'none';}
+    if(tab==='creations')populateAdminCreations();
+    // Call original for other tabs
+    if(origSwitchAdmin)origSwitchAdmin(tab,btn);
+    // Handle button active state for creations
+    if(btn){btn.closest('.admin-tabs')?.querySelectorAll('.btn-admtab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  };
+
+  function populateAdminCreations(){
+    // Units
+    const uDiv=document.getElementById('admin-custom-units');
+    const cg=JSON.parse(localStorage.getItem('cb_customGallery')||'[]');
+    if(uDiv){
+      if(!cg.length){uDiv.innerHTML='<p style="font-size:10px;color:var(--text2)">Aucune unité créée</p>';}
+      else{
+        const byCreator={};cg.forEach(u=>{const c=u.creator||'anonyme';if(!byCreator[c])byCreator[c]=[];byCreator[c].push(u);});
+        uDiv.innerHTML=Object.entries(byCreator).map(([creator,units])=>
+          '<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+creator+'</strong> ('+units.length+' unités)'+
+          '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">'+
+          units.map(u=>'<span style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px">'+
+            '<strong style="color:var(--accent)">'+u.name+'</strong> '+u.pts+'pts PV:'+u.hp+' Arm:'+u.arm+' ['+u.faction+']'+
+          '</span>').join('')+'</div></div>'
+        ).join('');
+      }
+    }
+    // Weapons
+    const wDiv=document.getElementById('admin-custom-weapons');
+    const cw=JSON.parse(localStorage.getItem('cb_customWeapons')||'{}');
+    const wKeys=Object.keys(cw);
+    if(wDiv){
+      if(!wKeys.length){wDiv.innerHTML='<p style="font-size:10px;color:var(--text2)">Aucune arme créée</p>';}
+      else{
+        const byCreator={};wKeys.forEach(k=>{const w=cw[k];const c=w.creator||'anonyme';if(!byCreator[c])byCreator[c]=[];byCreator[c].push(w);});
+        wDiv.innerHTML=Object.entries(byCreator).map(([creator,weapons])=>
+          '<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+creator+'</strong> ('+weapons.length+' armes)'+
+          '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">'+
+          weapons.map(w=>'<span style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px">'+
+            '<strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+
+          '</span>').join('')+'</div></div>'
+        ).join('');
+      }
+    }
+  }
+
+  // ═══ LOAD CUSTOM DATA ON PAGE INIT ═══
+  function initCustomData(){
+    // Load custom weapons into selector
+    const cw=getCustomWeapons();
+    Object.entries(cw).forEach(([k,w])=>addWeaponToSelector(k,w));
+    renderCustomWeapons();
+    // Load custom gallery units
+    const cg=JSON.parse(localStorage.getItem('cb_customGallery')||'[]');
+    cg.forEach(u=>addCustomUnitToGallery(u));
+  }
+  // Wait for script.js to init first
+  if(document.readyState==='complete')setTimeout(initCustomData,500);
+  else window.addEventListener('load',()=>setTimeout(initCustomData,500));
+})();
+</script>
 
 </body>
 </html>
