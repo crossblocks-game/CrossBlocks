@@ -66,6 +66,19 @@
  <span class="nav-sep">|</span>
  <a href="index.html" class="nav-active"> Éditeur de fiches d'unités</a>
  <a href="game.html"> Simulateur</a>
+ <div id="auth-box" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px">
+  <div id="auth-login" style="display:flex;gap:4px;align-items:center">
+   <input id="auth-user" placeholder="Login" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
+   <input id="auth-pass" type="password" placeholder="Mot de passe" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
+   <button onclick="CB.login()" style="padding:2px 8px;border-radius:3px;border:none;background:#238636;color:#fff;cursor:pointer;font-size:10px">Connexion</button>
+   <button onclick="CB.register()" style="padding:2px 8px;border-radius:3px;border:none;background:#1f6feb;color:#fff;cursor:pointer;font-size:10px">Créer compte</button>
+  </div>
+  <div id="auth-logged" style="display:none;gap:6px;align-items:center">
+   <span id="auth-username" style="color:#f0c040;font-weight:700"></span>
+   <span id="auth-badge" style="font-size:9px;padding:1px 5px;border-radius:3px;display:none">ADMIN</span>
+   <button onclick="CB.logout()" style="padding:2px 8px;border-radius:3px;border:none;background:#6e1010;color:#fff;cursor:pointer;font-size:10px">Déconnexion</button>
+  </div>
+ </div>
 </nav>
 
 <!-- Fond fixe -->
@@ -167,6 +180,12 @@
  <div id="weapon-selector" class="weapon-grid"></div>
  </div>
 
+ <div class="form-group">
+ <label> Image de l'unité (optionnel)</label>
+ <input type="file" id="ed-image" accept="image/*" onchange="handleUnitImage(this)" style="font-size:10px">
+ <div id="ed-image-preview" style="margin-top:4px;max-width:120px"></div>
+ </div>
+
  <div class="form-actions">
  <button class="btn btn-add" onclick="addCard()"> Ajouter fiche d'unité</button>
  <button class="btn btn-suggest" onclick="submitUnitForValidation()"> Soumettre pour validation admin</button>
@@ -234,21 +253,22 @@
  </div>
  </section>
 
- <!-- Hidden fields for unit suggestion compatibility with script.js -->
- <div id="suggest-unit" style="display:none">
- <input id="sg-name"><select id="sg-faction"></select>
- <input id="sg-pts" type="number"><input id="sg-hp" type="number">
- <input id="sg-arm" type="number"><input id="sg-mm" type="number">
- <input id="sg-pa" type="number"><input id="sg-weapons"><input id="sg-notes">
+ <!-- ═══ ÉDITEUR DE FACTIONS ═══ -->
+ <section class="suggest-section" style="margin-top:16px">
+ <h2 class="section-title"> Éditeur de factions</h2>
+ <p class="suggest-desc">Créez de nouvelles factions pour vos unités. Soumettez-les à l'admin pour les rendre disponibles à tous.</p>
+ <div class="suggest-form">
+ <div class="form-row">
+ <div class="form-group"><label>Nom de la faction</label><input id="fac-name" placeholder="Ex: Empire Galactique"></div>
+ <div class="form-group"><label>Couleur</label><input id="fac-color" type="color" value="#888888" style="width:50px;height:30px;border:none;cursor:pointer"></div>
+ <div class="form-group"><label>Abréviation (2-4 car.)</label><input id="fac-abbr" placeholder="emp" maxlength="4" style="width:60px"></div>
  </div>
-
- <!-- ═══ ID CRÉATEUR ═══ -->
- <section class="editor-section" style="margin-top:16px;padding:12px 16px">
- <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
- <span style="color:var(--accent);font-weight:700;font-size:13px"> Votre ID créateur</span>
- <input id="creator-id" placeholder="Entrez un pseudo" style="background:var(--card);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 10px;font-size:12px;width:150px" oninput="saveCreatorId()">
- <span id="creator-status" style="font-size:10px;color:var(--text2)">Vos créations sont sauvegardées localement sous cet ID</span>
+ <div class="form-actions" style="gap:8px">
+ <button class="btn btn-add" onclick="CB.createFaction()"> Créer la faction</button>
+ <button class="btn btn-suggest" onclick="CB.submitFaction()"> Soumettre à l'admin</button>
  </div>
+ </div>
+ <div id="custom-factions-list" style="margin-top:10px"></div>
  </section>
 
  <!-- ═══ ÉDITEUR D'ARMES ═══ -->
@@ -391,25 +411,122 @@
 <script src="admin.js"></script>
 
 <script>
-// ═══ CREATOR ID SYSTEM ═══
-(function(){
-  const idEl=document.getElementById('creator-id');
-  if(idEl){idEl.value=localStorage.getItem('cb_creatorId')||'';}
-  window.saveCreatorId=function(){
-    const v=(idEl?.value||'').replace(/[^a-zA-Z0-9_-]/g,'');
-    if(idEl)idEl.value=v;
-    localStorage.setItem('cb_creatorId',v);
+// ═══ CROSSBLOCKS ACCOUNT & DATA SYSTEM ═══
+const CB=(function(){
+  // ── Storage helpers ──
+  const LS=(k,def)=>{try{return JSON.parse(localStorage.getItem(k));}catch{return def;}};
+  const SS=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+  // ── Database (all in localStorage) ──
+  // Accounts: {login:{pass,isAdmin}} — admin is hardcoded
+  function getAccounts(){const a=LS('cb_accounts',{});a.admin={pass:'CrossBlocks123',isAdmin:true};return a;}
+  function saveAccounts(a){delete a.admin;SS('cb_accounts',a);}
+
+  // Per-user data: cb_data_{login} = {units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}}
+  function getUserData(login){return LS('cb_data_'+login,{units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}});}
+  function saveUserData(login,d){SS('cb_data_'+login,d);}
+
+  // Validated (global): cb_validated = {units:[],weapons:[],factions:[]}
+  function getValidated(){return LS('cb_validated',{units:[],weapons:[],factions:[]});}
+  function saveValidated(v){SS('cb_validated',v);}
+
+  // All submissions (for admin): cb_submissions = [{type,data,user,date}]
+  function getSubmissions(){return LS('cb_submissions',[]);}
+  function saveSubmissions(s){SS('cb_submissions',s);}
+
+  // All user logins list (for admin browsing)
+  function getAllUsers(){return LS('cb_allusers',[]);}
+  function addToAllUsers(login){const u=getAllUsers();if(!u.includes(login)){u.push(login);SS('cb_allusers',u);}}
+
+  // ── Session ──
+  let currentUser=LS('cb_session',null); // {login,isAdmin}
+
+  function updateAuthUI(){
+    const loginBox=document.getElementById('auth-login');
+    const loggedBox=document.getElementById('auth-logged');
+    const nameEl=document.getElementById('auth-username');
+    const badgeEl=document.getElementById('auth-badge');
+    if(!currentUser){
+      if(loginBox)loginBox.style.display='flex';
+      if(loggedBox)loggedBox.style.display='none';
+    } else {
+      if(loginBox)loginBox.style.display='none';
+      if(loggedBox)loggedBox.style.display='flex';
+      if(nameEl)nameEl.textContent=currentUser.login;
+      if(badgeEl){badgeEl.style.display=currentUser.isAdmin?'inline':'none';badgeEl.style.background='#f0c040';badgeEl.style.color='#000';}
+    }
+    // Show/hide admin button in footer
+    const admBtn=document.getElementById('admin-btn');
+    if(admBtn)admBtn.style.display=(currentUser&&currentUser.isAdmin)?'inline-block':'none';
+  }
+
+  function login(){
+    const u=document.getElementById('auth-user')?.value?.trim();
+    const p=document.getElementById('auth-pass')?.value;
+    if(!u||!p){alert('Login et mot de passe requis');return;}
+    const accounts=getAccounts();
+    if(!accounts[u]){alert('Compte inexistant. Cliquez "Créer compte".');return;}
+    if(accounts[u].pass!==p){alert('Mot de passe incorrect');return;}
+    currentUser={login:u,isAdmin:!!accounts[u].isAdmin};
+    SS('cb_session',currentUser);
+    updateAuthUI();
+    loadUserContent();
+  }
+
+  function register(){
+    const u=document.getElementById('auth-user')?.value?.trim().replace(/[^a-zA-Z0-9_-]/g,'');
+    const p=document.getElementById('auth-pass')?.value;
+    if(!u||u.length<2){alert('Login requis (2 caractères min, alphanumérique)');return;}
+    if(!p||p.length<4){alert('Mot de passe requis (4 caractères min)');return;}
+    if(u.toLowerCase()==='admin'){alert('Login réservé');return;}
+    const accounts=getAccounts();
+    if(accounts[u]){alert('Ce login existe déjà');return;}
+    accounts[u]={pass:p};
+    saveAccounts(accounts);
+    addToAllUsers(u);
+    currentUser={login:u,isAdmin:false};
+    SS('cb_session',currentUser);
+    updateAuthUI();
+    loadUserContent();
+    alert('Compte "'+u+'" créé !');
+  }
+
+  function logout(){
+    currentUser=null;
+    localStorage.removeItem('cb_session');
+    updateAuthUI();
+    location.reload();
+  }
+
+  function requireAccount(){
+    if(currentUser)return true;
+    alert('Vous devez créer un compte ou vous connecter pour sauvegarder vos créations.');
+    document.getElementById('auth-user')?.focus();
+    return false;
+  }
+
+  // ── Image handling ──
+  let pendingImage=null;
+  window.handleUnitImage=function(input){
+    const file=input.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(e){
+      pendingImage=e.target.result;
+      const prev=document.getElementById('ed-image-preview');
+      if(prev)prev.innerHTML='<img src="'+pendingImage+'" style="max-width:100px;max-height:80px;border-radius:4px;border:1px solid #444">';
+      updatePreview();
+    };
+    reader.readAsDataURL(file);
   };
 
-  // ═══ CUSTOM WEAPONS ═══
-  function getCustomWeapons(){try{return JSON.parse(localStorage.getItem('cb_customWeapons')||'{}');}catch{return{};}}
-  function saveCustomWeapons(w){localStorage.setItem('cb_customWeapons',JSON.stringify(w));}
+  // ── Custom weapons ──
+  function getMyWeapons(){if(!currentUser)return LS('cb_anonWeapons',{});return(getUserData(currentUser.login).weapons||[]).reduce((o,w)=>{o[w.key]=w;return o;},{});}
 
   window.createCustomWeapon=function(){
+    if(!requireAccount())return;
     const name=document.getElementById('sgw-name')?.value?.trim();
     if(!name){alert('Nom requis');return;}
-    const w={
-      n:name,
+    const w={key:'cw_'+Date.now(),n:name,
       diff:+(document.getElementById('sgw-diff')?.value||15),
       mun:+(document.getElementById('sgw-mun')?.value||1),
       pen:+(document.getElementById('sgw-pen')?.value||5),
@@ -418,90 +535,67 @@
       melee:+(document.getElementById('sgw-mel')?.value||0),
       cat1:+(document.getElementById('sgw-cat1')?.value||0),
       cat2:+(document.getElementById('sgw-cat2')?.value||0),
-      catP:+(document.getElementById('sgw-catp')?.value||0),
-      notes:document.getElementById('sgw-notes')?.value||'',
-      creator:localStorage.getItem('cb_creatorId')||'anonyme',
-      date:new Date().toISOString().slice(0,10)
-    };
-    const key='cw_'+name.toLowerCase().replace(/\s+/g,'_')+'_'+Date.now();
-    const all=getCustomWeapons();
-    all[key]=w;
-    saveCustomWeapons(all);
-    renderCustomWeapons();
-    // Add to weapon selector in editor
-    addWeaponToSelector(key,w);
-    alert('Arme "'+name+'" créée et ajoutée au sélecteur d\'armes !');
+      catP:+(document.getElementById('sgw-catp')?.value||0)};
+    const d=getUserData(currentUser.login);
+    d.weapons=d.weapons||[];d.weapons.push(w);
+    saveUserData(currentUser.login,d);
+    addWeaponToSelector(w.key,w);
+    renderMyWeapons();
+    alert('Arme "'+name+'" créée !');
   };
 
   function addWeaponToSelector(key,w){
-    const grid=document.getElementById('weapon-selector');
-    if(!grid)return;
+    const grid=document.getElementById('weapon-selector');if(!grid)return;
     if(grid.querySelector('[data-wkey="'+key+'"]'))return;
-    const label=document.createElement('label');
-    label.className='weapon-option';
-    label.dataset.wkey=key;
+    const label=document.createElement('label');label.className='weapon-option';label.dataset.wkey=key;
     label.innerHTML='<input type="checkbox" value="'+key+'" onchange="updatePreview()"><span class="wo-name">'+w.n+'</span><span class="wo-info">Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+'</span>';
-    label.style.borderColor='#f0c040';
-    grid.appendChild(label);
+    label.style.borderColor='#f0c040';grid.appendChild(label);
   }
 
-  function renderCustomWeapons(){
-    const list=document.getElementById('custom-weapons-list');
-    if(!list)return;
-    const all=getCustomWeapons();
-    const keys=Object.keys(all);
-    if(!keys.length){list.innerHTML='<p style="color:var(--text2);font-size:11px">Aucune arme créée</p>';return;}
-    list.innerHTML='<h3 style="color:var(--accent);font-size:13px;margin:0 0 6px">Armes créées ('+keys.length+')</h3>'+
-      keys.map(k=>{const w=all[k];return '<div style="display:inline-block;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin:3px;font-size:10px">'+
-        '<strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+(w.once?' (unique)':'')+
-        ' <span style="color:var(--text2)">par '+w.creator+'</span>'+
-        ' <button onclick="deleteCustomWeapon(\''+k+'\')" style="color:#f44;cursor:pointer;background:none;border:none;font-size:10px">×suppr</button>'+
-        '</div>';}).join('');
+  function renderMyWeapons(){
+    const list=document.getElementById('custom-weapons-list');if(!list)return;
+    if(!currentUser){list.innerHTML='';return;}
+    const d=getUserData(currentUser.login);const ws=d.weapons||[];
+    if(!ws.length){list.innerHTML='<p style="color:var(--text2);font-size:11px">Aucune arme créée</p>';return;}
+    list.innerHTML='<h3 style="color:var(--accent);font-size:13px;margin:0 0 6px">Mes armes ('+ws.length+')</h3>'+
+      ws.map(w=>'<div style="display:inline-block;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin:3px;font-size:10px">'+
+        '<strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+
+        ' <button onclick="CB.deleteWeapon(\''+w.key+'\')" style="color:#f44;cursor:pointer;background:none;border:none;font-size:10px">×</button></div>').join('');
   }
 
-  window.deleteCustomWeapon=function(key){
-    const all=getCustomWeapons();delete all[key];saveCustomWeapons(all);renderCustomWeapons();
+  function deleteWeapon(key){
+    if(!currentUser)return;
+    const d=getUserData(currentUser.login);d.weapons=(d.weapons||[]).filter(w=>w.key!==key);
+    saveUserData(currentUser.login,d);renderMyWeapons();
     const el=document.querySelector('[data-wkey="'+key+'"]');if(el)el.remove();
-  };
+  }
 
-  // ═══ SUBMIT UNIT FOR VALIDATION ═══
-  window.submitUnitForValidation=function(){
-    const creatorId=localStorage.getItem('cb_creatorId');
-    if(!creatorId){alert('Entrez votre ID créateur en haut de page d\'abord !');return;}
-    const name=document.getElementById('ed-name')?.value?.trim();
-    if(!name){alert('Remplissez au moins le nom de l\'unité');return;}
-    // Reuse existing submitSuggestion logic by filling sg- fields
-    const sgName=document.getElementById('sg-name');
-    const sgFac=document.getElementById('sg-faction');
-    const sgPts=document.getElementById('sg-pts');
-    const sgHp=document.getElementById('sg-hp');
-    const sgArm=document.getElementById('sg-arm');
-    const sgMm=document.getElementById('sg-mm');
-    const sgPa=document.getElementById('sg-pa');
-    const sgWeapons=document.getElementById('sg-weapons');
-    if(sgName)sgName.value=name;
-    if(sgFac)sgFac.value=document.getElementById('ed-faction')?.value||'';
-    if(sgPts)sgPts.value=document.getElementById('ed-points')?.value||'200';
-    if(sgHp)sgHp.value=document.getElementById('ed-hp')?.value||'2';
-    if(sgArm)sgArm.value=document.getElementById('ed-armor')?.value||'15';
-    if(sgMm)sgMm.value=document.getElementById('ed-move')?.value||'0';
-    if(sgPa)sgPa.value=document.getElementById('ed-pa')?.value||'5';
-    // Get selected weapons
-    const checks=document.querySelectorAll('#weapon-selector input:checked');
-    if(sgWeapons)sgWeapons.value=Array.from(checks).map(c=>c.parentElement.querySelector('.wo-name')?.textContent||c.value).join(', ');
-    // Call existing submitSuggestion
-    if(typeof submitSuggestion==='function')submitSuggestion('unit');
-    else alert('Proposition de "'+name+'" enregistrée (ID: '+creatorId+')');
-  };
+  // ── Custom factions ──
+  window.CB_createFaction=null; // set below after CB defined
 
-  // ═══ HOOK INTO addCard TO ALSO ADD TO GALLERY ═══
+  function renderMyFactions(){
+    const list=document.getElementById('custom-factions-list');if(!list)return;
+    if(!currentUser){list.innerHTML='';return;}
+    const d=getUserData(currentUser.login);const fs=d.factions||[];
+    const validated=getValidated().factions||[];
+    const allFacs=[...validated,...fs];
+    if(!allFacs.length){list.innerHTML='';return;}
+    list.innerHTML='<h3 style="color:var(--accent);font-size:12px;margin:0 0 4px">Factions disponibles</h3>'+
+      allFacs.map(f=>'<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;font-size:10px;border:1px solid '+f.color+';color:'+f.color+'">'+
+        f.name+(f.validated?' ✓':' (perso)')+
+        (!f.validated?' <button onclick="CB.deleteFaction(\''+f.abbr+'\')" style="color:#f44;cursor:pointer;background:none;border:none;font-size:9px">×</button>':'')+
+      '</span>').join('');
+    // Also add to faction selector in editor
+    const sel=document.getElementById('ed-faction');
+    if(sel){allFacs.forEach(f=>{if(!sel.querySelector('option[value="'+f.name+'"]')){const o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o);}});}
+  }
+
+  // ── Hook addCard ──
   const origAddCard=window.addCard;
   window.addCard=function(){
-    // Call original
+    if(!requireAccount())return;
     if(origAddCard)origAddCard();
-    // Also add to gallery as custom unit
-    const name=document.getElementById('ed-name')?.value?.trim();
-    if(!name)return;
+    const name=document.getElementById('ed-name')?.value?.trim();if(!name)return;
     const faction=document.getElementById('ed-faction')?.value||'République';
     const pts=+(document.getElementById('ed-points')?.value||200);
     const hp=+(document.getElementById('ed-hp')?.value||2);
@@ -509,95 +603,204 @@
     const mm=+(document.getElementById('ed-move')?.value||0);
     const pa=+(document.getElementById('ed-pa')?.value||5);
     const checks=document.querySelectorAll('#weapon-selector input:checked');
-    const weapons=Array.from(checks).map(c=>c.parentElement.querySelector('.wo-name')?.textContent||c.value);
-    const customGallery=JSON.parse(localStorage.getItem('cb_customGallery')||'[]');
-    // Avoid duplicates by name
-    if(!customGallery.find(u=>u.name===name)){
-      customGallery.push({name,faction,pts,hp,arm,mm,pa,weapons,creator:localStorage.getItem('cb_creatorId')||'local',date:new Date().toISOString().slice(0,10)});
-      localStorage.setItem('cb_customGallery',JSON.stringify(customGallery));
-      addCustomUnitToGallery({name,faction,pts,hp,arm,mm,pa,weapons});
-    }
+    const weapons=Array.from(checks).map(c=>c.parentElement?.querySelector('.wo-name')?.textContent||c.value);
+    const unit={name,faction,pts,hp,arm,mm,pa,weapons,image:pendingImage||null,date:new Date().toISOString().slice(0,10)};
+    const d=getUserData(currentUser.login);d.units=d.units||[];
+    if(!d.units.find(u=>u.name===name)){d.units.push(unit);saveUserData(currentUser.login,d);}
+    addUnitToGallery(unit);
+    pendingImage=null;
   };
 
-  function addCustomUnitToGallery(u){
-    const grid=document.getElementById('gallery-grid');
-    if(!grid)return;
-    const facMap={'République':'cl','Séparatistes':'sep','Rebelles':'reb'};
-    const fac=facMap[u.faction]||'cl';
-    const card=document.createElement('div');
-    card.className='gallery-card';
-    card.dataset.faction=u.faction;
+  function addUnitToGallery(u){
+    const grid=document.getElementById('gallery-grid');if(!grid)return;
+    if(grid.querySelector('[data-uname="'+u.name+'"]'))return;
+    const card=document.createElement('div');card.className='gallery-card';card.dataset.faction=u.faction;card.dataset.uname=u.name;
     card.style.borderColor='#f0c040';
     card.innerHTML='<div class="gc-name" style="color:#f0c040">'+u.name+' ★</div>'+
+      (u.image?'<img src="'+u.image+'" style="max-width:60px;max-height:40px;border-radius:3px;margin:2px 0">':'')+
       '<div class="gc-stats">'+u.pts+'pts | PV:'+u.hp+' Arm:'+u.arm+' PA:'+u.pa+'</div>'+
-      '<div class="gc-weapons" style="font-size:9px;color:var(--text2)">'+u.weapons.join(', ')+'</div>'+
-      '<button class="btn btn-gallery-add" onclick="addGalleryUnit(\'custom_'+u.name.replace(/\'/g,'')+'\')">+ Ajouter</button>';
+      '<button class="btn btn-gallery-add" onclick="addGalleryUnit(\'custom_'+u.name.replace(/'/g,'')+'\')">+ Ajouter</button>';
     grid.appendChild(card);
   }
 
-  // ═══ ADMIN: CREATIONS TAB ═══
+  // ── Submit for validation ──
+  window.submitUnitForValidation=function(){
+    if(!requireAccount())return;
+    const name=document.getElementById('ed-name')?.value?.trim();
+    if(!name){alert('Remplissez le nom');return;}
+    const d=getUserData(currentUser.login);const unit=d.units?.find(u=>u.name===name);
+    if(!unit){alert('Ajoutez d\'abord la fiche via "Ajouter fiche d\'unité"');return;}
+    const subs=getSubmissions();
+    subs.push({type:'unit',data:unit,user:currentUser.login,date:new Date().toISOString()});
+    saveSubmissions(subs);
+    // Also mark in user data
+    d.submitted=d.submitted||{units:[],weapons:[],factions:[]};
+    if(!d.submitted.units.includes(name)){d.submitted.units.push(name);saveUserData(currentUser.login,d);}
+    alert('Unité "'+name+'" soumise pour validation !');
+  };
+
+  // ── Load content for logged user ──
+  function loadUserContent(){
+    if(!currentUser)return;
+    const d=getUserData(currentUser.login);
+    // Load weapons into selector
+    (d.weapons||[]).forEach(w=>addWeaponToSelector(w.key,w));
+    renderMyWeapons();
+    // Load units into gallery
+    (d.units||[]).forEach(u=>addUnitToGallery(u));
+    // Load validated items
+    const v=getValidated();
+    (v.units||[]).forEach(u=>addUnitToGallery({...u,validated:true}));
+    (v.weapons||[]).forEach(w=>addWeaponToSelector(w.key||('vw_'+w.n),w));
+    // Load factions
+    renderMyFactions();
+  }
+
+  // ── Admin functions ──
   const origSwitchAdmin=window.switchAdminTab;
   window.switchAdminTab=function(tab,btn){
-    // Handle new 'creations' tab
-    const crDiv=document.getElementById('admin-creations');
-    if(crDiv){crDiv.style.display=tab==='creations'?'block':'none';}
-    if(tab==='creations')populateAdminCreations();
-    // Call original for other tabs
-    if(origSwitchAdmin)origSwitchAdmin(tab,btn);
-    // Handle button active state for creations
+    ['admin-config','admin-pending','admin-creations','admin-balance'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.style.display='none';
+    });
+    const target=document.getElementById('admin-'+tab);if(target)target.style.display='block';
+    if(tab==='pending')renderAdminPending();
+    if(tab==='creations')renderAdminCreations();
     if(btn){btn.closest('.admin-tabs')?.querySelectorAll('.btn-admtab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
   };
 
-  function populateAdminCreations(){
-    // Units
+  function renderAdminPending(){
+    const area=document.getElementById('pending-list-area');if(!area)return;
+    const subs=getSubmissions();
+    if(!subs.length){area.innerHTML='<p style="font-size:10px;color:var(--text2)">Aucune soumission</p>';return;}
+    area.innerHTML=subs.map((s,i)=>'<div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:6px;margin:3px 0;font-size:10px">'+
+      '<strong style="color:var(--accent)">['+s.type+']</strong> '+(s.data?.name||s.data?.n||'?')+
+      ' <span style="color:#58a6ff">par '+s.user+'</span> ('+s.date?.slice(0,10)+')'+
+      ' <button onclick="CB.validateSubmission('+i+')" style="padding:1px 6px;border:none;border-radius:3px;background:#238636;color:#fff;cursor:pointer;font-size:9px;margin-left:4px">Valider</button>'+
+      ' <button onclick="CB.rejectSubmission('+i+')" style="padding:1px 6px;border:none;border-radius:3px;background:#6e1010;color:#fff;cursor:pointer;font-size:9px">Refuser</button>'+
+    '</div>').join('');
+  }
+
+  function validateSubmission(i){
+    const subs=getSubmissions();const s=subs[i];if(!s)return;
+    const v=getValidated();
+    if(s.type==='unit'){v.units=v.units||[];s.data.validated=true;v.units.push(s.data);}
+    if(s.type==='weapon'){v.weapons=v.weapons||[];s.data.validated=true;v.weapons.push(s.data);}
+    if(s.type==='faction'){v.factions=v.factions||[];s.data.validated=true;v.factions.push(s.data);}
+    saveValidated(v);
+    subs.splice(i,1);saveSubmissions(subs);
+    renderAdminPending();
+    alert((s.data?.name||s.data?.n)+' validé(e) !');
+  }
+
+  function rejectSubmission(i){
+    const subs=getSubmissions();subs.splice(i,1);saveSubmissions(subs);renderAdminPending();
+  }
+
+  function renderAdminCreations(){
     const uDiv=document.getElementById('admin-custom-units');
-    const cg=JSON.parse(localStorage.getItem('cb_customGallery')||'[]');
-    if(uDiv){
-      if(!cg.length){uDiv.innerHTML='<p style="font-size:10px;color:var(--text2)">Aucune unité créée</p>';}
-      else{
-        const byCreator={};cg.forEach(u=>{const c=u.creator||'anonyme';if(!byCreator[c])byCreator[c]=[];byCreator[c].push(u);});
-        uDiv.innerHTML=Object.entries(byCreator).map(([creator,units])=>
-          '<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+creator+'</strong> ('+units.length+' unités)'+
-          '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">'+
-          units.map(u=>'<span style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px">'+
-            '<strong style="color:var(--accent)">'+u.name+'</strong> '+u.pts+'pts PV:'+u.hp+' Arm:'+u.arm+' ['+u.faction+']'+
-          '</span>').join('')+'</div></div>'
-        ).join('');
-      }
-    }
-    // Weapons
     const wDiv=document.getElementById('admin-custom-weapons');
-    const cw=JSON.parse(localStorage.getItem('cb_customWeapons')||'{}');
-    const wKeys=Object.keys(cw);
+    const users=getAllUsers();
+    // Units by user
+    if(uDiv){
+      let html='';
+      users.forEach(login=>{
+        const d=getUserData(login);const units=d.units||[];
+        if(!units.length)return;
+        const submitted=d.submitted?.units||[];
+        html+='<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+login+'</strong> ('+units.length+' unités)<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">';
+        html+=units.map(u=>{
+          const isSub=submitted.includes(u.name);
+          return '<span style="background:var(--card);border:1px solid '+(isSub?'#f0c040':'var(--border)')+';border-radius:4px;padding:2px 6px;font-size:9px">'+
+            (u.image?'<img src="'+u.image+'" style="width:16px;height:16px;border-radius:2px;vertical-align:middle;margin-right:2px">':'')+
+            '<strong style="color:var(--accent)">'+u.name+'</strong> '+u.pts+'pts'+(isSub?' <span style="color:#f0c040">★soumis</span>':' <span style="color:#666">non soumis</span>')+
+          '</span>';
+        }).join('');
+        html+='</div></div>';
+      });
+      uDiv.innerHTML=html||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';
+    }
+    // Weapons by user
     if(wDiv){
-      if(!wKeys.length){wDiv.innerHTML='<p style="font-size:10px;color:var(--text2)">Aucune arme créée</p>';}
-      else{
-        const byCreator={};wKeys.forEach(k=>{const w=cw[k];const c=w.creator||'anonyme';if(!byCreator[c])byCreator[c]=[];byCreator[c].push(w);});
-        wDiv.innerHTML=Object.entries(byCreator).map(([creator,weapons])=>
-          '<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+creator+'</strong> ('+weapons.length+' armes)'+
-          '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">'+
-          weapons.map(w=>'<span style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px">'+
-            '<strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+
-          '</span>').join('')+'</div></div>'
-        ).join('');
-      }
+      let html='';
+      users.forEach(login=>{
+        const d=getUserData(login);const ws=d.weapons||[];
+        if(!ws.length)return;
+        html+='<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+login+'</strong> ('+ws.length+' armes)<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">';
+        html+=ws.map(w=>'<span style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px"><strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+'</span>').join('');
+        html+='</div></div>';
+      });
+      wDiv.innerHTML=html||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';
     }
   }
 
-  // ═══ LOAD CUSTOM DATA ON PAGE INIT ═══
-  function initCustomData(){
-    // Load custom weapons into selector
-    const cw=getCustomWeapons();
-    Object.entries(cw).forEach(([k,w])=>addWeaponToSelector(k,w));
-    renderCustomWeapons();
-    // Load custom gallery units
-    const cg=JSON.parse(localStorage.getItem('cb_customGallery')||'[]');
-    cg.forEach(u=>addCustomUnitToGallery(u));
+  // ── Init ──
+  function init(){
+    updateAuthUI();
+    if(currentUser)setTimeout(loadUserContent,500);
+    // Load validated content for everyone
+    setTimeout(()=>{
+      const v=getValidated();
+      (v.units||[]).forEach(u=>addUnitToGallery({...u,validated:true}));
+      (v.weapons||[]).forEach(w=>addWeaponToSelector(w.key||('vw_'+w.n),w));
+      (v.factions||[]).forEach(f=>{
+        const sel=document.getElementById('ed-faction');
+        if(sel&&!sel.querySelector('option[value="'+f.name+'"]')){const o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o);}
+      });
+    },600);
   }
-  // Wait for script.js to init first
-  if(document.readyState==='complete')setTimeout(initCustomData,500);
-  else window.addEventListener('load',()=>setTimeout(initCustomData,500));
+
+  if(document.readyState==='complete')init();
+  else window.addEventListener('load',init);
+
+  // ── Public API ──
+  return{
+    login,register,logout,requireAccount,
+    deleteWeapon,
+    createFaction:function(){
+      if(!requireAccount())return;
+      const name=document.getElementById('fac-name')?.value?.trim();
+      const color=document.getElementById('fac-color')?.value||'#888';
+      const abbr=document.getElementById('fac-abbr')?.value?.trim()||name?.slice(0,3);
+      if(!name){alert('Nom requis');return;}
+      const f={name,color,abbr,validated:false};
+      const d=getUserData(currentUser.login);d.factions=d.factions||[];
+      if(d.factions.find(x=>x.name===name)){alert('Faction déjà créée');return;}
+      d.factions.push(f);saveUserData(currentUser.login,d);
+      renderMyFactions();alert('Faction "'+name+'" créée !');
+    },
+    submitFaction:function(){
+      if(!requireAccount())return;
+      const name=document.getElementById('fac-name')?.value?.trim();
+      if(!name){alert('Nom requis');return;}
+      const d=getUserData(currentUser.login);
+      const f=(d.factions||[]).find(x=>x.name===name);
+      if(!f){alert('Créez d\'abord la faction');return;}
+      const subs=getSubmissions();
+      subs.push({type:'faction',data:f,user:currentUser.login,date:new Date().toISOString()});
+      saveSubmissions(subs);
+      d.submitted=d.submitted||{units:[],weapons:[],factions:[]};
+      d.submitted.factions=d.submitted.factions||[];
+      if(!d.submitted.factions.includes(name)){d.submitted.factions.push(name);saveUserData(currentUser.login,d);}
+      alert('Faction "'+name+'" soumise !');
+    },
+    deleteFaction:function(abbr){
+      if(!currentUser)return;
+      const d=getUserData(currentUser.login);d.factions=(d.factions||[]).filter(f=>f.abbr!==abbr);
+      saveUserData(currentUser.login,d);renderMyFactions();
+    },
+    validateSubmission,rejectSubmission
+  };
 })();
+
+// Override promptAdmin to use account system
+window.promptAdmin=function(){
+  if(!CB||!CB.login)return;
+  if(localStorage.getItem('cb_session')){
+    const s=JSON.parse(localStorage.getItem('cb_session'));
+    if(s&&s.isAdmin){const p=document.getElementById('adminPanel');if(p)p.style.display='flex';return;}
+  }
+  alert('Connectez-vous avec le compte admin (login: admin) en haut à droite.');
+};
 </script>
 
 </body>
