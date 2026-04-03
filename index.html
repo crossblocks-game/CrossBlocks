@@ -264,8 +264,8 @@
  <div class="form-group"><label>Abréviation (2-4 car.)</label><input id="fac-abbr" placeholder="emp" maxlength="4" style="width:60px"></div>
  </div>
  <div class="form-actions" style="gap:8px">
- <button class="btn btn-add" onclick="CB.createFaction()"> Créer la faction</button>
- <button class="btn btn-suggest" onclick="CB.submitFaction()"> Soumettre à l'admin</button>
+ <button class="btn btn-add" onclick="CB_createFaction()"> Créer la faction</button>
+ <button class="btn btn-suggest" onclick="CB_submitFaction()"> Soumettre à l'admin</button>
  </div>
  </div>
  <div id="custom-factions-list" style="margin-top:10px"></div>
@@ -407,400 +407,96 @@
 
 </div>
 
+
+<script>
+// ═══ AUTH SYSTEM — loads FIRST, before script.js/admin.js ═══
+window.CB=(function(){
+  function LS(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
+  function SS(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+  function getAccounts(){var a=LS('cb_accounts',{});a['admin']={pass:'CrossBlocks123',isAdmin:true};return a;}
+  function saveAccounts(a){var c={};for(var k in a){if(k!=='admin')c[k]=a[k];}SS('cb_accounts',c);}
+  function getUserData(login){return LS('cb_data_'+login,{units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}});}
+  function saveUserData(login,d){SS('cb_data_'+login,d);}
+  function getValidated(){return LS('cb_validated',{units:[],weapons:[],factions:[]});}
+  function saveValidated(v){SS('cb_validated',v);}
+  function getSubmissions(){return LS('cb_submissions',[]);}
+  function saveSubmissions(s){SS('cb_submissions',s);}
+  function getAllUsers(){return LS('cb_allusers',[]);}
+  function addToAllUsers(login){var u=getAllUsers();if(u.indexOf(login)<0){u.push(login);SS('cb_allusers',u);}}
+  var currentUser=LS('cb_session',null);
+  function updateAuthUI(){
+    var lb=document.getElementById('auth-login'),lg=document.getElementById('auth-logged'),nm=document.getElementById('auth-username'),bg=document.getElementById('auth-badge'),ab=document.getElementById('admin-btn');
+    if(!currentUser){if(lb)lb.style.display='flex';if(lg)lg.style.display='none';}
+    else{if(lb)lb.style.display='none';if(lg)lg.style.display='flex';if(nm)nm.textContent=currentUser.login;if(bg){bg.style.display=currentUser.isAdmin?'inline':'none';bg.style.background='#f0c040';bg.style.color='#000';}}
+    if(ab)ab.style.display=(currentUser&&currentUser.isAdmin)?'inline-block':'none';
+  }
+  function login(){
+    var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;
+    if(!u||!p){alert('Login et mot de passe requis');return;}u=u.trim();
+    var acc=getAccounts();if(!acc[u]){alert('Compte inexistant. Cliquez "Créer compte".');return;}
+    if(acc[u].pass!==p){alert('Mot de passe incorrect');return;}
+    currentUser={login:u,isAdmin:!!acc[u].isAdmin};SS('cb_session',currentUser);updateAuthUI();
+    alert('Connecte en tant que '+u+(currentUser.isAdmin?' (ADMIN)':''));
+    setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);
+  }
+  function register(){
+    var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;
+    if(!u){alert('Login requis');return;}u=u.trim().replace(/[^a-zA-Z0-9_-]/g,'');
+    if(u.length<2){alert('Login trop court (2 car. min)');return;}
+    if(!p||p.length<4){alert('Mot de passe requis (4 car. min)');return;}
+    if(u.toLowerCase()==='admin'){alert('Login reserve');return;}
+    var acc=getAccounts();if(acc[u]){alert('Login existe deja');return;}
+    acc[u]={pass:p};saveAccounts(acc);addToAllUsers(u);
+    currentUser={login:u,isAdmin:false};SS('cb_session',currentUser);updateAuthUI();
+    alert('Compte "'+u+'" cree ! Vous etes connecte.');
+    setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);
+  }
+  function logout(){currentUser=null;localStorage.removeItem('cb_session');updateAuthUI();location.reload();}
+  function requireAccount(){if(currentUser)return true;alert('Creez un compte ou connectez-vous.');var el=document.getElementById('auth-user');if(el)el.focus();return false;}
+  function getUser(){return currentUser;}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',updateAuthUI);else updateAuthUI();
+  return{login:login,register:register,logout:logout,requireAccount:requireAccount,getUser:getUser,
+    getUserData:getUserData,saveUserData:saveUserData,getValidated:getValidated,saveValidated:saveValidated,
+    getSubmissions:getSubmissions,saveSubmissions:saveSubmissions,getAllUsers:getAllUsers,addToAllUsers:addToAllUsers,getAccounts:getAccounts,updateAuthUI:updateAuthUI};
+})();
+</script>
+
 <script src="script.js"></script>
 <script src="admin.js"></script>
 
 <script>
-// ═══ CROSSBLOCKS ACCOUNT & DATA SYSTEM ═══
-const CB=(function(){
-  // ── Storage helpers ──
-  const LS=(k,def)=>{try{return JSON.parse(localStorage.getItem(k));}catch{return def;}};
-  const SS=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+// ═══ FEATURES — loads AFTER script.js/admin.js ═══
+(function(){
+  var pendingImage=null;
+  window.handleUnitImage=function(input){var file=input.files[0];if(!file)return;var r=new FileReader();r.onload=function(e){pendingImage=e.target.result;var p=document.getElementById('ed-image-preview');if(p)p.innerHTML='<img src="'+pendingImage+'" style="max-width:100px;max-height:80px;border-radius:4px">';if(typeof updatePreview==='function')updatePreview();};r.readAsDataURL(file);};
 
-  // ── Database (all in localStorage) ──
-  // Accounts: {login:{pass,isAdmin}} — admin is hardcoded
-  function getAccounts(){const a=LS('cb_accounts',{});a.admin={pass:'CrossBlocks123',isAdmin:true};return a;}
-  function saveAccounts(a){delete a.admin;SS('cb_accounts',a);}
+  function addW2S(key,w){var g=document.getElementById('weapon-selector');if(!g||g.querySelector('[data-wkey="'+key+'"]'))return;var l=document.createElement('label');l.className='weapon-option';l.dataset.wkey=key;l.innerHTML='<input type="checkbox" value="'+key+'" onchange="updatePreview()"><span class="wo-name">'+w.n+'</span><span class="wo-info">Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+'</span>';l.style.borderColor='#f0c040';g.appendChild(l);}
+  function renderW(){var list=document.getElementById('custom-weapons-list');if(!list)return;var u=CB.getUser();if(!u){list.innerHTML='';return;}var d=CB.getUserData(u.login);var ws=d.weapons||[];if(!ws.length){list.innerHTML='<p style="color:var(--text2);font-size:11px">Aucune arme creee</p>';return;}list.innerHTML='<h3 style="color:var(--accent);font-size:13px;margin:0 0 6px">Mes armes ('+ws.length+')</h3>'+ws.map(function(w){return '<div style="display:inline-block;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin:3px;font-size:10px"><strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+' <button onclick="CB_delW(\''+w.key+'\') " style="color:#f44;background:none;border:none;cursor:pointer">x</button></div>';}).join('');}
+  window.CB_delW=function(k){var u=CB.getUser();if(!u)return;var d=CB.getUserData(u.login);d.weapons=(d.weapons||[]).filter(function(w){return w.key!==k;});CB.saveUserData(u.login,d);renderW();var el=document.querySelector('[data-wkey="'+k+'"]');if(el)el.remove();};
+  window.createCustomWeapon=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}var w={key:'cw_'+Date.now(),n:nm.trim(),mun:+(document.getElementById('sgw-mun')||{}).value||1,pen:+(document.getElementById('sgw-pen')||{}).value||5,dmg:+(document.getElementById('sgw-dmg')||{}).value||1,once:(document.getElementById('sgw-once')||{}).value==='1',melee:+(document.getElementById('sgw-mel')||{}).value||0,cat1:+(document.getElementById('sgw-cat1')||{}).value||0,cat2:+(document.getElementById('sgw-cat2')||{}).value||0,catP:+(document.getElementById('sgw-catp')||{}).value||0};var d=CB.getUserData(u.login);d.weapons=d.weapons||[];d.weapons.push(w);CB.saveUserData(u.login,d);addW2S(w.key,w);renderW();alert('Arme creee !');};
 
-  // Per-user data: cb_data_{login} = {units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}}
-  function getUserData(login){return LS('cb_data_'+login,{units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}});}
-  function saveUserData(login,d){SS('cb_data_'+login,d);}
+  function renderF(){var list=document.getElementById('custom-factions-list');if(!list)return;var u=CB.getUser();var vf=CB.getValidated().factions||[];var pf=u?(CB.getUserData(u.login).factions||[]):[];var all=vf.concat(pf);if(!all.length){list.innerHTML='';return;}list.innerHTML=all.map(function(f){return '<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;font-size:10px;border:1px solid '+f.color+';color:'+f.color+'">'+f.name+(f.validated?' v':'')+'</span>';}).join('');var sel=document.getElementById('ed-faction');if(sel)all.forEach(function(f){if(!sel.querySelector('option[value="'+f.name+'"]')){var o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o);}});}
+  window.CB_createFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}var c=(document.getElementById('fac-color')||{}).value||'#888';var ab=(document.getElementById('fac-abbr')||{}).value||nm.slice(0,3);var f={name:nm.trim(),color:c,abbr:ab.trim(),validated:false};var d=CB.getUserData(u.login);d.factions=d.factions||[];if(d.factions.some(function(x){return x.name===f.name;})){alert('Existe deja');return;}d.factions.push(f);CB.saveUserData(u.login,d);renderF();alert('Faction creee !');};
+  window.CB_submitFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}var d=CB.getUserData(u.login);var f=(d.factions||[]).find(function(x){return x.name===nm.trim();});if(!f){alert('Creez la faction d\'abord');return;}var s=CB.getSubmissions();s.push({type:'faction',data:f,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);alert('Faction soumise !');};
 
-  // Validated (global): cb_validated = {units:[],weapons:[],factions:[]}
-  function getValidated(){return LS('cb_validated',{units:[],weapons:[],factions:[]});}
-  function saveValidated(v){SS('cb_validated',v);}
+  function addU2G(u){var g=document.getElementById('gallery-grid');if(!g||g.querySelector('[data-uname="'+u.name+'"]'))return;var c=document.createElement('div');c.className='gallery-card';c.dataset.faction=u.faction;c.dataset.uname=u.name;c.style.borderColor='#f0c040';c.innerHTML='<div class="gc-name" style="color:#f0c040">'+u.name+'</div>'+(u.image?'<img src="'+u.image+'" style="max-width:60px;max-height:40px;border-radius:3px;margin:2px 0">':'')+'<div class="gc-stats">'+u.pts+'pts PV:'+u.hp+'</div>';g.appendChild(c);}
 
-  // All submissions (for admin): cb_submissions = [{type,data,user,date}]
-  function getSubmissions(){return LS('cb_submissions',[]);}
-  function saveSubmissions(s){SS('cb_submissions',s);}
+  var origAdd=window.addCard;
+  window.addCard=function(){if(!CB.requireAccount())return;if(origAdd)origAdd();var u=CB.getUser();if(!u)return;var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim())return;nm=nm.trim();var fc=(document.getElementById('ed-faction')||{}).value||'Republique';var pt=+(document.getElementById('ed-points')||{}).value||200;var hp=+(document.getElementById('ed-hp')||{}).value||2;var ar=+(document.getElementById('ed-armor')||{}).value||15;var mm=+(document.getElementById('ed-move')||{}).value||0;var pa=+(document.getElementById('ed-pa')||{}).value||5;var ch=document.querySelectorAll('#weapon-selector input:checked');var ws=Array.from(ch).map(function(c){return (c.parentElement.querySelector('.wo-name')||{}).textContent||c.value;});var unit={name:nm,faction:fc,pts:pt,hp:hp,arm:ar,mm:mm,pa:pa,weapons:ws,image:pendingImage||null,date:new Date().toISOString().slice(0,10)};var d=CB.getUserData(u.login);d.units=d.units||[];if(!d.units.some(function(x){return x.name===nm;})){d.units.push(unit);CB.saveUserData(u.login,d);}addU2G(unit);pendingImage=null;};
 
-  // All user logins list (for admin browsing)
-  function getAllUsers(){return LS('cb_allusers',[]);}
-  function addToAllUsers(login){const u=getAllUsers();if(!u.includes(login)){u.push(login);SS('cb_allusers',u);}}
+  window.submitUnitForValidation=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}nm=nm.trim();var d=CB.getUserData(u.login);var unit=(d.units||[]).find(function(x){return x.name===nm;});if(!unit){alert('Ajoutez la fiche d\'abord');return;}var s=CB.getSubmissions();s.push({type:'unit',data:unit,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);alert('Unite soumise !');};
 
-  // ── Session ──
-  let currentUser=LS('cb_session',null); // {login,isAdmin}
+  window.switchAdminTab=function(tab,btn){['admin-config','admin-pending','admin-creations','admin-balance'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});var t=document.getElementById('admin-'+tab);if(t)t.style.display='block';if(tab==='pending')renderAP();if(tab==='creations')renderAC();if(btn){var tabs=btn.closest('.admin-tabs');if(tabs)tabs.querySelectorAll('.btn-admtab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}};
+  function renderAP(){var a=document.getElementById('pending-list-area');if(!a)return;var s=CB.getSubmissions();if(!s.length){a.innerHTML='<p style="color:var(--text2);font-size:10px">Aucune soumission</p>';return;}a.innerHTML=s.map(function(x,i){return '<div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:6px;margin:3px 0;font-size:10px"><strong style="color:var(--accent)">['+x.type+']</strong> '+(x.data.name||x.data.n||'?')+' <span style="color:#58a6ff">par '+x.user+'</span> <button onclick="CB_val('+i+')" style="padding:1px 6px;border:none;border-radius:3px;background:#238636;color:#fff;cursor:pointer;font-size:9px;margin-left:4px">Valider</button> <button onclick="CB_rej('+i+')" style="padding:1px 6px;border:none;border-radius:3px;background:#6e1010;color:#fff;cursor:pointer;font-size:9px">Refuser</button></div>';}).join('');}
+  window.CB_val=function(i){var s=CB.getSubmissions();var x=s[i];if(!x)return;var v=CB.getValidated();if(x.type==='unit'){v.units=v.units||[];x.data.validated=true;v.units.push(x.data);}if(x.type==='weapon'){v.weapons=v.weapons||[];x.data.validated=true;v.weapons.push(x.data);}if(x.type==='faction'){v.factions=v.factions||[];x.data.validated=true;v.factions.push(x.data);}CB.saveValidated(v);s.splice(i,1);CB.saveSubmissions(s);renderAP();alert('Valide !');};
+  window.CB_rej=function(i){var s=CB.getSubmissions();s.splice(i,1);CB.saveSubmissions(s);renderAP();};
+  function renderAC(){var uD=document.getElementById('admin-custom-units'),wD=document.getElementById('admin-custom-weapons'),us=CB.getAllUsers();if(uD){var h='';us.forEach(function(l){var d=CB.getUserData(l);var units=d.units||[];if(!units.length)return;h+='<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+l+'</strong> ('+units.length+')<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">';h+=units.map(function(u){return '<span style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px"><strong style="color:var(--accent)">'+u.name+'</strong> '+u.pts+'pts</span>';}).join('');h+='</div></div>';});uD.innerHTML=h||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';}if(wD){var h2='';us.forEach(function(l){var d=CB.getUserData(l);var ws=d.weapons||[];if(!ws.length)return;h2+='<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+l+'</strong><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">';h2+=ws.map(function(w){return '<span style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px"><strong>'+w.n+'</strong></span>';}).join('');h2+='</div></div>';});wD.innerHTML=h2||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';}}
 
-  function updateAuthUI(){
-    const loginBox=document.getElementById('auth-login');
-    const loggedBox=document.getElementById('auth-logged');
-    const nameEl=document.getElementById('auth-username');
-    const badgeEl=document.getElementById('auth-badge');
-    if(!currentUser){
-      if(loginBox)loginBox.style.display='flex';
-      if(loggedBox)loggedBox.style.display='none';
-    } else {
-      if(loginBox)loginBox.style.display='none';
-      if(loggedBox)loggedBox.style.display='flex';
-      if(nameEl)nameEl.textContent=currentUser.login;
-      if(badgeEl){badgeEl.style.display=currentUser.isAdmin?'inline':'none';badgeEl.style.background='#f0c040';badgeEl.style.color='#000';}
-    }
-    // Show/hide admin button in footer
-    const admBtn=document.getElementById('admin-btn');
-    if(admBtn)admBtn.style.display=(currentUser&&currentUser.isAdmin)?'inline-block':'none';
-  }
-
-  function login(){
-    const u=document.getElementById('auth-user')?.value?.trim();
-    const p=document.getElementById('auth-pass')?.value;
-    if(!u||!p){alert('Login et mot de passe requis');return;}
-    const accounts=getAccounts();
-    if(!accounts[u]){alert('Compte inexistant. Cliquez "Créer compte".');return;}
-    if(accounts[u].pass!==p){alert('Mot de passe incorrect');return;}
-    currentUser={login:u,isAdmin:!!accounts[u].isAdmin};
-    SS('cb_session',currentUser);
-    updateAuthUI();
-    loadUserContent();
-  }
-
-  function register(){
-    const u=document.getElementById('auth-user')?.value?.trim().replace(/[^a-zA-Z0-9_-]/g,'');
-    const p=document.getElementById('auth-pass')?.value;
-    if(!u||u.length<2){alert('Login requis (2 caractères min, alphanumérique)');return;}
-    if(!p||p.length<4){alert('Mot de passe requis (4 caractères min)');return;}
-    if(u.toLowerCase()==='admin'){alert('Login réservé');return;}
-    const accounts=getAccounts();
-    if(accounts[u]){alert('Ce login existe déjà');return;}
-    accounts[u]={pass:p};
-    saveAccounts(accounts);
-    addToAllUsers(u);
-    currentUser={login:u,isAdmin:false};
-    SS('cb_session',currentUser);
-    updateAuthUI();
-    loadUserContent();
-    alert('Compte "'+u+'" créé !');
-  }
-
-  function logout(){
-    currentUser=null;
-    localStorage.removeItem('cb_session');
-    updateAuthUI();
-    location.reload();
-  }
-
-  function requireAccount(){
-    if(currentUser)return true;
-    alert('Vous devez créer un compte ou vous connecter pour sauvegarder vos créations.');
-    document.getElementById('auth-user')?.focus();
-    return false;
-  }
-
-  // ── Image handling ──
-  let pendingImage=null;
-  window.handleUnitImage=function(input){
-    const file=input.files[0];if(!file)return;
-    const reader=new FileReader();
-    reader.onload=function(e){
-      pendingImage=e.target.result;
-      const prev=document.getElementById('ed-image-preview');
-      if(prev)prev.innerHTML='<img src="'+pendingImage+'" style="max-width:100px;max-height:80px;border-radius:4px;border:1px solid #444">';
-      updatePreview();
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // ── Custom weapons ──
-  function getMyWeapons(){if(!currentUser)return LS('cb_anonWeapons',{});return(getUserData(currentUser.login).weapons||[]).reduce((o,w)=>{o[w.key]=w;return o;},{});}
-
-  window.createCustomWeapon=function(){
-    if(!requireAccount())return;
-    const name=document.getElementById('sgw-name')?.value?.trim();
-    if(!name){alert('Nom requis');return;}
-    const w={key:'cw_'+Date.now(),n:name,
-      diff:+(document.getElementById('sgw-diff')?.value||15),
-      mun:+(document.getElementById('sgw-mun')?.value||1),
-      pen:+(document.getElementById('sgw-pen')?.value||5),
-      dmg:+(document.getElementById('sgw-dmg')?.value||1),
-      once:document.getElementById('sgw-once')?.value==='1',
-      melee:+(document.getElementById('sgw-mel')?.value||0),
-      cat1:+(document.getElementById('sgw-cat1')?.value||0),
-      cat2:+(document.getElementById('sgw-cat2')?.value||0),
-      catP:+(document.getElementById('sgw-catp')?.value||0)};
-    const d=getUserData(currentUser.login);
-    d.weapons=d.weapons||[];d.weapons.push(w);
-    saveUserData(currentUser.login,d);
-    addWeaponToSelector(w.key,w);
-    renderMyWeapons();
-    alert('Arme "'+name+'" créée !');
-  };
-
-  function addWeaponToSelector(key,w){
-    const grid=document.getElementById('weapon-selector');if(!grid)return;
-    if(grid.querySelector('[data-wkey="'+key+'"]'))return;
-    const label=document.createElement('label');label.className='weapon-option';label.dataset.wkey=key;
-    label.innerHTML='<input type="checkbox" value="'+key+'" onchange="updatePreview()"><span class="wo-name">'+w.n+'</span><span class="wo-info">Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+'</span>';
-    label.style.borderColor='#f0c040';grid.appendChild(label);
-  }
-
-  function renderMyWeapons(){
-    const list=document.getElementById('custom-weapons-list');if(!list)return;
-    if(!currentUser){list.innerHTML='';return;}
-    const d=getUserData(currentUser.login);const ws=d.weapons||[];
-    if(!ws.length){list.innerHTML='<p style="color:var(--text2);font-size:11px">Aucune arme créée</p>';return;}
-    list.innerHTML='<h3 style="color:var(--accent);font-size:13px;margin:0 0 6px">Mes armes ('+ws.length+')</h3>'+
-      ws.map(w=>'<div style="display:inline-block;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin:3px;font-size:10px">'+
-        '<strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+w.dmg+
-        ' <button onclick="CB.deleteWeapon(\''+w.key+'\')" style="color:#f44;cursor:pointer;background:none;border:none;font-size:10px">×</button></div>').join('');
-  }
-
-  function deleteWeapon(key){
-    if(!currentUser)return;
-    const d=getUserData(currentUser.login);d.weapons=(d.weapons||[]).filter(w=>w.key!==key);
-    saveUserData(currentUser.login,d);renderMyWeapons();
-    const el=document.querySelector('[data-wkey="'+key+'"]');if(el)el.remove();
-  }
-
-  // ── Custom factions ──
-  window.CB_createFaction=null; // set below after CB defined
-
-  function renderMyFactions(){
-    const list=document.getElementById('custom-factions-list');if(!list)return;
-    if(!currentUser){list.innerHTML='';return;}
-    const d=getUserData(currentUser.login);const fs=d.factions||[];
-    const validated=getValidated().factions||[];
-    const allFacs=[...validated,...fs];
-    if(!allFacs.length){list.innerHTML='';return;}
-    list.innerHTML='<h3 style="color:var(--accent);font-size:12px;margin:0 0 4px">Factions disponibles</h3>'+
-      allFacs.map(f=>'<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;font-size:10px;border:1px solid '+f.color+';color:'+f.color+'">'+
-        f.name+(f.validated?' ✓':' (perso)')+
-        (!f.validated?' <button onclick="CB.deleteFaction(\''+f.abbr+'\')" style="color:#f44;cursor:pointer;background:none;border:none;font-size:9px">×</button>':'')+
-      '</span>').join('');
-    // Also add to faction selector in editor
-    const sel=document.getElementById('ed-faction');
-    if(sel){allFacs.forEach(f=>{if(!sel.querySelector('option[value="'+f.name+'"]')){const o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o);}});}
-  }
-
-  // ── Hook addCard ──
-  const origAddCard=window.addCard;
-  window.addCard=function(){
-    if(!requireAccount())return;
-    if(origAddCard)origAddCard();
-    const name=document.getElementById('ed-name')?.value?.trim();if(!name)return;
-    const faction=document.getElementById('ed-faction')?.value||'République';
-    const pts=+(document.getElementById('ed-points')?.value||200);
-    const hp=+(document.getElementById('ed-hp')?.value||2);
-    const arm=+(document.getElementById('ed-armor')?.value||15);
-    const mm=+(document.getElementById('ed-move')?.value||0);
-    const pa=+(document.getElementById('ed-pa')?.value||5);
-    const checks=document.querySelectorAll('#weapon-selector input:checked');
-    const weapons=Array.from(checks).map(c=>c.parentElement?.querySelector('.wo-name')?.textContent||c.value);
-    const unit={name,faction,pts,hp,arm,mm,pa,weapons,image:pendingImage||null,date:new Date().toISOString().slice(0,10)};
-    const d=getUserData(currentUser.login);d.units=d.units||[];
-    if(!d.units.find(u=>u.name===name)){d.units.push(unit);saveUserData(currentUser.login,d);}
-    addUnitToGallery(unit);
-    pendingImage=null;
-  };
-
-  function addUnitToGallery(u){
-    const grid=document.getElementById('gallery-grid');if(!grid)return;
-    if(grid.querySelector('[data-uname="'+u.name+'"]'))return;
-    const card=document.createElement('div');card.className='gallery-card';card.dataset.faction=u.faction;card.dataset.uname=u.name;
-    card.style.borderColor='#f0c040';
-    card.innerHTML='<div class="gc-name" style="color:#f0c040">'+u.name+' ★</div>'+
-      (u.image?'<img src="'+u.image+'" style="max-width:60px;max-height:40px;border-radius:3px;margin:2px 0">':'')+
-      '<div class="gc-stats">'+u.pts+'pts | PV:'+u.hp+' Arm:'+u.arm+' PA:'+u.pa+'</div>'+
-      '<button class="btn btn-gallery-add" onclick="addGalleryUnit(\'custom_'+u.name.replace(/'/g,'')+'\')">+ Ajouter</button>';
-    grid.appendChild(card);
-  }
-
-  // ── Submit for validation ──
-  window.submitUnitForValidation=function(){
-    if(!requireAccount())return;
-    const name=document.getElementById('ed-name')?.value?.trim();
-    if(!name){alert('Remplissez le nom');return;}
-    const d=getUserData(currentUser.login);const unit=d.units?.find(u=>u.name===name);
-    if(!unit){alert('Ajoutez d\'abord la fiche via "Ajouter fiche d\'unité"');return;}
-    const subs=getSubmissions();
-    subs.push({type:'unit',data:unit,user:currentUser.login,date:new Date().toISOString()});
-    saveSubmissions(subs);
-    // Also mark in user data
-    d.submitted=d.submitted||{units:[],weapons:[],factions:[]};
-    if(!d.submitted.units.includes(name)){d.submitted.units.push(name);saveUserData(currentUser.login,d);}
-    alert('Unité "'+name+'" soumise pour validation !');
-  };
-
-  // ── Load content for logged user ──
-  function loadUserContent(){
-    if(!currentUser)return;
-    const d=getUserData(currentUser.login);
-    // Load weapons into selector
-    (d.weapons||[]).forEach(w=>addWeaponToSelector(w.key,w));
-    renderMyWeapons();
-    // Load units into gallery
-    (d.units||[]).forEach(u=>addUnitToGallery(u));
-    // Load validated items
-    const v=getValidated();
-    (v.units||[]).forEach(u=>addUnitToGallery({...u,validated:true}));
-    (v.weapons||[]).forEach(w=>addWeaponToSelector(w.key||('vw_'+w.n),w));
-    // Load factions
-    renderMyFactions();
-  }
-
-  // ── Admin functions ──
-  const origSwitchAdmin=window.switchAdminTab;
-  window.switchAdminTab=function(tab,btn){
-    ['admin-config','admin-pending','admin-creations','admin-balance'].forEach(id=>{
-      const el=document.getElementById(id);if(el)el.style.display='none';
-    });
-    const target=document.getElementById('admin-'+tab);if(target)target.style.display='block';
-    if(tab==='pending')renderAdminPending();
-    if(tab==='creations')renderAdminCreations();
-    if(btn){btn.closest('.admin-tabs')?.querySelectorAll('.btn-admtab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
-  };
-
-  function renderAdminPending(){
-    const area=document.getElementById('pending-list-area');if(!area)return;
-    const subs=getSubmissions();
-    if(!subs.length){area.innerHTML='<p style="font-size:10px;color:var(--text2)">Aucune soumission</p>';return;}
-    area.innerHTML=subs.map((s,i)=>'<div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:6px;margin:3px 0;font-size:10px">'+
-      '<strong style="color:var(--accent)">['+s.type+']</strong> '+(s.data?.name||s.data?.n||'?')+
-      ' <span style="color:#58a6ff">par '+s.user+'</span> ('+s.date?.slice(0,10)+')'+
-      ' <button onclick="CB.validateSubmission('+i+')" style="padding:1px 6px;border:none;border-radius:3px;background:#238636;color:#fff;cursor:pointer;font-size:9px;margin-left:4px">Valider</button>'+
-      ' <button onclick="CB.rejectSubmission('+i+')" style="padding:1px 6px;border:none;border-radius:3px;background:#6e1010;color:#fff;cursor:pointer;font-size:9px">Refuser</button>'+
-    '</div>').join('');
-  }
-
-  function validateSubmission(i){
-    const subs=getSubmissions();const s=subs[i];if(!s)return;
-    const v=getValidated();
-    if(s.type==='unit'){v.units=v.units||[];s.data.validated=true;v.units.push(s.data);}
-    if(s.type==='weapon'){v.weapons=v.weapons||[];s.data.validated=true;v.weapons.push(s.data);}
-    if(s.type==='faction'){v.factions=v.factions||[];s.data.validated=true;v.factions.push(s.data);}
-    saveValidated(v);
-    subs.splice(i,1);saveSubmissions(subs);
-    renderAdminPending();
-    alert((s.data?.name||s.data?.n)+' validé(e) !');
-  }
-
-  function rejectSubmission(i){
-    const subs=getSubmissions();subs.splice(i,1);saveSubmissions(subs);renderAdminPending();
-  }
-
-  function renderAdminCreations(){
-    const uDiv=document.getElementById('admin-custom-units');
-    const wDiv=document.getElementById('admin-custom-weapons');
-    const users=getAllUsers();
-    // Units by user
-    if(uDiv){
-      let html='';
-      users.forEach(login=>{
-        const d=getUserData(login);const units=d.units||[];
-        if(!units.length)return;
-        const submitted=d.submitted?.units||[];
-        html+='<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+login+'</strong> ('+units.length+' unités)<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">';
-        html+=units.map(u=>{
-          const isSub=submitted.includes(u.name);
-          return '<span style="background:var(--card);border:1px solid '+(isSub?'#f0c040':'var(--border)')+';border-radius:4px;padding:2px 6px;font-size:9px">'+
-            (u.image?'<img src="'+u.image+'" style="width:16px;height:16px;border-radius:2px;vertical-align:middle;margin-right:2px">':'')+
-            '<strong style="color:var(--accent)">'+u.name+'</strong> '+u.pts+'pts'+(isSub?' <span style="color:#f0c040">★soumis</span>':' <span style="color:#666">non soumis</span>')+
-          '</span>';
-        }).join('');
-        html+='</div></div>';
-      });
-      uDiv.innerHTML=html||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';
-    }
-    // Weapons by user
-    if(wDiv){
-      let html='';
-      users.forEach(login=>{
-        const d=getUserData(login);const ws=d.weapons||[];
-        if(!ws.length)return;
-        html+='<div style="margin-bottom:8px"><strong style="color:#58a6ff;font-size:11px">'+login+'</strong> ('+ws.length+' armes)<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">';
-        html+=ws.map(w=>'<span style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px"><strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+'</span>').join('');
-        html+='</div></div>';
-      });
-      wDiv.innerHTML=html||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';
-    }
-  }
-
-  // ── Init ──
-  function init(){
-    updateAuthUI();
-    if(currentUser)setTimeout(loadUserContent,500);
-    // Load validated content for everyone
-    setTimeout(()=>{
-      const v=getValidated();
-      (v.units||[]).forEach(u=>addUnitToGallery({...u,validated:true}));
-      (v.weapons||[]).forEach(w=>addWeaponToSelector(w.key||('vw_'+w.n),w));
-      (v.factions||[]).forEach(f=>{
-        const sel=document.getElementById('ed-faction');
-        if(sel&&!sel.querySelector('option[value="'+f.name+'"]')){const o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o);}
-      });
-    },600);
-  }
-
-  if(document.readyState==='complete')init();
-  else window.addEventListener('load',init);
-
-  // ── Public API ──
-  return{
-    login,register,logout,requireAccount,
-    deleteWeapon,
-    createFaction:function(){
-      if(!requireAccount())return;
-      const name=document.getElementById('fac-name')?.value?.trim();
-      const color=document.getElementById('fac-color')?.value||'#888';
-      const abbr=document.getElementById('fac-abbr')?.value?.trim()||name?.slice(0,3);
-      if(!name){alert('Nom requis');return;}
-      const f={name,color,abbr,validated:false};
-      const d=getUserData(currentUser.login);d.factions=d.factions||[];
-      if(d.factions.find(x=>x.name===name)){alert('Faction déjà créée');return;}
-      d.factions.push(f);saveUserData(currentUser.login,d);
-      renderMyFactions();alert('Faction "'+name+'" créée !');
-    },
-    submitFaction:function(){
-      if(!requireAccount())return;
-      const name=document.getElementById('fac-name')?.value?.trim();
-      if(!name){alert('Nom requis');return;}
-      const d=getUserData(currentUser.login);
-      const f=(d.factions||[]).find(x=>x.name===name);
-      if(!f){alert('Créez d\'abord la faction');return;}
-      const subs=getSubmissions();
-      subs.push({type:'faction',data:f,user:currentUser.login,date:new Date().toISOString()});
-      saveSubmissions(subs);
-      d.submitted=d.submitted||{units:[],weapons:[],factions:[]};
-      d.submitted.factions=d.submitted.factions||[];
-      if(!d.submitted.factions.includes(name)){d.submitted.factions.push(name);saveUserData(currentUser.login,d);}
-      alert('Faction "'+name+'" soumise !');
-    },
-    deleteFaction:function(abbr){
-      if(!currentUser)return;
-      const d=getUserData(currentUser.login);d.factions=(d.factions||[]).filter(f=>f.abbr!==abbr);
-      saveUserData(currentUser.login,d);renderMyFactions();
-    },
-    validateSubmission,rejectSubmission
-  };
+  window.loadUserContent=function(){var u=CB.getUser();if(!u)return;var d=CB.getUserData(u.login);(d.weapons||[]).forEach(function(w){addW2S(w.key,w);});renderW();(d.units||[]).forEach(function(x){addU2G(x);});var v=CB.getValidated();(v.units||[]).forEach(function(x){addU2G(x);});(v.weapons||[]).forEach(function(w){addW2S(w.key||('vw_'+w.n),w);});renderF();};
+  window.promptAdmin=function(){var u=CB.getUser();if(u&&u.isAdmin){var p=document.getElementById('adminPanel');if(p)p.style.display='flex';return;}alert('Connectez-vous avec le compte admin en haut a droite.');};
+  function init(){var v=CB.getValidated();(v.factions||[]).forEach(function(f){var s=document.getElementById('ed-faction');if(s&&!s.querySelector('option[value="'+f.name+'"]')){var o=document.createElement('option');o.value=f.name;o.textContent=f.name;s.appendChild(o);}});if(CB.getUser())loadUserContent();}
+  if(document.readyState==='complete')setTimeout(init,500);else window.addEventListener('load',function(){setTimeout(init,500);});
 })();
-
-// Override promptAdmin to use account system
-window.promptAdmin=function(){
-  if(!CB||!CB.login)return;
-  if(localStorage.getItem('cb_session')){
-    const s=JSON.parse(localStorage.getItem('cb_session'));
-    if(s&&s.isAdmin){const p=document.getElementById('adminPanel');if(p)p.style.display='flex';return;}
-  }
-  alert('Connectez-vous avec le compte admin (login: admin) en haut à droite.');
-};
 </script>
 
 </body>
