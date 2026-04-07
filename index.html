@@ -66,7 +66,10 @@
  <span class="nav-sep">|</span>
  <a href="index.html" class="nav-active"> Éditeur de fiches d'unités</a>
  <a href="game.html"> Simulateur</a>
+ <a href="#" id="nav-admin-link" onclick="promptAdmin();return false;" style="display:none;color:#f0c040;font-weight:700"> Panneau Admin</a>
  <div id="auth-box" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px">
+  <span id="sync-indicator" style="font-size:9px;color:#888;padding:2px 6px;border-radius:3px;background:#1a1a2e;border:1px solid #333" title="Etat synchronisation JSONBin">Connexion...</span>
+  <button onclick="CB.refresh()" style="padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#aaa;cursor:pointer;font-size:9px" title="Rafraichir">↻</button>
   <div id="auth-login" style="display:flex;gap:4px;align-items:center">
    <input id="auth-user" placeholder="Login" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
    <input id="auth-pass" type="password" placeholder="Mot de passe" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
@@ -210,10 +213,10 @@
  <div class="card-stat"><span class="stat-icon"></span><span class="stat-val" id="pv-move">+0</span><span class="stat-label">Mouv.</span></div>
  <div class="card-stat"><span class="stat-icon"></span><span class="stat-val" id="pv-pa">5</span><span class="stat-label">PA</span></div>
  </div>
+ <div id="pv-image" style="text-align:center;margin:4px 0"></div>
  <div class="card-weapons" id="pv-weapons">
  <div class="card-no-weapon">Aucune arme sélectionnée</div>
  </div>
- <div id="pv-image" style="text-align:center;margin:4px 0"></div>
  <div class="card-footer">CROSSBLOCKS</div>
  </div>
  </div>
@@ -398,7 +401,8 @@
  </div>
  <div class="admin-body" id="admin-sync" style="display:none">
  <h3> Transfert de données entre ordinateurs</h3>
- <p class="admin-desc">localStorage ne se partage pas entre ordinateurs. Utilisez Export/Import pour transférer toutes les données (comptes, créations, soumissions, validations).</p>
+ <p class="admin-desc" style="background:#1a0a0a;border:1px solid #6e1010;border-radius:4px;padding:8px;margin-bottom:8px;font-size:10px"><strong style="color:#f85149">Pourquoi pas de sauvegarde directe sur GitHub ?</strong> GitHub Pages est un hébergement <b>statique en lecture seule</b> — les visiteurs ne peuvent pas écrire de fichiers sur le serveur. Pour un stockage en ligne partagé, il faudrait un serveur backend (Firebase, Supabase, etc.). En attendant, utilisez <b>Export/Import JSON</b> pour transférer les données entre ordinateurs.</p>
+ <p class="admin-desc"><b>Workflow :</b> Sur le PC où les utilisateurs créent → l'admin exporte le JSON. Sur un autre PC → l'admin importe le JSON. Les données sont fusionnées automatiquement (pas d'écrasement).</p>
  <div style="display:flex;gap:8px;margin:10px 0">
  <button class="btn btn-add" onclick="CB_exportAll()"> Exporter tout (JSON)</button>
  <button class="btn btn-suggest" onclick="document.getElementById('import-file').click()"> Importer (JSON)</button>
@@ -427,34 +431,153 @@
 
 
 <script>
-// ═══ AUTH SYSTEM ═══
+// ═══ AUTH SYSTEM WITH JSONBIN.IO SYNC ═══
 window.CB=(function(){
-  function LS(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
-  function SS(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-  function getAccounts(){var a=LS('cb_accounts',{});a['admin']={pass:'crossblocks123',isAdmin:true};return a;}
-  function saveAccounts(a){var c={};for(var k in a)if(k!=='admin')c[k]=a[k];SS('cb_accounts',c);}
-  function getUserData(login){return LS('cb_data_'+login,{units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}});}
-  function saveUserData(login,d){SS('cb_data_'+login,d);}
-  function getValidated(){return LS('cb_validated',{units:[],weapons:[],factions:[]});}
-  function saveValidated(v){SS('cb_validated',v);}
-  function getSubmissions(){return LS('cb_submissions',[]);}
-  function saveSubmissions(s){SS('cb_submissions',s);}
-  function getAllUsers(){return LS('cb_allusers',[]);}
-  function addToAllUsers(l){var u=getAllUsers();if(u.indexOf(l)<0){u.push(l);SS('cb_allusers',u);}}
-  var cur=LS('cb_session',null);
+  // ─── JSONBin config ───
+  var BIN_ID='69d5251036566621a889f31c';
+  var API_KEY='$2a$10$CVqFqG6ENUvnIME732d6beac0tzxDUr4yv4TJwyFEnEWA4ih6OnZa';
+  var BIN_URL='https://api.jsonbin.io/v3/b/'+BIN_ID;
+
+  // ─── Local cache (updated from remote) ───
+  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{}};
+  var remoteReady=false;
+  var syncStatus='En attente...';
+
+  function setStatus(msg){
+    syncStatus=msg;
+    var el=document.getElementById('sync-indicator');
+    if(el)el.textContent=msg;
+  }
+
+  // Fetch from JSONBin
+  function fetchRemote(cb){
+    setStatus('Chargement distant...');
+    fetch(BIN_URL+'/latest',{headers:{'X-Master-Key':API_KEY,'X-Bin-Meta':'false'}})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(function(data){
+        // JSONBin returns the record directly when X-Bin-Meta:false
+        cache=data||cache;
+        if(!cache.accounts)cache.accounts={};
+        if(!cache.allusers)cache.allusers=[];
+        if(!cache.validated)cache.validated={units:[],weapons:[],factions:[]};
+        if(!cache.submissions)cache.submissions=[];
+        if(!cache.userData)cache.userData={};
+        remoteReady=true;
+        setStatus('Synchronise ('+new Date().toLocaleTimeString()+')');
+        if(cb)cb();
+      })
+      .catch(function(err){
+        console.error('JSONBin fetch error:',err);
+        setStatus('ERREUR: '+err.message+' (mode local)');
+        remoteReady=false;
+        // Fallback: load from localStorage
+        try{var local=localStorage.getItem('cb_cache');if(local)cache=JSON.parse(local);}catch(e){}
+        if(cb)cb();
+      });
+  }
+
+  // Push to JSONBin (debounced)
+  var pushTimer=null;
+  function pushRemote(){
+    if(pushTimer)clearTimeout(pushTimer);
+    pushTimer=setTimeout(function(){
+      setStatus('Sauvegarde...');
+      // Save local backup first
+      try{localStorage.setItem('cb_cache',JSON.stringify(cache));}catch(e){}
+      fetch(BIN_URL,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+        body:JSON.stringify(cache)
+      })
+        .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+        .then(function(){setStatus('Sauvegarde OK ('+new Date().toLocaleTimeString()+')');})
+        .catch(function(err){console.error('JSONBin push error:',err);setStatus('Erreur sauvegarde: '+err.message);});
+    },500);
+  }
+
+  // ─── Data accessors (work on cache, sync on change) ───
+  function getAccounts(){var a={};for(var k in cache.accounts)a[k]=cache.accounts[k];a['admin']={pass:'crossblocks123',isAdmin:true};return a;}
+  function saveAccounts(a){var c={};for(var k in a)if(k!=='admin')c[k]=a[k];cache.accounts=c;pushRemote();}
+  function getUserData(login){return cache.userData[login]||{units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}};}
+  function saveUserData(login,d){cache.userData[login]=d;pushRemote();}
+  function getValidated(){return cache.validated||{units:[],weapons:[],factions:[]};}
+  function saveValidated(v){cache.validated=v;pushRemote();}
+  function getSubmissions(){return cache.submissions||[];}
+  function saveSubmissions(s){cache.submissions=s;pushRemote();}
+  function getAllUsers(){return cache.allusers||[];}
+  function addToAllUsers(l){var u=cache.allusers=cache.allusers||[];if(u.indexOf(l)<0){u.push(l);pushRemote();}}
+
+  // ─── Session (stays local) ───
+  var cur=null;
+  try{cur=JSON.parse(localStorage.getItem('cb_session')||'null');}catch(e){}
+  function saveSession(s){try{localStorage.setItem('cb_session',JSON.stringify(s));}catch(e){}}
+
   function ui(){
-    var lb=document.getElementById('auth-login'),lg=document.getElementById('auth-logged'),nm=document.getElementById('auth-username'),bg=document.getElementById('auth-badge'),ab=document.getElementById('admin-btn');
+    var lb=document.getElementById('auth-login'),lg=document.getElementById('auth-logged'),nm=document.getElementById('auth-username'),bg=document.getElementById('auth-badge'),ab=document.getElementById('admin-btn'),na=document.getElementById('nav-admin-link');
     if(!cur){if(lb)lb.style.display='flex';if(lg)lg.style.display='none';}
     else{if(lb)lb.style.display='none';if(lg)lg.style.display='flex';if(nm)nm.textContent=cur.login;if(bg){bg.style.display=cur.isAdmin?'inline':'none';bg.style.background='#f0c040';bg.style.color='#000';}}
     if(ab)ab.style.display=(cur&&cur.isAdmin)?'inline-block':'none';
+    if(na)na.style.display=(cur&&cur.isAdmin)?'inline':'none';
   }
-  function login(){var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;if(!u||!p){alert('Login et mot de passe requis');return;}u=u.trim();var a=getAccounts();if(!a[u]){alert('Compte inexistant');return;}if(a[u].pass!==p){alert('Mot de passe incorrect');return;}cur={login:u,isAdmin:!!a[u].isAdmin};SS('cb_session',cur);ui();alert('Connecte: '+u+(cur.isAdmin?' (ADMIN)':''));setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);}
-  function register(){var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;if(!u){alert('Login requis');return;}u=u.trim().replace(/[^a-zA-Z0-9_-]/g,'');if(u.length<2){alert('Login trop court');return;}if(!p||p.length<4){alert('MDP 4 car. min');return;}if(u.toLowerCase()==='admin'){alert('Reserve');return;}var a=getAccounts();if(a[u]){alert('Existe deja');return;}a[u]={pass:p};saveAccounts(a);addToAllUsers(u);cur={login:u,isAdmin:false};SS('cb_session',cur);ui();alert('Compte cree !');setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);}
+
+  function login(){
+    var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;
+    if(!u||!p){alert('Login et mot de passe requis');return;}
+    u=u.trim();
+    if(!remoteReady){alert('Donnees pas encore chargees, attendez une seconde et reessayez');return;}
+    var a=getAccounts();
+    if(!a[u]){alert('Compte inexistant');return;}
+    if(a[u].pass!==p){alert('Mot de passe incorrect');return;}
+    cur={login:u,isAdmin:!!a[u].isAdmin};
+    saveSession(cur);ui();
+    alert('Connecte: '+u+(cur.isAdmin?' (ADMIN)':''));
+    setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);
+  }
+
+  function register(){
+    var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;
+    if(!u){alert('Login requis');return;}
+    u=u.trim().replace(/[^a-zA-Z0-9_-]/g,'');
+    if(u.length<2){alert('Login trop court');return;}
+    if(!p||p.length<4){alert('MDP 4 car. min');return;}
+    if(u.toLowerCase()==='admin'){alert('Reserve');return;}
+    if(!remoteReady){alert('Donnees pas encore chargees, attendez une seconde');return;}
+    var a=getAccounts();
+    if(a[u]){alert('Login existe deja. Utilisez Connexion.');return;}
+    cache.accounts[u]={pass:p};
+    if(!cache.allusers)cache.allusers=[];
+    if(cache.allusers.indexOf(u)<0)cache.allusers.push(u);
+    pushRemote();
+    cur={login:u,isAdmin:false};
+    saveSession(cur);ui();
+    alert('Compte "'+u+'" cree et sauvegarde en ligne !');
+    setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);
+  }
+
   function logout(){cur=null;localStorage.removeItem('cb_session');ui();location.reload();}
   function req(){if(cur)return true;alert('Connectez-vous ou creez un compte');var el=document.getElementById('auth-user');if(el)el.focus();return false;}
   function getUser(){return cur;}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();
-  return{login:login,register:register,logout:logout,requireAccount:req,getUser:getUser,getUserData:getUserData,saveUserData:saveUserData,getValidated:getValidated,saveValidated:saveValidated,getSubmissions:getSubmissions,saveSubmissions:saveSubmissions,getAllUsers:getAllUsers,addToAllUsers:addToAllUsers,getAccounts:getAccounts,saveAccounts:saveAccounts,updateAuthUI:ui};
+
+  // Force refresh from remote
+  function refresh(){fetchRemote(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();ui();});}
+
+  // Init: fetch then UI
+  function init(){fetchRemote(function(){ui();if(cur&&typeof window.loadUserContent==='function')setTimeout(window.loadUserContent,300);});}
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+  else init();
+
+  return{
+    login:login,register:register,logout:logout,requireAccount:req,getUser:getUser,
+    getUserData:getUserData,saveUserData:saveUserData,
+    getValidated:getValidated,saveValidated:saveValidated,
+    getSubmissions:getSubmissions,saveSubmissions:saveSubmissions,
+    getAllUsers:getAllUsers,addToAllUsers:addToAllUsers,
+    getAccounts:getAccounts,saveAccounts:saveAccounts,
+    updateAuthUI:ui,refresh:refresh,
+    getStatus:function(){return syncStatus;},
+    isRemoteReady:function(){return remoteReady;}
+  };
 })();
 </script>
 <script src="script.js"></script>
@@ -472,6 +595,63 @@ window.CB=(function(){
     var price=Math.round((w.mun||1)*5 + acc*3 + (w.pen||0)*3 + d*12 + (w.once?-20:0) + nr*5);
     return Math.max(10,price);
   };
+
+  // ═══ HOOK updatePreview to add weapon prices and image ═══
+  var origUpdatePreview=window.updatePreview;
+  window.updatePreview=function(){
+    if(origUpdatePreview)origUpdatePreview();
+    // After original script.js rebuilds the card, we add weapon cost + image
+    setTimeout(function(){
+      // 1. Calculate weapon costs from checked weapons
+      var checks=document.querySelectorAll('#weapon-selector input:checked');
+      var weaponCost=0;
+      checks.forEach(function(c){
+        var info=c.parentElement?c.parentElement.querySelector('.wo-info'):null;
+        if(info){var m=info.textContent.match(/(\d+)pts/);if(m)weaponCost+=parseInt(m[1]);}
+      });
+
+      // 2. Update points display to BASE + weapon cost
+      var ptsField=document.getElementById('ed-points');
+      var base=parseInt((ptsField||{}).value)||0;
+      var total=base+weaponCost;
+      // Find the card-points span inside the preview
+      var cardPts=document.querySelector('#card-preview .card-points');
+      if(cardPts)cardPts.innerHTML=' '+total+(weaponCost>0?' <span style="font-size:8px;opacity:0.7">('+base+'+'+weaponCost+')</span>':'');
+
+      // 3. Show weapon cost breakdown
+      var bd=document.getElementById('price-breakdown');
+      if(bd){
+        if(weaponCost>0){bd.style.display='block';bd.innerHTML='<div style="color:#f0c040;font-size:11px;margin-top:4px">Cout armes: <b>+'+weaponCost+'pts</b> | Total: <b>'+total+'pts</b></div>';}
+        else{bd.style.display='none';}
+      }
+
+      // 4. Re-inject image ABOVE weapons (script.js may have cleared it)
+      var pvWeapons=document.getElementById('pv-weapons');
+      if(pvWeapons&&pendingImage){
+        // Insert image div before the weapons div
+        var existingImg=document.getElementById('pv-image');
+        if(!existingImg){
+          existingImg=document.createElement('div');existingImg.id='pv-image';existingImg.style.cssText='text-align:center;margin:4px 0';
+          pvWeapons.parentNode.insertBefore(existingImg,pvWeapons);
+        }
+        existingImg.innerHTML='<img src="'+pendingImage+'" style="max-width:100%;max-height:120px;border-radius:4px;margin:4px 0">';
+      }
+    },80);
+  };
+
+  // ═══ UNIQUE NAME VALIDATION ═══
+  function nameExists(type,name){
+    // Check all users + validated
+    var v=CB.getValidated();
+    if(type==='unit'){if((v.units||[]).some(function(u){return u.name===name;}))return true;var users=CB.getAllUsers();for(var i=0;i<users.length;i++){var d=CB.getUserData(users[i]);if((d.units||[]).some(function(u){return u.name===name;}))return true;}}
+    if(type==='weapon'){if((v.weapons||[]).some(function(w){return w.n===name;}))return true;var users2=CB.getAllUsers();for(var j=0;j<users2.length;j++){var d2=CB.getUserData(users2[j]);if((d2.weapons||[]).some(function(w){return w.n===name;}))return true;}
+      // Also check built-in weapons from config.js
+      if(typeof WEAPONS_DB!=='undefined'){for(var k in WEAPONS_DB)if(WEAPONS_DB[k].n===name)return true;}}
+    if(type==='faction'){if((v.factions||[]).some(function(f){return f.abbr===name||f.name===name;}))return true;var users3=CB.getAllUsers();for(var m=0;m<users3.length;m++){var d3=CB.getUserData(users3[m]);if((d3.factions||[]).some(function(f){return f.abbr===name||f.name===name;}))return true;}
+      // Check built-in factions
+      if(['cl','sep','reb','Republique','Separatistes','Rebelles'].indexOf(name)>=0)return true;}
+    return false;
+  }
 
   // ═══ IMAGE HANDLING ═══
   var pendingImage=null;
@@ -496,21 +676,32 @@ window.CB=(function(){
   function renderF(){var list=document.getElementById('custom-factions-list');if(!list)return;var u=CB.getUser();var vf=CB.getValidated().factions||[];var pf=u?(CB.getUserData(u.login).factions||[]):[];var all=vf.concat(pf);if(!all.length){list.innerHTML='';return;}list.innerHTML=all.map(function(f){return '<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;font-size:10px;border:1px solid '+f.color+';color:'+f.color+'">'+f.name+(f.validated?' OK':'')+'</span>';}).join('');var sel=document.getElementById('ed-faction');if(sel)all.forEach(function(f){if(!sel.querySelector('option[value="'+f.name+'"]')){var o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o);}});}
 
   // ═══ CREATE WEAPON ═══
-  window.createCustomWeapon=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}
-    var w={key:'cw_'+Date.now(),n:nm.trim(),mun:+(document.getElementById('sgw-mun')||{}).value||1,pen:+(document.getElementById('sgw-pen')||{}).value||5,dmg:+(document.getElementById('sgw-dmg')||{}).value||1,once:(document.getElementById('sgw-once')||{}).value==='1',melee:+(document.getElementById('sgw-mel')||{}).value||0,cat1:+(document.getElementById('sgw-cat1')||{}).value||0,cat2:+(document.getElementById('sgw-cat2')||{}).value||0,catP:+(document.getElementById('sgw-catp')||{}).value||0};
+  window.createCustomWeapon=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}nm=nm.trim();
+    if(nameExists('weapon',nm)){alert('Une arme "'+nm+'" existe deja !');return;}
+    var w={key:'cw_'+Date.now(),n:nm,mun:+(document.getElementById('sgw-mun')||{}).value||1,pen:+(document.getElementById('sgw-pen')||{}).value||5,dmg:+(document.getElementById('sgw-dmg')||{}).value||1,once:(document.getElementById('sgw-once')||{}).value==='1',melee:+(document.getElementById('sgw-mel')||{}).value||0,cat1:+(document.getElementById('sgw-cat1')||{}).value||0,cat2:+(document.getElementById('sgw-cat2')||{}).value||0,catP:+(document.getElementById('sgw-catp')||{}).value||0};
     w.price=calcWeaponPrice(w);
-    var d=CB.getUserData(u.login);d.weapons=d.weapons||[];d.weapons.push(w);CB.saveUserData(u.login,d);addW2S(w.key,w);renderW();alert('Arme "'+nm.trim()+'" creee ! Prix: '+w.price+'pts');};
+    var d=CB.getUserData(u.login);d.weapons=d.weapons||[];d.weapons.push(w);CB.saveUserData(u.login,d);addW2S(w.key,w);renderW();alert('Arme "'+nm+'" creee ! Prix: '+w.price+'pts');};
 
   // ═══ SUBMIT WEAPON ═══
   window.submitWeaponForValidation=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}var d=CB.getUserData(u.login);var w=(d.weapons||[]).find(function(x){return x.n===nm.trim();});if(!w){alert('Creez l\'arme d\'abord');return;}var s=CB.getSubmissions();s.push({type:'weapon',data:w,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);alert('Arme soumise !');};
 
   // ═══ FACTIONS ═══
-  window.CB_createFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}var c=(document.getElementById('fac-color')||{}).value||'#888';var ab=(document.getElementById('fac-abbr')||{}).value||nm.slice(0,3);var f={name:nm.trim(),color:c,abbr:ab.trim(),validated:false};var d=CB.getUserData(u.login);d.factions=d.factions||[];if(d.factions.some(function(x){return x.name===f.name;})){alert('Existe deja');return;}d.factions.push(f);CB.saveUserData(u.login,d);renderF();alert('Faction creee !');};
+  window.CB_createFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}var c=(document.getElementById('fac-color')||{}).value||'#888';var ab=(document.getElementById('fac-abbr')||{}).value||nm.slice(0,3);nm=nm.trim();ab=ab.trim();
+    if(nameExists('faction',nm)){alert('Faction "'+nm+'" existe deja !');return;}
+    if(nameExists('faction',ab)){alert('Abreviation "'+ab+'" existe deja !');return;}
+    var f={name:nm,color:c,abbr:ab,validated:false};var d=CB.getUserData(u.login);d.factions=d.factions||[];d.factions.push(f);CB.saveUserData(u.login,d);renderF();alert('Faction creee !');};
   window.CB_submitFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert('Nom');return;}var d=CB.getUserData(u.login);var f=(d.factions||[]).find(function(x){return x.name===nm.trim();});if(!f){alert('Creez d\'abord');return;}var s=CB.getSubmissions();s.push({type:'faction',data:f,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);alert('Soumise !');};
 
   // ═══ HOOK addCard ═══
   var origAdd=window.addCard;
-  window.addCard=function(){if(!CB.requireAccount())return;if(origAdd)origAdd();var u=CB.getUser();if(!u)return;var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim())return;nm=nm.trim();var unit={name:nm,faction:(document.getElementById('ed-faction')||{}).value||'Republique',pts:+(document.getElementById('ed-points')||{}).value||200,hp:+(document.getElementById('ed-hp')||{}).value||2,arm:+(document.getElementById('ed-armor')||{}).value||15,mm:+(document.getElementById('ed-move')||{}).value||0,pa:+(document.getElementById('ed-pa')||{}).value||5,weapons:Array.from(document.querySelectorAll('#weapon-selector input:checked')).map(function(c){return(c.parentElement.querySelector('.wo-name')||{}).textContent||c.value;}),image:pendingImage||null,date:new Date().toISOString().slice(0,10)};var d=CB.getUserData(u.login);d.units=d.units||[];if(!d.units.some(function(x){return x.name===nm;})){d.units.push(unit);CB.saveUserData(u.login,d);}addU2G(unit);pendingImage=null;};
+  window.addCard=function(){if(!CB.requireAccount())return;var u=CB.getUser();if(!u)return;var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}nm=nm.trim();
+    if(nameExists('unit',nm)){alert('Une unite "'+nm+'" existe deja !');return;}
+    if(origAdd)origAdd();
+    // Calculate weapon cost
+    var checks=document.querySelectorAll('#weapon-selector input:checked');var wCost=0;
+    checks.forEach(function(c){var inf=c.parentElement?c.parentElement.querySelector('.wo-info'):null;if(inf){var m=inf.textContent.match(/(\d+)pts/);if(m)wCost+=parseInt(m[1]);}});
+    var basePts=+(document.getElementById('ed-points')||{}).value||200;
+    var unit={name:nm,faction:(document.getElementById('ed-faction')||{}).value||'Republique',pts:basePts+wCost,basePts:basePts,weaponCost:wCost,hp:+(document.getElementById('ed-hp')||{}).value||2,arm:+(document.getElementById('ed-armor')||{}).value||15,mm:+(document.getElementById('ed-move')||{}).value||0,pa:+(document.getElementById('ed-pa')||{}).value||5,weapons:Array.from(checks).map(function(c){return(c.parentElement.querySelector('.wo-name')||{}).textContent||c.value;}),image:pendingImage||null,date:new Date().toISOString().slice(0,10)};var d=CB.getUserData(u.login);d.units=d.units||[];d.units.push(unit);CB.saveUserData(u.login,d);addU2G(unit);pendingImage=null;};
   window.submitUnitForValidation=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim()){alert('Nom');return;}nm=nm.trim();var d=CB.getUserData(u.login);var unit=(d.units||[]).find(function(x){return x.name===nm;});if(!unit){alert('Ajoutez d\'abord');return;}var s=CB.getSubmissions();s.push({type:'unit',data:unit,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);alert('Soumise !');};
 
   // ═══ PDF A4 HOOK ═══
@@ -562,11 +753,56 @@ window.CB=(function(){
   }
 
   // ═══ ADMIN CONFIG ═══
+  // Built-in weapon stats (from game.html WEAPS)
+  var BUILTIN_WEAPS={
+    fusil_b:{n:"Fusil bleu",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:5,dmg:1},
+    fusil_r:{n:"Fusil rouge",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
+    blast_b:{n:"Blaster bleu",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:5,dmg:1},
+    blast_r:{n:"Blaster rouge",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:4,dmg:1},
+    pist_b:{n:"Pistolet bleu",melee:17,cat1:17,cat2:0,catP:0,mun:5,pen:4,dmg:1},
+    pist_r:{n:"Pistolet rouge",melee:17,cat1:17,cat2:0,catP:0,mun:5,pen:3,dmg:1},
+    sniper:{n:"Sniper bleu",melee:0,cat1:0,cat2:13,catP:15,mun:1,pen:7,dmg:2},
+    dbl_f:{n:"Dbl fusil",melee:0,cat1:13,cat2:16,catP:0,mun:2,pen:6,dmg:1},
+    pist_a:{n:"Pist.auto",melee:15,cat1:15,cat2:0,catP:0,mun:5,pen:4,dmg:2},
+    f_poing:{n:"Fusil poing",melee:0,cat1:16,cat2:16,catP:0,mun:2,pen:3,dmg:1},
+    f_poing_x2:{n:"x2 Fusils poing",melee:0,cat1:16,cat2:16,catP:0,mun:4,pen:3,dmg:1},
+    tourelle_x3:{n:"x3 Tourelles",melee:0,cat1:14,cat2:14,catP:0,mun:12,pen:3,dmg:1},
+    rocket_x3:{n:"x3 Rockets",melee:0,cat1:0,cat2:11,catP:11,mun:3,pen:10,dmg:4,dMax:4,once:true}
+  };
+
   function renderACfg(){
+    var tt=document.getElementById('adminThemes');
+    if(tt){
+      var themes=(typeof CONFIG!=='undefined'&&CONFIG.themes)?CONFIG.themes:['metal','dark','military','parchment','clone','separatist','rebel','nature'];
+      tt.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px">'+themes.map(function(t){return '<span style="display:inline-block;padding:4px 12px;border-radius:4px;font-size:11px;border:1px solid var(--border);background:var(--card);font-weight:700">'+t+'</span>';}).join('')+'</div>';
+    }
     var tw=document.getElementById('adminWeapons');
-    if(tw&&typeof WEAPONS_DB!=='undefined'){tw.innerHTML='<p style="font-size:10px">Armes chargees depuis config.js</p>';}
-    else if(tw){tw.innerHTML='<p style="font-size:10px;color:var(--text2)">Config chargee depuis config.js/script.js (rechargez si vide)</p>';}
+    if(tw){
+      var h='<h4 style="color:var(--accent);font-size:11px;margin:0 0 6px">Armes de base (du jeu)</h4>';
+      h+='<table style="width:100%;font-size:9px;border-collapse:collapse"><tr style="background:#222;color:var(--accent)"><th style="padding:3px">Nom</th><th>Mun</th><th>Pen</th><th>Dmg</th><th>Mel</th><th>C1</th><th>C2</th><th>CP</th><th>Prix</th></tr>';
+      for(var k in BUILTIN_WEAPS){var w=BUILTIN_WEAPS[k];var p=calcWeaponPrice(w);h+='<tr style="border-bottom:1px solid #333"><td style="padding:2px 4px;color:var(--accent)">'+w.n+'</td><td>'+w.mun+'</td><td>'+w.pen+'</td><td>'+(w.dMax||w.dmg)+'</td><td>'+(w.melee||'-')+'</td><td>'+(w.cat1||'-')+'</td><td>'+(w.cat2||'-')+'</td><td>'+(w.catP||'-')+'</td><td style="color:#f0c040;font-weight:700">'+p+'</td></tr>';}
+      h+='</table>';
+      // Validated custom weapons
+      var vw=CB.getValidated().weapons||[];
+      if(vw.length){h+='<h4 style="color:#3fb950;font-size:11px;margin:10px 0 4px">Armes validees (custom) — '+vw.length+'</h4><div>';vw.forEach(function(w){h+='<span style="display:inline-block;background:var(--card);border:1px solid #f0c040;border-radius:4px;padding:3px 8px;margin:2px;font-size:9px">'+w.n+' '+(w.price||calcWeaponPrice(w))+'pts <button onclick="CB_removeValidated(\'weapon\',\''+w.n+'\')" style="color:#f44;background:none;border:none;cursor:pointer;font-size:9px">suppr</button></span>';});h+='</div>';}
+      // Validated custom units
+      var vu=CB.getValidated().units||[];
+      if(vu.length){h+='<h4 style="color:#3fb950;font-size:11px;margin:10px 0 4px">Unites validees — '+vu.length+'</h4><div>';vu.forEach(function(u){h+='<span style="display:inline-block;background:var(--card);border:1px solid #f0c040;border-radius:4px;padding:3px 8px;margin:2px;font-size:9px">'+(u.image?'<img src="'+u.image+'" style="width:14px;height:14px;border-radius:2px;vertical-align:middle;margin-right:2px">':'')+(u.name||'?')+' '+u.pts+'pts <button onclick="CB_removeValidated(\'unit\',\''+u.name+'\')" style="color:#f44;background:none;border:none;cursor:pointer;font-size:9px">suppr</button></span>';});h+='</div>';}
+      // Validated factions
+      var vf=CB.getValidated().factions||[];
+      if(vf.length){h+='<h4 style="color:#3fb950;font-size:11px;margin:10px 0 4px">Factions validees — '+vf.length+'</h4><div>';vf.forEach(function(f){h+='<span style="display:inline-block;padding:3px 8px;margin:2px;border-radius:4px;font-size:10px;border:1px solid '+f.color+';color:'+f.color+'">'+f.name+' ('+f.abbr+') <button onclick="CB_removeValidated(\'faction\',\''+f.name+'\')" style="color:#f44;background:none;border:none;cursor:pointer;font-size:9px">suppr</button></span>';});h+='</div>';}
+      tw.innerHTML=h;
+    }
   }
+  // Remove validated item
+  window.CB_removeValidated=function(type,name){
+    if(!confirm('Supprimer "'+name+'" des elements valides ?'))return;
+    var v=CB.getValidated();
+    if(type==='weapon')v.weapons=(v.weapons||[]).filter(function(w){return w.n!==name;});
+    if(type==='unit')v.units=(v.units||[]).filter(function(u){return u.name!==name;});
+    if(type==='faction')v.factions=(v.factions||[]).filter(function(f){return f.name!==name;});
+    CB.saveValidated(v);renderACfg();alert('Supprime');
+  };
 
   // ═══ ADMIN USERS ═══
   function renderAU(){
