@@ -560,7 +560,129 @@ window.I18N=(function(){
       var key=el.getAttribute('data-i18n-title');var val=t(key);
       if(val&&val!==key)el.setAttribute('title',val);
     });
+    // Apply name translations (factions, units, weapons)
+    translateNames();
   }
+
+  // ─── NAME TRANSLATION SYSTEM (factions, units, weapons, specials) ───
+  // Build reverse lookup: FR text → key (from the FR dictionary)
+  function buildReverseLookup(){
+    var rev={};
+    var fr=translations.fr||{};
+    for(var key in fr){
+      if(key.indexOf('faction.')===0||key.indexOf('unit.')===0||key.indexOf('weap.')===0||key.indexOf('special.')===0){
+        rev[fr[key]]=key;
+      }
+    }
+    return rev;
+  }
+
+  // Translate a single FR text to current language (pass-through if no match)
+  window.translateName=function(frText){
+    if(!frText||typeof frText!=='string')return frText;
+    if(!translations.fr||!translations[currentLang])return frText;
+    var rev=buildReverseLookup();
+    var key=rev[frText];
+    if(!key)return frText; // no translation available
+    return translations[currentLang][key]||frText;
+  };
+
+  // Walk the DOM and replace text content in specific zones
+  function translateNames(){
+    if(currentLang==='fr')return; // no-op if FR
+    if(!translations.fr||!translations[currentLang])return;
+    var rev=buildReverseLookup();
+
+    // 1. Faction dropdown (ed-faction options)
+    var facSel=document.getElementById('ed-faction');
+    if(facSel){
+      for(var i=0;i<facSel.options.length;i++){
+        var opt=facSel.options[i];
+        // Preserve original value (FR) in data-orig
+        if(!opt.hasAttribute('data-orig'))opt.setAttribute('data-orig',opt.textContent);
+        var orig=opt.getAttribute('data-orig');
+        var key=rev[orig];
+        if(key&&translations[currentLang][key])opt.textContent=translations[currentLang][key];
+      }
+    }
+
+    // 2. Gallery cards — unit names
+    document.querySelectorAll('.gc-name, .gallery-card [class*="name"]').forEach(function(el){
+      if(!el.hasAttribute('data-orig'))el.setAttribute('data-orig',el.textContent.trim());
+      var orig=el.getAttribute('data-orig');
+      // Remove any trailing stars or decorations
+      var clean=orig.replace(/\s*[★⭐]\s*$/,'').trim();
+      var key=rev[clean];
+      if(key&&translations[currentLang][key]){
+        el.textContent=translations[currentLang][key]+(orig!==clean?' ★':'');
+      }
+    });
+
+    // 3. Weapon selector rows (.w-name class from script.js)
+    document.querySelectorAll('.weapon-option .w-name').forEach(function(el){
+      if(!el.hasAttribute('data-orig'))el.setAttribute('data-orig',el.textContent);
+      var orig=el.getAttribute('data-orig');
+      var key=rev[orig];
+      if(key&&translations[currentLang][key])el.textContent=translations[currentLang][key];
+    });
+
+    // 4. Gallery filter buttons (faction names)
+    document.querySelectorAll('.btn-filter').forEach(function(el){
+      if(!el.hasAttribute('data-orig'))el.setAttribute('data-orig',el.textContent.trim());
+      var orig=el.getAttribute('data-orig');
+      if(orig==='Toutes'||orig==='All')return; // handled by data-i18n
+      var key=rev[orig];
+      if(key&&translations[currentLang][key])el.textContent=translations[currentLang][key];
+    });
+
+    // 5. Card preview faction badge
+    document.querySelectorAll('.card-faction-badge').forEach(function(el){
+      if(!el.hasAttribute('data-orig'))el.setAttribute('data-orig',el.textContent.trim());
+      var orig=el.getAttribute('data-orig');
+      var key=rev[orig];
+      if(key&&translations[currentLang][key])el.textContent=translations[currentLang][key];
+    });
+
+    // 6. Card preview name
+    document.querySelectorAll('.card-name').forEach(function(el){
+      if(!el.hasAttribute('data-orig'))el.setAttribute('data-orig',el.textContent.trim());
+      var orig=el.getAttribute('data-orig');
+      var key=rev[orig];
+      if(key&&translations[currentLang][key])el.textContent=translations[currentLang][key];
+    });
+
+    // 7. Generated cards container - all text nodes that might contain unit/weapon/faction names
+    document.querySelectorAll('#cards-container .card').forEach(function(card){
+      card.querySelectorAll('.card-name, .card-faction-badge, .card-weapons *, .card-special').forEach(function(el){
+        if(!el.hasAttribute('data-orig')){
+          el.setAttribute('data-orig',el.textContent.trim());
+        }
+        var orig=el.getAttribute('data-orig');
+        var key=rev[orig];
+        if(key&&translations[currentLang][key])el.textContent=translations[currentLang][key];
+      });
+    });
+  }
+
+  // Expose translateNames so it can be called after DOM updates
+  window.translateNames=translateNames;
+
+  // MutationObserver: re-translate when gallery/weapons/cards are (re)populated
+  function setupDomObserver(){
+    var targets=['gallery-grid','weapon-selector','cards-container','ed-faction','card-preview'];
+    var debounce=null;
+    var obs=new MutationObserver(function(mutations){
+      if(currentLang==='fr')return;
+      clearTimeout(debounce);
+      debounce=setTimeout(function(){translateNames();},100);
+    });
+    targets.forEach(function(id){
+      var el=document.getElementById(id);
+      if(el)obs.observe(el,{childList:true,subtree:true,characterData:true});
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(setupDomObserver,800);});
+  else setTimeout(setupDomObserver,800);
 
   window.setLang=function(lang){applyLang(lang);};
   window.t=t;
