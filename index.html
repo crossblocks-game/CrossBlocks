@@ -64,25 +64,81 @@
 <nav class="site-nav">
  <a href="index.html" class="nav-title">CROSSBLOCKS</a>
  <span class="nav-sep">|</span>
- <a href="index.html" class="nav-active"> Éditeur de fiches d'unités</a>
- <a href="game.html"> Simulateur</a>
- <a href="#" id="nav-admin-link" onclick="promptAdmin();return false;" style="display:none;color:#f0c040;font-weight:700"> Panneau Admin</a>
- <div id="auth-box" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px">
-  <span id="sync-indicator" style="font-size:9px;color:#888;padding:2px 6px;border-radius:3px;background:#1a1a2e;border:1px solid #333" title="Etat synchronisation JSONBin">Connexion...</span>
-  <button onclick="CB.refresh()" style="padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#aaa;cursor:pointer;font-size:9px" title="Rafraichir">↻</button>
+ <a href="index.html" class="nav-active" data-i18n="nav.editor"> Éditeur de fiches d'unités</a>
+ <a href="game.html" data-i18n="nav.simulator"> Simulateur</a>
+ <a href="#" id="nav-admin-link" onclick="promptAdmin();return false;" style="display:none;color:#f0c040;font-weight:700" data-i18n="nav.admin"> Panneau Admin</a>
+ <div id="auth-box" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap">
+  <select id="lang-switch" onchange="setLang(this.value)" style="padding:2px 4px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px;cursor:pointer">
+   <option value="fr">🇫🇷 FR</option>
+   <option value="en">🇬🇧 EN</option>
+  </select>
+  <span id="sync-indicator" style="font-size:9px;color:#888;padding:2px 6px;border-radius:3px;background:#1a1a2e;border:1px solid #333" data-i18n-title="nav.sync_tooltip" title="Etat synchronisation JSONBin" data-i18n="nav.connecting">Connexion...</span>
+  <button onclick="CB.refresh()" style="padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#aaa;cursor:pointer;font-size:9px" data-i18n-title="nav.refresh_tooltip" title="Rafraichir">↻</button>
   <div id="auth-login" style="display:flex;gap:4px;align-items:center">
-   <input id="auth-user" placeholder="Login" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
-   <input id="auth-pass" type="password" placeholder="Mot de passe" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
-   <button onclick="CB.login()" style="padding:2px 8px;border-radius:3px;border:none;background:#238636;color:#fff;cursor:pointer;font-size:10px">Connexion</button>
-   <button onclick="CB.register()" style="padding:2px 8px;border-radius:3px;border:none;background:#1f6feb;color:#fff;cursor:pointer;font-size:10px">Créer compte</button>
+   <input id="auth-user" placeholder="Login" data-i18n-placeholder="nav.login_placeholder" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
+   <input id="auth-pass" type="password" placeholder="Mot de passe" data-i18n-placeholder="nav.pass_placeholder" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
+   <button onclick="CB.login()" style="padding:2px 8px;border-radius:3px;border:none;background:#238636;color:#fff;cursor:pointer;font-size:10px" data-i18n="nav.login">Connexion</button>
+   <button onclick="CB.register()" style="padding:2px 8px;border-radius:3px;border:none;background:#1f6feb;color:#fff;cursor:pointer;font-size:10px" data-i18n="nav.register">Créer compte</button>
   </div>
   <div id="auth-logged" style="display:none;gap:6px;align-items:center">
    <span id="auth-username" style="color:#f0c040;font-weight:700"></span>
    <span id="auth-badge" style="font-size:9px;padding:1px 5px;border-radius:3px;display:none">ADMIN</span>
-   <button onclick="CB.logout()" style="padding:2px 8px;border-radius:3px;border:none;background:#6e1010;color:#fff;cursor:pointer;font-size:10px">Déconnexion</button>
+   <button onclick="CB.logout()" style="padding:2px 8px;border-radius:3px;border:none;background:#6e1010;color:#fff;cursor:pointer;font-size:10px" data-i18n="nav.logout">Déconnexion</button>
   </div>
  </div>
 </nav>
+
+<!-- Bannière d'accueil (visiteurs non connectés) -->
+<div id="welcome-banner" style="display:none;background:linear-gradient(90deg,#1a3a5a,#2a5080);color:#fff;padding:10px 16px;border-bottom:2px solid #f0c040;position:relative">
+ <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  <span style="font-size:22px">👋</span>
+  <div style="flex:1;min-width:200px">
+   <strong style="color:#f0c040;font-size:14px" data-i18n="banner.welcome">Bienvenue sur CrossBlocks !</strong>
+   <div style="font-size:11px;opacity:0.9;margin-top:2px" data-i18n="banner.message">Créez un compte pour sauvegarder vos fiches d'unités, vos armes et partager vos créations avec la communauté.</div>
+  </div>
+  <button onclick="document.getElementById('auth-user').focus();document.getElementById('welcome-banner').style.display='none'" style="padding:6px 14px;border:none;border-radius:4px;background:#f0c040;color:#000;cursor:pointer;font-weight:700;font-size:12px" data-i18n="banner.cta">Créer un compte</button>
+  <button onclick="document.getElementById('welcome-banner').style.display='none';localStorage.setItem('cb_banner_dismissed','1')" title="Fermer" style="padding:4px 8px;border:none;border-radius:3px;background:transparent;color:#aaa;cursor:pointer;font-size:16px">×</button>
+ </div>
+</div>
+
+<!-- Responsive & Banner CSS -->
+<style>
+#welcome-banner button:hover{opacity:0.9}
+@media (max-width:900px){
+ .site-nav{flex-wrap:wrap;padding:6px 8px!important;gap:4px!important}
+ .site-nav a{font-size:11px!important;padding:3px 6px!important}
+ #auth-box{width:100%;justify-content:flex-start;margin-top:4px!important;order:10}
+ #auth-login,#auth-logged{flex-wrap:wrap}
+ #auth-user,#auth-pass{width:70px!important}
+ .site-title{font-size:28px!important}
+ .site-desc{font-size:13px!important}
+ .hero-features{grid-template-columns:1fr!important;gap:8px!important}
+ .hero-feature{padding:10px!important}
+ .editor-layout{grid-template-columns:1fr!important;gap:12px!important}
+ .form-row,.form-row-4{grid-template-columns:1fr 1fr!important;gap:6px!important}
+ .gallery-grid{grid-template-columns:repeat(2,1fr)!important;gap:6px!important}
+ .gallery-card{padding:6px!important;font-size:10px!important}
+ .cards-grid{grid-template-columns:1fr!important}
+ .section-title{font-size:16px!important}
+ .admin-panel{width:95vw!important;max-width:95vw!important;max-height:92vh!important}
+ .admin-tabs{flex-wrap:wrap;gap:3px!important}
+ .btn-admtab{font-size:10px!important;padding:4px 6px!important}
+ .weapon-grid{grid-template-columns:1fr!important}
+ .card-preview,#card-preview{transform:scale(0.85);transform-origin:top center}
+ .cards-toolbar{flex-direction:column;align-items:flex-start!important;gap:6px!important}
+ .footer-links{flex-wrap:wrap;font-size:10px!important}
+}
+@media (max-width:500px){
+ .gallery-grid{grid-template-columns:1fr!important}
+ .form-row,.form-row-4{grid-template-columns:1fr!important}
+ .site-title{font-size:22px!important}
+ .hero-box{padding:10px!important}
+ .hero-text{font-size:12px!important}
+ #lang-switch{font-size:9px!important}
+ .form-actions{flex-direction:column;gap:4px!important}
+ .form-actions button{width:100%}
+}
+</style>
 
 <!-- Fond fixe -->
 <div class="fixed-bg"></div>
@@ -94,35 +150,35 @@
  <header class="site-header" itemscope itemtype="https://schema.org/WebApplication">
  <img src="logo.svg" class="logo" alt="CrossBlocks — Wargame tactique LEGO" itemprop="image">
  <h1 class="site-title" itemprop="name">CROSSBLOCKS</h1>
- <p class="site-desc" itemprop="description">Le <strong>wargame tactique à base de LEGO</strong> — 100% gratuit, 100% personnalisable.</p>
+ <p class="site-desc" itemprop="description" data-i18n="hero.tagline">Le <strong>wargame tactique à base de LEGO</strong> — 100% gratuit, 100% personnalisable.</p>
 
  <div class="hero-box">
- <p class="hero-text"><strong>CrossBlocks</strong> est un jeu de guerre sur table qui transforme vos LEGO en véritable champ de bataille. Construisez vos armées avec n'importe quelles minifigurines — inventez vos factions, créez vos propres unités avec des stats uniques (PV, armure, armes, actions) et imprimez vos fiches. Déployez vos troupes, lancez les dés au D20, et affrontez vos amis dans des combats tactiques intenses. Tout ce qu'il vous faut, c'est vos LEGO et un peu de stratégie.</p>
+ <p class="hero-text" data-i18n="hero.intro"><strong>CrossBlocks</strong> est un jeu de guerre sur table qui transforme vos LEGO en véritable champ de bataille. Construisez vos armées avec n'importe quelles minifigurines — inventez vos factions, créez vos propres unités avec des stats uniques (PV, armure, armes, actions) et imprimez vos fiches. Déployez vos troupes, lancez les dés au D20, et affrontez vos amis dans des combats tactiques intenses. Tout ce qu'il vous faut, c'est vos LEGO et un peu de stratégie.</p>
 
  <div class="hero-features">
  <div class="hero-feature">
  <span class="hf-icon">🃏</span>
- <div><strong>Éditeur de fiches d'unités</strong><br>Créez et personnalisez vos fiches d'unités avec l'éditeur en ligne, puis exportez-les en PDF au format A4 prêt à imprimer.</div>
+ <div data-i18n="hero.feat1"><strong>Éditeur de fiches d'unités</strong><br>Créez et personnalisez vos fiches d'unités avec l'éditeur en ligne, puis exportez-les en PDF au format A4 prêt à imprimer.</div>
  </div>
  <div class="hero-feature">
  <span class="hf-icon"></span>
- <div><strong>Système au D20</strong><br>Touche, sauvegarde, dégâts — tout se joue aux dés. Simple à apprendre, profond à maîtriser.</div>
+ <div data-i18n="hero.feat2"><strong>Système au D20</strong><br>Touche, sauvegarde, dégâts — tout se joue aux dés. Simple à apprendre, profond à maîtriser.</div>
  </div>
  <div class="hero-feature">
  <span class="hf-icon"></span>
- <div><strong>Simulateur intégré</strong><br>Testez l'équilibre de vos armées avec le simulateur de batailles IA vs IA avant de jouer pour de vrai.</div>
+ <div data-i18n="hero.feat3"><strong>Simulateur intégré</strong><br>Testez l'équilibre de vos armées avec le simulateur de batailles IA vs IA avant de jouer pour de vrai.</div>
  </div>
  </div>
 
  <div class="hero-discord">
  <svg class="discord-icon" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53.05s5-12.68 11.45-12.68S53.98 46.1 53.9 53.05c0 6.95-5.11 12.64-11.45 12.64Zm42.24 0C78.41 65.69 73.25 60 73.25 53.05s5-12.68 11.44-12.68S96.23 46.1 96.14 53.05c0 6.95-5.09 12.64-11.45 12.64Z"/></svg>
- <div>
+ <div data-i18n="hero.discord_text">
  <strong>Les règles complètes du jeu sont sur le Discord !</strong><br>
  <span>Retrouvez le livret de règles, les guides pour débutants, les FAQ, les tournois et toute la communauté CrossBlocks. C'est là que tout se passe — venez proposer vos unités, discuter stratégie et organiser des parties.</span>
  </div>
  <a href="https://discord.gg/CMntzhndfs" target="_blank" class="btn btn-discord-big" rel="noopener" onclick="window.open(this.href,'_blank');return false;">
  <svg width="20" height="16" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53.05s5-12.68 11.45-12.68S53.98 46.1 53.9 53.05c0 6.95-5.11 12.64-11.45 12.64Zm42.24 0C78.41 65.69 73.25 60 73.25 53.05s5-12.68 11.44-12.68S96.23 46.1 96.14 53.05c0 6.95-5.09 12.64-11.45 12.64Z"/></svg>
- Rejoindre le Discord
+ <span data-i18n="hero.discord_btn">Rejoindre le Discord</span>
  </a>
  </div>
  </div>
@@ -130,7 +186,7 @@
 
  <!-- ═══ ÉDITEUR ═══ -->
  <section class="editor-section">
- <h2 class="section-title"> Éditeur de fiches d'unités</h2>
+ <h2 class="section-title" data-i18n="editor.title"> Éditeur de fiches d'unités</h2>
 
  <div class="editor-layout">
 
@@ -138,69 +194,69 @@
  <div class="editor-form">
 
  <div class="form-group">
- <label for="ed-name">Nom de l'unité</label>
+ <label for="ed-name" data-i18n="editor.name">Nom de l'unité</label>
  <input id="ed-name" placeholder="Ex: Clone Phase 2" oninput="updatePreview()">
  </div>
 
  <div class="form-row">
  <div class="form-group">
- <label for="ed-faction">Faction</label>
+ <label for="ed-faction" data-i18n="editor.faction">Faction</label>
  <select id="ed-faction" onchange="updatePreview()"></select>
  </div>
  <div class="form-group">
- <label for="ed-theme">Thème visuel</label>
+ <label for="ed-theme" data-i18n="editor.theme">Thème visuel</label>
  <select id="ed-theme" onchange="updatePreview()"></select>
  </div>
  </div>
 
  <div class="form-row form-row-4">
  <div class="form-group">
- <label> Points</label>
+ <label data-i18n="editor.points"> Points</label>
  <input id="ed-points" type="number" value="200" oninput="updatePreview()">
  </div>
  <div class="form-group">
- <label> PV</label>
+ <label data-i18n="editor.hp"> PV</label>
  <input id="ed-hp" type="number" value="2" oninput="updatePreview()">
  </div>
  <div class="form-group">
- <label> Armure</label>
+ <label data-i18n="editor.armor"> Armure</label>
  <input id="ed-armor" type="number" value="15" oninput="updatePreview()">
  </div>
  <div class="form-group">
- <label> Mouvement</label>
+ <label data-i18n="editor.move"> Mouvement</label>
  <input id="ed-move" type="number" value="0" oninput="updatePreview()">
  </div>
  </div>
 
  <div class="form-group">
- <label> Points d'Action</label>
+ <label data-i18n="editor.pa"> Points d'Action</label>
  <input id="ed-pa" type="number" value="5" min="1" max="8" oninput="updatePreview()">
  </div>
 
  <!-- Sélecteur d'armes -->
  <div class="form-group">
- <label> Armes (cochez pour ajouter)</label>
+ <label data-i18n="editor.weapons"> Armes (cochez pour ajouter)</label>
  <div id="weapon-selector" class="weapon-grid"></div>
  </div>
 
  <div class="form-group">
- <label> Image de l'unité (optionnel)</label>
+ <label data-i18n="editor.image"> Image de l'unité (optionnel)</label>
  <input type="file" id="ed-image" accept="image/*" onchange="handleUnitImage(this)" style="font-size:10px">
  <div id="ed-image-preview" style="margin-top:4px;max-width:120px"></div>
  </div>
 
  <div class="form-actions">
- <button class="btn btn-add" onclick="addCard()"> Ajouter fiche d'unité</button>
- <button class="btn btn-suggest" onclick="submitUnitForValidation()"> Soumettre pour validation admin</button>
- <button class="btn btn-calc" onclick="calcPrice()"> Calculer le prix</button>
- <button class="btn btn-secondary" onclick="clearForm()"> Vider le formulaire</button>
+ <button class="btn btn-add" onclick="addCard()" data-i18n="editor.add"> Ajouter fiche d'unité</button>
+ <button class="btn btn-suggest" onclick="submitUnitForValidation()" data-i18n="editor.submit"> Soumettre pour validation admin</button>
+ <button class="btn btn-calc" onclick="calcPrice()" data-i18n="editor.calc"> Calculer le prix</button>
+ <button class="btn btn-secondary" onclick="clearForm()" data-i18n="editor.clear"> Vider le formulaire</button>
  </div>
  <div id="price-breakdown" class="price-breakdown" style="display:none"></div>
  </div>
 
  <!-- APERÇU EN DIRECT -->
  <div class="preview-area">
- <div class="preview-label">Aperçu en direct</div>
+ <div class="preview-label" data-i18n="editor.preview">Aperçu en direct</div>
  <div id="card-preview" class="card theme-metal">
  <div class="card-header">
  <span class="card-faction-badge">République</span>
@@ -215,7 +271,7 @@
  </div>
  <div id="pv-image" style="text-align:center;margin:4px 0"></div>
  <div class="card-weapons" id="pv-weapons">
- <div class="card-no-weapon">Aucune arme sélectionnée</div>
+ <div class="card-no-weapon" data-i18n="editor.no_weapon">Aucune arme sélectionnée</div>
  </div>
  <div class="card-footer">CROSSBLOCKS</div>
  </div>
@@ -226,13 +282,13 @@
 
  <!-- ═══ GALERIE D'UNITÉS ═══ -->
  <section class="gallery-section">
- <h2 class="section-title"> Galerie — Ajout rapide</h2>
+ <h2 class="section-title" data-i18n="gallery.title"> Galerie — Ajout rapide</h2>
  <div class="gallery-tabs">
- <button class="btn btn-tab active" onclick="switchGalleryTab('units',this)"> Unités</button>
- <button class="btn btn-tab" onclick="switchGalleryTab('vehicles',this)"> Véhicules</button>
+ <button class="btn btn-tab active" onclick="switchGalleryTab('units',this)" data-i18n="gallery.tab_units"> Unités</button>
+ <button class="btn btn-tab" onclick="switchGalleryTab('vehicles',this)" data-i18n="gallery.tab_vehicles"> Véhicules</button>
  </div>
  <div class="gallery-filters">
- <button class="btn btn-filter active" onclick="filterGallery('all',this)">Toutes</button>
+ <button class="btn btn-filter active" onclick="filterGallery('all',this)" data-i18n="gallery.filter_all">Toutes</button>
  <button class="btn btn-filter" onclick="filterGallery('République',this)">République</button>
  <button class="btn btn-filter" onclick="filterGallery('Séparatistes',this)">Séparatistes</button>
  <button class="btn btn-filter" onclick="filterGallery('Rebelles',this)">Rebelles</button>
@@ -243,33 +299,33 @@
  <!-- ═══ FICHES D'UNITÉS GÉNÉRÉES ═══ -->
  <section class="cards-section">
  <div class="cards-toolbar">
- <h2 class="section-title">🃏 Fiches d'unités générées</h2>
+ <h2 class="section-title" data-i18n="cards.title">🃏 Fiches d'unités générées</h2>
  <div class="cards-actions">
  <span id="card-count" class="card-counter">0 fiche(s)</span>
  <span id="army-total" class="army-total"></span>
- <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled> Exporter PDF</button>
- <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none"> Tout supprimer</button>
+ <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled data-i18n="cards.export"> Exporter PDF</button>
+ <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none" data-i18n="cards.clear_all"> Tout supprimer</button>
  </div>
  </div>
- <div id="save-indicator" class="save-indicator"> Sauvegarde auto activée</div>
+ <div id="save-indicator" class="save-indicator" data-i18n="cards.autosave"> Sauvegarde auto activée</div>
  <div id="cards-container" class="cards-grid">
- <div class="cards-empty">Aucune fiche pour l'instant. Utilisez l'éditeur ou la galerie ci-dessus !</div>
+ <div class="cards-empty" data-i18n="cards.empty">Aucune fiche pour l'instant. Utilisez l'éditeur ou la galerie ci-dessus !</div>
  </div>
  </section>
 
  <!-- ═══ ÉDITEUR DE FACTIONS ═══ -->
  <section class="suggest-section" style="margin-top:16px">
- <h2 class="section-title"> Éditeur de factions</h2>
- <p class="suggest-desc">Créez de nouvelles factions pour vos unités. Soumettez-les à l'admin pour les rendre disponibles à tous.</p>
+ <h2 class="section-title" data-i18n="faction.title"> Éditeur de factions</h2>
+ <p class="suggest-desc" data-i18n="faction.desc">Créez de nouvelles factions pour vos unités. Soumettez-les à l'admin pour les rendre disponibles à tous.</p>
  <div class="suggest-form">
  <div class="form-row">
- <div class="form-group"><label>Nom de la faction</label><input id="fac-name" placeholder="Ex: Empire Galactique"></div>
- <div class="form-group"><label>Couleur</label><input id="fac-color" type="color" value="#888888" style="width:50px;height:30px;border:none;cursor:pointer"></div>
- <div class="form-group"><label>Abréviation (2-4 car.)</label><input id="fac-abbr" placeholder="emp" maxlength="4" style="width:60px"></div>
+ <div class="form-group"><label data-i18n="faction.name">Nom de la faction</label><input id="fac-name" placeholder="Ex: Empire Galactique" data-i18n-placeholder="faction.name_ph"></div>
+ <div class="form-group"><label data-i18n="faction.color">Couleur</label><input id="fac-color" type="color" value="#888888" style="width:50px;height:30px;border:none;cursor:pointer"></div>
+ <div class="form-group"><label data-i18n="faction.abbr">Abréviation (2-4 car.)</label><input id="fac-abbr" placeholder="emp" maxlength="4" style="width:60px"></div>
  </div>
  <div class="form-actions" style="gap:8px">
- <button class="btn btn-add" onclick="CB_createFaction()"> Créer la faction</button>
- <button class="btn btn-suggest" onclick="CB_submitFaction()"> Soumettre à l'admin</button>
+ <button class="btn btn-add" onclick="CB_createFaction()" data-i18n="faction.create"> Créer la faction</button>
+ <button class="btn btn-suggest" onclick="CB_submitFaction()" data-i18n="faction.submit"> Soumettre à l'admin</button>
  </div>
  </div>
  <div id="custom-factions-list" style="margin-top:10px"></div>
@@ -277,28 +333,28 @@
 
  <!-- ═══ ÉDITEUR D'ARMES ═══ -->
  <section class="suggest-section">
- <h2 class="section-title"> Éditeur d'armes</h2>
- <p class="suggest-desc">Créez vos armes personnalisées. Elles seront disponibles dans l'éditeur de fiches d'unités. Soumettez-les pour validation par l'admin.</p>
+ <h2 class="section-title" data-i18n="weapon.title"> Éditeur d'armes</h2>
+ <p class="suggest-desc" data-i18n="weapon.desc">Créez vos armes personnalisées. Elles seront disponibles dans l'éditeur de fiches d'unités. Soumettez-les pour validation par l'admin.</p>
 
  <div id="weapon-editor-form" class="suggest-form">
- <div class="form-row"><div class="form-group"><label>Nom complet</label><input id="sgw-name" placeholder="Ex: SW Canon laser (bleu)"></div>
- <div class="form-group"><label> Difficulté (d20)</label><input id="sgw-diff" type="number" value="15"></div></div>
+ <div class="form-row"><div class="form-group"><label data-i18n="weapon.name">Nom complet</label><input id="sgw-name" placeholder="Ex: SW Canon laser (bleu)"></div>
+ <div class="form-group"><label data-i18n="weapon.diff"> Difficulté (d20)</label><input id="sgw-diff" type="number" value="15"></div></div>
  <div class="form-row form-row-4">
- <div class="form-group"><label> Mun</label><input id="sgw-mun" type="number" value="3"></div>
- <div class="form-group"><label> Pén</label><input id="sgw-pen" type="number" value="5"></div>
- <div class="form-group"><label> Dégâts</label><input id="sgw-dmg" type="number" value="1"></div>
- <div class="form-group"><label> Usage unique</label><select id="sgw-once"><option value="0">Non</option><option value="1">Oui</option></select></div>
+ <div class="form-group"><label data-i18n="weapon.mun"> Mun</label><input id="sgw-mun" type="number" value="3"></div>
+ <div class="form-group"><label data-i18n="weapon.pen"> Pén</label><input id="sgw-pen" type="number" value="5"></div>
+ <div class="form-group"><label data-i18n="weapon.dmg"> Dégâts</label><input id="sgw-dmg" type="number" value="1"></div>
+ <div class="form-group"><label data-i18n="weapon.once"> Usage unique</label><select id="sgw-once"><option value="0" data-i18n="common.no">Non</option><option value="1" data-i18n="common.yes">Oui</option></select></div>
  </div>
  <div class="form-row form-row-4">
- <div class="form-group"><label>Mêlée (0=non)</label><input id="sgw-mel" type="number" value="0"></div>
- <div class="form-group"><label>Cat.1 (0=non)</label><input id="sgw-cat1" type="number" value="15"></div>
- <div class="form-group"><label>Cat.2 (0=non)</label><input id="sgw-cat2" type="number" value="0"></div>
- <div class="form-group"><label>Cat.P (0=non)</label><input id="sgw-catp" type="number" value="0"></div>
+ <div class="form-group"><label data-i18n="weapon.melee">Mêlée (0=non)</label><input id="sgw-mel" type="number" value="0"></div>
+ <div class="form-group"><label data-i18n="weapon.cat1">Cat.1 (0=non)</label><input id="sgw-cat1" type="number" value="15"></div>
+ <div class="form-group"><label data-i18n="weapon.cat2">Cat.2 (0=non)</label><input id="sgw-cat2" type="number" value="0"></div>
+ <div class="form-group"><label data-i18n="weapon.catp">Cat.P (0=non)</label><input id="sgw-catp" type="number" value="0"></div>
  </div>
- <div class="form-group"><label> Notes</label><input id="sgw-notes" placeholder="Ex: Monté sur véhicule, anti-blindage..."></div>
+ <div class="form-group"><label data-i18n="weapon.notes"> Notes</label><input id="sgw-notes" placeholder="Ex: Monté sur véhicule, anti-blindage..."></div>
  <div class="form-actions" style="gap:8px">
- <button class="btn btn-add" onclick="createCustomWeapon()"> Créer l'arme</button>
- <button class="btn btn-suggest" onclick="submitWeaponForValidation()"> Soumettre arme à l'admin</button>
+ <button class="btn btn-add" onclick="createCustomWeapon()" data-i18n="weapon.create"> Créer l'arme</button>
+ <button class="btn btn-suggest" onclick="submitWeaponForValidation()" data-i18n="weapon.submit"> Soumettre arme à l'admin</button>
  </div>
  </div>
 
@@ -310,28 +366,28 @@
 
  <!-- SEO: Contenu texte riche pour Google -->
  <section class="seo-section">
- <h2 class="section-title"> Qu'est-ce que CrossBlocks ?</h2>
- <p>CrossBlocks est un <strong>wargame tactique à base de LEGO</strong>. 
+ <h2 class="section-title" data-i18n="seo.title"> Qu'est-ce que CrossBlocks ?</h2>
+ <p data-i18n="seo.p1">CrossBlocks est un <strong>wargame tactique à base de LEGO</strong>. 
  Créez vos propres <strong>fiches d'unités</strong> avec des statistiques personnalisées 
  (points de vie, armure, armes, points d'action), simulez des <strong>batailles stratégiques</strong> 
  et imprimez vos fiches au format A4. Utilisez vos minifigurines LEGO comme unités de combat !</p>
- <p>L'éditeur en ligne est <strong>100% gratuit</strong> — pas d'inscription, pas de téléchargement. 
+ <p data-i18n="seo.p2">L'éditeur en ligne est <strong>100% gratuit</strong> — pas d'inscription, pas de téléchargement. 
  Que vous jouiez avec des <strong>minifigures LEGO</strong>, des figurines peintes ou du papier, 
  CrossBlocks s'adapte à votre style de jeu. Les <strong>règles complètes du jeu</strong> sont disponibles 
  sur notre <a href="https://discord.gg/CMntzhndfs" target="_blank" rel="noopener" style="color:#5865F2;font-weight:700">serveur Discord</a>.</p>
  <details class="seo-details">
- <summary> Comment jouer ?</summary>
- <ol>
+ <summary data-i18n="seo.howto_title"> Comment jouer ?</summary>
+ <ol data-i18n="seo.howto_list">
  <li><strong>Rejoignez le Discord</strong> — lisez les règles complètes et posez vos questions à la communauté</li>
  <li><strong>Créez vos unités</strong> — utilisez l'éditeur ci-dessus pour définir les caractéristiques de chaque figurine</li>
- <li><strong>Imprimez vos fiches</strong> — exportez en PDF A6 pour avoir vos fiches pendant la partie</li>
+ <li><strong>Imprimez vos fiches</strong> — exportez en PDF A4 pour avoir vos fiches pendant la partie</li>
  <li><strong>Composez votre armée</strong> — choisissez vos unités avec un budget en points</li>
  <li><strong>Jouez !</strong> — déployez vos LEGO sur un plateau et affrontez vos amis</li>
  </ol>
  </details>
  <details class="seo-details">
- <summary> Factions disponibles</summary>
- <p><strong>République</strong> (Clones Phase 2, Snipers, Commandants, Airborne, véhicules), 
+ <summary data-i18n="seo.factions_title"> Factions disponibles</summary>
+ <p data-i18n="seo.factions_text"><strong>République</strong> (Clones Phase 2, Snipers, Commandants, Airborne, véhicules), 
  <strong>Séparatistes</strong> (Droïdes B1, B2, Tri-Droïde, STAP), 
  <strong>Rebelles</strong> (Rebelles, Gardes, Jetpacks), 
  <strong>Empire</strong>, et plus encore ! Proposez vos propres unités via la communauté.</p>
@@ -341,32 +397,32 @@
  <!-- FOOTER -->
  <footer class="site-footer">
  <nav class="footer-links">
- <a href="index.html">Éditeur de fiches d'unités</a> ·
- <a href="game.html">Simulateur de batailles</a> ·
+ <a href="index.html" data-i18n="footer.editor">Éditeur de fiches d'unités</a> ·
+ <a href="game.html" data-i18n="footer.sim">Simulateur de batailles</a> ·
  <a href="https://discord.gg/CMntzhndfs" target="_blank" rel="noopener" style="color:#5865F2;display:inline-flex;align-items:center;gap:4px"><svg width="14" height="11" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53.05s5-12.68 11.45-12.68S53.98 46.1 53.9 53.05c0 6.95-5.11 12.64-11.45 12.64Zm42.24 0C78.41 65.69 73.25 60 73.25 53.05s5-12.68 11.44-12.68S96.23 46.1 96.14 53.05c0 6.95-5.09 12.64-11.45 12.64Z"/></svg> Discord</a>
  </nav>
- <span>CrossBlocks © 2025 — Wargame tactique LEGO gratuit</span>
+ <span data-i18n="footer.copyright">CrossBlocks © 2025 — Wargame tactique LEGO gratuit</span>
  </footer>
 
  <!-- ═══ Panneau Admin ═══ -->
  <div id="adminPanel" class="admin-overlay" style="display:none">
  <div class="admin-panel">
  <div class="admin-header">
- <h2> Panneau Admin</h2>
+ <h2 data-i18n="admin.title"> Panneau Admin</h2>
  <button class="btn-close" onclick="closeAdmin()"></button>
  </div>
  <div class="admin-tabs">
- <button class="btn btn-admtab active" onclick="switchAdminTab('config',this)"> Config</button>
- <button class="btn btn-admtab" onclick="switchAdminTab('pending',this)"> Propositions</button>
- <button class="btn btn-admtab" onclick="switchAdminTab('creations',this)"> Créations</button>
- <button class="btn btn-admtab" onclick="switchAdminTab('users',this)"> Utilisateurs</button>
- <button class="btn btn-admtab" onclick="switchAdminTab('sync',this)"> Import/Export</button>
- <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)"> Balance</button>
+ <button class="btn btn-admtab active" onclick="switchAdminTab('config',this)" data-i18n="admin.config"> Config</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('pending',this)" data-i18n="admin.proposals"> Propositions</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('creations',this)" data-i18n="admin.creations"> Créations</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('users',this)" data-i18n="admin.users"> Utilisateurs</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('sync',this)" data-i18n="admin.sync"> Import/Export</button>
+ <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)" data-i18n="admin.balance"> Balance</button>
  </div>
  <div class="admin-body" id="admin-config">
- <h3>Thèmes disponibles</h3>
+ <h3 data-i18n="admin.themes_title">Thèmes disponibles</h3>
  <div id="adminThemes"></div>
- <h3>Armes et statistiques</h3>
+ <h3 data-i18n="admin.weapons_title">Armes et statistiques</h3>
  <div id="adminWeapons"></div>
  </div>
  <div class="admin-body" id="admin-pending" style="display:none">
@@ -430,17 +486,87 @@
 
 
 <script>
-// ═══ AUTH SYSTEM WITH JSONBIN.IO SYNC ═══
+// ═══ I18N SYSTEM (FR/EN) ═══
+window.I18N=(function(){
+  var translations={};
+  var currentLang=localStorage.getItem('cb_lang')||'fr';
+  var originalTexts={}; // cache original FR texts as fallback
+
+  function loadTranslations(cb){
+    fetch('translations.json')
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(function(data){translations=data;applyLang(currentLang);if(cb)cb();})
+      .catch(function(err){console.warn('translations.json not loaded:',err.message);if(cb)cb();});
+  }
+
+  function t(key){
+    if(translations[currentLang]&&translations[currentLang][key])return translations[currentLang][key];
+    if(translations.fr&&translations.fr[key])return translations.fr[key];
+    return key;
+  }
+
+  function applyLang(lang){
+    currentLang=lang;
+    localStorage.setItem('cb_lang',lang);
+    document.documentElement.lang=lang;
+    var sel=document.getElementById('lang-switch');if(sel)sel.value=lang;
+    if(!translations[lang])return;
+    // Apply to elements with data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var key=el.getAttribute('data-i18n');
+      var val=t(key);
+      if(val&&val!==key){
+        if(val.indexOf('<')>=0)el.innerHTML=val;
+        else el.textContent=val;
+      }
+    });
+    // Placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+      var key=el.getAttribute('data-i18n-placeholder');var val=t(key);
+      if(val&&val!==key)el.setAttribute('placeholder',val);
+    });
+    // Titles (tooltips)
+    document.querySelectorAll('[data-i18n-title]').forEach(function(el){
+      var key=el.getAttribute('data-i18n-title');var val=t(key);
+      if(val&&val!==key)el.setAttribute('title',val);
+    });
+  }
+
+  window.setLang=function(lang){applyLang(lang);};
+  window.t=t;
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){loadTranslations();});
+  else loadTranslations();
+
+  return{t:t,setLang:applyLang,getLang:function(){return currentLang;},load:loadTranslations};
+})();
+</script>
+
+
+<script>
+// ═══ AUTH SYSTEM WITH JSONBIN.IO SYNC + SHA-256 + VERSIONING ═══
 window.CB=(function(){
-  // ─── JSONBin config ───
+  function _t(k,f){return(typeof t==='function'?t(k):null)||f;}
+  // ─── JSONBin config (Access Key restricted to this bin only) ───
   var BIN_ID='69d5251036566621a889f31c';
-  var API_KEY='$2a$10$CVqFqG6ENUvnIME732d6beac0tzxDUr4yv4TJwyFEnEWA4ih6OnZa';
+  var ACCESS_KEY='$2a$10$74Cd9Zz3V7836e.FaYcJK.ngSI/o6TQ87C8EzBy6mtrxCF0nZOeQC';
   var BIN_URL='https://api.jsonbin.io/v3/b/'+BIN_ID;
 
+  // ─── SHA-256 password hashing ───
+  async function hashPassword(pwd){
+    try{
+      var enc=new TextEncoder().encode(pwd);
+      var hash=await crypto.subtle.digest('SHA-256',enc);
+      return Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+    }catch(e){console.error('hash error',e);return 'plain:'+pwd;}
+  }
+  function isHashed(p){return typeof p==='string'&&p.length===64&&/^[a-f0-9]+$/.test(p);}
+
   // ─── Local cache (updated from remote) ───
-  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{}};
+  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{},version:0};
   var remoteReady=false;
   var syncStatus='En attente...';
+  var pushPending=false;
 
   function setStatus(msg){
     syncStatus=msg;
@@ -451,51 +577,112 @@ window.CB=(function(){
   // Fetch from JSONBin
   function fetchRemote(cb){
     setStatus('Chargement distant...');
-    fetch(BIN_URL+'/latest',{headers:{'X-Master-Key':API_KEY,'X-Bin-Meta':'false'}})
+    fetch(BIN_URL+'/latest',{headers:{'X-Access-Key':ACCESS_KEY,'X-Bin-Meta':'false'}})
       .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
       .then(function(data){
-        // JSONBin returns the record directly when X-Bin-Meta:false
         cache=data||cache;
         if(!cache.accounts)cache.accounts={};
         if(!cache.allusers)cache.allusers=[];
         if(!cache.validated)cache.validated={units:[],weapons:[],factions:[]};
         if(!cache.submissions)cache.submissions=[];
         if(!cache.userData)cache.userData={};
+        if(typeof cache.version!=='number')cache.version=0;
         remoteReady=true;
-        setStatus('Synchronise ('+new Date().toLocaleTimeString()+')');
+        setStatus('Sync OK v'+cache.version+' ('+new Date().toLocaleTimeString()+')');
         if(cb)cb();
       })
       .catch(function(err){
         console.error('JSONBin fetch error:',err);
         setStatus('ERREUR: '+err.message+' (mode local)');
         remoteReady=false;
-        // Fallback: load from localStorage
         try{var local=localStorage.getItem('cb_cache');if(local)cache=JSON.parse(local);}catch(e){}
         if(cb)cb();
       });
   }
 
-  // Push to JSONBin (debounced)
+  // Merge two cache objects (for conflict resolution)
+  function mergeData(local,remote){
+    var merged={
+      accounts:{},
+      allusers:[],
+      validated:{units:[],weapons:[],factions:[]},
+      submissions:[],
+      userData:{},
+      version:Math.max(local.version||0,remote.version||0)
+    };
+    // Accounts: union (remote wins on conflict)
+    for(var k in local.accounts)merged.accounts[k]=local.accounts[k];
+    for(var k2 in remote.accounts)merged.accounts[k2]=remote.accounts[k2];
+    // Users list: union
+    var us={};(local.allusers||[]).forEach(function(u){us[u]=1;});(remote.allusers||[]).forEach(function(u){us[u]=1;});
+    merged.allusers=Object.keys(us);
+    // Validated: union by name
+    ['units','weapons','factions'].forEach(function(t){
+      var seen={};
+      ((local.validated||{})[t]||[]).forEach(function(it){var k=it.name||it.n;if(!seen[k]){seen[k]=1;merged.validated[t].push(it);}});
+      ((remote.validated||{})[t]||[]).forEach(function(it){var k=it.name||it.n;if(!seen[k]){seen[k]=1;merged.validated[t].push(it);}});
+    });
+    // Submissions: concat (append all from both)
+    var subSeen={};
+    (local.submissions||[]).forEach(function(s){var k=s.user+'|'+s.type+'|'+(s.data.name||s.data.n)+'|'+s.date;if(!subSeen[k]){subSeen[k]=1;merged.submissions.push(s);}});
+    (remote.submissions||[]).forEach(function(s){var k=s.user+'|'+s.type+'|'+(s.data.name||s.data.n)+'|'+s.date;if(!subSeen[k]){subSeen[k]=1;merged.submissions.push(s);}});
+    // UserData: union by login, inner union by name
+    var allLogins={};for(var l in(local.userData||{}))allLogins[l]=1;for(var l2 in(remote.userData||{}))allLogins[l2]=1;
+    for(var login in allLogins){
+      var lu=(local.userData||{})[login]||{};
+      var ru=(remote.userData||{})[login]||{};
+      var ud={units:[],weapons:[],factions:[],submitted:lu.submitted||ru.submitted||{units:[],weapons:[],factions:[]}};
+      ['units','weapons','factions'].forEach(function(t){
+        var s={};
+        (lu[t]||[]).forEach(function(it){var k=it.name||it.n;if(!s[k]){s[k]=1;ud[t].push(it);}});
+        (ru[t]||[]).forEach(function(it){var k=it.name||it.n;if(!s[k]){s[k]=1;ud[t].push(it);}});
+      });
+      merged.userData[login]=ud;
+    }
+    return merged;
+  }
+
+  // Push to JSONBin with version check (anti-overwrite)
   var pushTimer=null;
   function pushRemote(){
     if(pushTimer)clearTimeout(pushTimer);
     pushTimer=setTimeout(function(){
-      setStatus('Sauvegarde...');
-      // Save local backup first
+      if(pushPending)return;
+      pushPending=true;
+      setStatus('Verification...');
       try{localStorage.setItem('cb_cache',JSON.stringify(cache));}catch(e){}
-      fetch(BIN_URL,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
-        body:JSON.stringify(cache)
-      })
+      // Fetch latest first to detect concurrent changes
+      fetch(BIN_URL+'/latest',{headers:{'X-Access-Key':ACCESS_KEY,'X-Bin-Meta':'false'}})
+        .then(function(r){return r.json();})
+        .then(function(remote){
+          var remoteVer=(remote&&typeof remote.version==='number')?remote.version:0;
+          var localVer=cache.version||0;
+          if(remoteVer>localVer){
+            setStatus('Conflit, fusion...');
+            cache=mergeData(cache,remote);
+          }
+          cache.version=Math.max(remoteVer,localVer)+1;
+          return fetch(BIN_URL,{
+            method:'PUT',
+            headers:{'Content-Type':'application/json','X-Access-Key':ACCESS_KEY},
+            body:JSON.stringify(cache)
+          });
+        })
         .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-        .then(function(){setStatus('Sauvegarde OK ('+new Date().toLocaleTimeString()+')');})
-        .catch(function(err){console.error('JSONBin push error:',err);setStatus('Erreur sauvegarde: '+err.message);});
+        .then(function(){
+          setStatus('Sauvegarde OK v'+cache.version+' ('+new Date().toLocaleTimeString()+')');
+          pushPending=false;
+        })
+        .catch(function(err){
+          console.error('Push error:',err);
+          setStatus('Erreur: '+err.message);
+          pushPending=false;
+        });
     },500);
   }
 
-  // ─── Data accessors (work on cache, sync on change) ───
-  function getAccounts(){var a={};for(var k in cache.accounts)a[k]=cache.accounts[k];a['admin']={pass:'crossblocks123',isAdmin:true};return a;}
+  // ─── Data accessors (cache-based, auto-push) ───
+  function getAccounts(){var a={};for(var k in cache.accounts)a[k]=cache.accounts[k];a['admin']={pass:'crossblocks123',isAdmin:true,plain:true};return a;}
   function saveAccounts(a){var c={};for(var k in a)if(k!=='admin')c[k]=a[k];cache.accounts=c;pushRemote();}
   function getUserData(login){return cache.userData[login]||{units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}};}
   function saveUserData(login,d){cache.userData[login]=d;pushRemote();}
@@ -506,61 +693,77 @@ window.CB=(function(){
   function getAllUsers(){return cache.allusers||[];}
   function addToAllUsers(l){var u=cache.allusers=cache.allusers||[];if(u.indexOf(l)<0){u.push(l);pushRemote();}}
 
-  // ─── Session (stays local) ───
+  // ─── Session (local only) ───
   var cur=null;
   try{cur=JSON.parse(localStorage.getItem('cb_session')||'null');}catch(e){}
   function saveSession(s){try{localStorage.setItem('cb_session',JSON.stringify(s));}catch(e){}}
 
   function ui(){
-    var lb=document.getElementById('auth-login'),lg=document.getElementById('auth-logged'),nm=document.getElementById('auth-username'),bg=document.getElementById('auth-badge'),ab=document.getElementById('admin-btn'),na=document.getElementById('nav-admin-link');
+    var lb=document.getElementById('auth-login'),lg=document.getElementById('auth-logged'),nm=document.getElementById('auth-username'),bg=document.getElementById('auth-badge'),na=document.getElementById('nav-admin-link');
     if(!cur){if(lb)lb.style.display='flex';if(lg)lg.style.display='none';}
     else{if(lb)lb.style.display='none';if(lg)lg.style.display='flex';if(nm)nm.textContent=cur.login;if(bg){bg.style.display=cur.isAdmin?'inline':'none';bg.style.background='#f0c040';bg.style.color='#000';}}
-    if(ab)ab.style.display=(cur&&cur.isAdmin)?'inline-block':'none';
     if(na)na.style.display=(cur&&cur.isAdmin)?'inline':'none';
+    // Welcome banner: show if not logged in and not dismissed
+    var banner=document.getElementById('welcome-banner');
+    if(banner){
+      var dismissed=localStorage.getItem('cb_banner_dismissed')==='1';
+      banner.style.display=(!cur&&!dismissed)?'block':'none';
+    }
   }
 
-  function login(){
+  async function login(){
     var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;
-    if(!u||!p){alert('Login et mot de passe requis');return;}
+    if(!u||!p){alert(_t('alert.login_required','Login et mot de passe requis'));return;}
     u=u.trim();
-    if(!remoteReady){alert('Donnees pas encore chargees, attendez une seconde et reessayez');return;}
+    if(!remoteReady){alert(_t('alert.not_loaded','Donnees pas encore chargees, patientez'));return;}
     var a=getAccounts();
-    if(!a[u]){alert('Compte inexistant');return;}
-    if(a[u].pass!==p){alert('Mot de passe incorrect');return;}
+    if(!a[u]){alert(_t('alert.account_notfound','Compte inexistant'));return;}
+    // Admin account uses plain password (hardcoded)
+    var valid=false;
+    if(a[u].plain){valid=(a[u].pass===p);}
+    else{
+      var hashed=await hashPassword(p);
+      if(isHashed(a[u].pass)){valid=(a[u].pass===hashed);}
+      else{
+        // Legacy plain password — migrate to hash on successful login
+        valid=(a[u].pass===p);
+        if(valid){cache.accounts[u].pass=hashed;pushRemote();}
+      }
+    }
+    if(!valid){alert(_t('alert.wrong_password','Mot de passe incorrect'));return;}
     cur={login:u,isAdmin:!!a[u].isAdmin};
     saveSession(cur);ui();
     alert('Connecte: '+u+(cur.isAdmin?' (ADMIN)':''));
     setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);
   }
 
-  function register(){
+  async function register(){
     var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;
-    if(!u){alert('Login requis');return;}
+    if(!u){alert(_t('alert.login_required','Login requis'));return;}
     u=u.trim().replace(/[^a-zA-Z0-9_-]/g,'');
-    if(u.length<2){alert('Login trop court');return;}
-    if(!p||p.length<4){alert('MDP 4 car. min');return;}
-    if(u.toLowerCase()==='admin'){alert('Reserve');return;}
-    if(!remoteReady){alert('Donnees pas encore chargees, attendez une seconde');return;}
+    if(u.length<2){alert(_t('alert.login_short','Login trop court (2 car. min)'));return;}
+    if(!p||p.length<4){alert(_t('alert.pass_short','MDP 4 car. min'));return;}
+    if(u.toLowerCase()==='admin'){alert(_t('alert.login_reserved','Login reserve'));return;}
+    if(!remoteReady){alert(_t('alert.not_loaded','Donnees pas encore chargees, patientez'));return;}
     var a=getAccounts();
-    if(a[u]){alert('Login existe deja. Utilisez Connexion.');return;}
-    cache.accounts[u]={pass:p};
+    if(a[u]){alert(_t('alert.account_exists','Login existe deja'));return;}
+    var hashed=await hashPassword(p);
+    cache.accounts[u]={pass:hashed};
     if(!cache.allusers)cache.allusers=[];
     if(cache.allusers.indexOf(u)<0)cache.allusers.push(u);
     pushRemote();
     cur={login:u,isAdmin:false};
     saveSession(cur);ui();
-    alert('Compte "'+u+'" cree et sauvegarde en ligne !');
+    alert('Compte "'+u+'" cree (MDP hashe SHA-256) !');
     setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);
   }
 
   function logout(){cur=null;localStorage.removeItem('cb_session');ui();location.reload();}
-  function req(){if(cur)return true;alert('Connectez-vous ou creez un compte');var el=document.getElementById('auth-user');if(el)el.focus();return false;}
+  function req(){if(cur)return true;alert(_t('alert.need_account','Connectez-vous ou creez un compte'));var el=document.getElementById('auth-user');if(el)el.focus();return false;}
   function getUser(){return cur;}
 
-  // Force refresh from remote
   function refresh(){fetchRemote(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();ui();});}
 
-  // Init: fetch then UI
   function init(){fetchRemote(function(){ui();if(cur&&typeof window.loadUserContent==='function')setTimeout(window.loadUserContent,300);});}
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
@@ -574,6 +777,7 @@ window.CB=(function(){
     getAllUsers:getAllUsers,addToAllUsers:addToAllUsers,
     getAccounts:getAccounts,saveAccounts:saveAccounts,
     updateAuthUI:ui,refresh:refresh,
+    hashPassword:hashPassword,
     getStatus:function(){return syncStatus;},
     isRemoteReady:function(){return remoteReady;}
   };
@@ -675,17 +879,17 @@ window.CB=(function(){
   function renderF(){var list=document.getElementById('custom-factions-list');if(!list)return;var u=CB.getUser();var vf=CB.getValidated().factions||[];var pf=u?(CB.getUserData(u.login).factions||[]):[];var all=vf.concat(pf);if(!all.length){list.innerHTML='';return;}list.innerHTML=all.map(function(f){return '<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;font-size:10px;border:1px solid '+f.color+';color:'+f.color+'">'+f.name+(f.validated?' OK':'')+'</span>';}).join('');var sel=document.getElementById('ed-faction');if(sel)all.forEach(function(f){if(!sel.querySelector('option[value="'+f.name+'"]')){var o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o);}});}
 
   // ═══ CREATE WEAPON ═══
-  window.createCustomWeapon=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}nm=nm.trim();
+  window.createCustomWeapon=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert(_t('alert.name_required','Nom requis'));return;}nm=nm.trim();
     if(nameExists('weapon',nm)){alert('Une arme "'+nm+'" existe deja !');return;}
     var w={key:'cw_'+Date.now(),n:nm,mun:+(document.getElementById('sgw-mun')||{}).value||1,pen:+(document.getElementById('sgw-pen')||{}).value||5,dmg:+(document.getElementById('sgw-dmg')||{}).value||1,once:(document.getElementById('sgw-once')||{}).value==='1',melee:+(document.getElementById('sgw-mel')||{}).value||0,cat1:+(document.getElementById('sgw-cat1')||{}).value||0,cat2:+(document.getElementById('sgw-cat2')||{}).value||0,catP:+(document.getElementById('sgw-catp')||{}).value||0};
     w.price=calcWeaponPrice(w);
     var d=CB.getUserData(u.login);d.weapons=d.weapons||[];d.weapons.push(w);CB.saveUserData(u.login,d);addW2S(w.key,w);renderW();alert('Arme "'+nm+'" creee ! Prix: '+w.price+'pts');};
 
   // ═══ SUBMIT WEAPON ═══
-  window.submitWeaponForValidation=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}var d=CB.getUserData(u.login);var w=(d.weapons||[]).find(function(x){return x.n===nm.trim();});if(!w){alert('Creez l\'arme d\'abord');return;}var s=CB.getSubmissions();s.push({type:'weapon',data:w,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);alert('Arme soumise !');};
+  window.submitWeaponForValidation=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert(_t('alert.name_required','Nom requis'));return;}var d=CB.getUserData(u.login);var w=(d.weapons||[]).find(function(x){return x.n===nm.trim();});if(!w){alert('Creez l\'arme d\'abord');return;}var s=CB.getSubmissions();s.push({type:'weapon',data:w,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);alert('Arme soumise !');};
 
   // ═══ FACTIONS ═══
-  window.CB_createFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}var c=(document.getElementById('fac-color')||{}).value||'#888';var ab=(document.getElementById('fac-abbr')||{}).value||nm.slice(0,3);nm=nm.trim();ab=ab.trim();
+  window.CB_createFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert(_t('alert.name_required','Nom requis'));return;}var c=(document.getElementById('fac-color')||{}).value||'#888';var ab=(document.getElementById('fac-abbr')||{}).value||nm.slice(0,3);nm=nm.trim();ab=ab.trim();
     if(nameExists('faction',nm)){alert('Faction "'+nm+'" existe deja !');return;}
     if(nameExists('faction',ab)){alert('Abreviation "'+ab+'" existe deja !');return;}
     var f={name:nm,color:c,abbr:ab,validated:false};var d=CB.getUserData(u.login);d.factions=d.factions||[];d.factions.push(f);CB.saveUserData(u.login,d);renderF();alert('Faction creee !');};
@@ -693,7 +897,7 @@ window.CB=(function(){
 
   // ═══ HOOK addCard ═══
   var origAdd=window.addCard;
-  window.addCard=function(){if(!CB.requireAccount())return;var u=CB.getUser();if(!u)return;var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim()){alert('Nom requis');return;}nm=nm.trim();
+  window.addCard=function(){if(!CB.requireAccount())return;var u=CB.getUser();if(!u)return;var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim()){alert(_t('alert.name_required','Nom requis'));return;}nm=nm.trim();
     if(nameExists('unit',nm)){alert('Une unite "'+nm+'" existe deja !');return;}
     if(origAdd)origAdd();
     // Calculate weapon cost
@@ -727,6 +931,7 @@ window.CB=(function(){
     ['admin-config','admin-pending','admin-creations','admin-balance','admin-users','admin-sync'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
     var t=document.getElementById('admin-'+tab);if(t)t.style.display='block';
     if(tab==='pending')renderAP();if(tab==='creations')renderAC();if(tab==='users')renderAU();if(tab==='config')renderACfg();
+    if(typeof I18N!=='undefined'&&I18N.setLang)I18N.setLang(I18N.getLang());
     if(btn){var tabs=btn.closest('.admin-tabs');if(tabs)tabs.querySelectorAll('.btn-admtab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
   };
 
@@ -859,7 +1064,7 @@ window.CB=(function(){
 
   // ═══ LOAD USER CONTENT ═══
   window.loadUserContent=function(){var u=CB.getUser();if(!u)return;var d=CB.getUserData(u.login);(d.weapons||[]).forEach(function(w){addW2S(w.key,w);});renderW();(d.units||[]).forEach(function(x){addU2G(x);});var v=CB.getValidated();(v.units||[]).forEach(function(x){addU2G(x);});(v.weapons||[]).forEach(function(w){addW2S(w.key||('vw_'+w.n),w);});renderF();};
-  window.promptAdmin=function(){var u=CB.getUser();if(u&&u.isAdmin){var p=document.getElementById('adminPanel');if(p)p.style.display='flex';return;}alert('Connectez-vous en admin.');};
+  window.promptAdmin=function(){var u=CB.getUser();if(u&&u.isAdmin){var p=document.getElementById('adminPanel');if(p)p.style.display='flex';return;}alert(_t('alert.admin_only','Connectez-vous en admin.'));};
   function init(){var v=CB.getValidated();(v.factions||[]).forEach(function(f){var s=document.getElementById('ed-faction');if(s&&!s.querySelector('option[value="'+f.name+'"]')){var o=document.createElement('option');o.value=f.name;o.textContent=f.name;s.appendChild(o);}});(v.weapons||[]).forEach(function(w){addW2S(w.key||('vw_'+w.n),w);});(v.units||[]).forEach(function(u){addU2G(u);});if(CB.getUser())loadUserContent();}
   if(document.readyState==='complete')setTimeout(init,500);else window.addEventListener('load',function(){setTimeout(init,500);});
 })();
