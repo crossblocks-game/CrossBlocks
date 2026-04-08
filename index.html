@@ -240,15 +240,37 @@
  </div>
 
  <div class="form-group">
- <label data-i18n="editor.image"> Image de l'unité (optionnel)</label>
- <input type="file" id="ed-image" accept="image/*" onchange="handleUnitImage(this)" style="font-size:10px">
- <div id="ed-image-preview" style="margin-top:4px;max-width:120px"></div>
+ <label data-i18n="editor.image"> Image / Icône de l'unité (optionnel)</label>
+ <div style="display:flex;gap:4px;margin-bottom:4px">
+   <button type="button" onclick="CB_switchImgTab('upload')" id="img-tab-upload" class="btn-imgtab active" style="padding:3px 10px;border:1px solid #555;background:#238636;color:#fff;font-size:10px;border-radius:3px;cursor:pointer">📁 Upload</button>
+   <button type="button" onclick="CB_switchImgTab('icons')" id="img-tab-icons" class="btn-imgtab" style="padding:3px 10px;border:1px solid #555;background:#222;color:#aaa;font-size:10px;border-radius:3px;cursor:pointer">🎨 Icônes</button>
+   <button type="button" onclick="CB_switchImgTab('crop')" id="img-tab-crop" style="padding:3px 10px;border:1px solid #555;background:#222;color:#aaa;font-size:10px;border-radius:3px;cursor:pointer;display:none">✂️ Recadrer</button>
+ </div>
+ <div id="img-panel-upload">
+   <input type="file" id="ed-image" accept="image/*" onchange="handleUnitImage(this)" style="font-size:10px">
+   <div id="ed-image-preview" style="margin-top:4px;max-width:120px"></div>
+ </div>
+ <div id="img-panel-icons" style="display:none;background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:6px;max-height:200px;overflow-y:auto">
+   <div style="font-size:10px;color:#8b949e;margin-bottom:4px">Cliquez une icône pour l'utiliser comme image</div>
+   <div id="icon-library-grid" style="display:flex;flex-wrap:wrap;gap:3px"></div>
+ </div>
+ <div id="img-panel-crop" style="display:none;background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:8px">
+   <div id="crop-container" style="position:relative;width:100%;max-width:280px;margin:0 auto;user-select:none">
+     <canvas id="crop-canvas" style="display:block;width:100%;border:1px solid #444;cursor:crosshair"></canvas>
+     <div id="crop-overlay" style="position:absolute;border:2px dashed #f0c040;box-sizing:border-box;cursor:move;pointer-events:none"></div>
+   </div>
+   <div style="display:flex;gap:4px;margin-top:6px;justify-content:center">
+     <button type="button" onclick="CB_applyCrop()" style="padding:4px 10px;background:#238636;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">✓ Appliquer</button>
+     <button type="button" onclick="CB_resetCrop()" style="padding:4px 10px;background:#6e1010;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">↺ Reset</button>
+   </div>
+ </div>
  </div>
 
  <div class="form-actions">
  <button class="btn btn-add" onclick="addCard()" data-i18n="editor.add"> Ajouter fiche d'unité</button>
  <button class="btn btn-suggest" onclick="submitUnitForValidation()" data-i18n="editor.submit"> Soumettre pour validation admin</button>
  <button class="btn btn-calc" onclick="calcPrice()" data-i18n="editor.calc"> Calculer le prix</button>
+ <button type="button" onclick="CB_showPreviewBig()" style="padding:6px 14px;background:#1f6feb;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px">🔍 Voir en grand</button>
  <button class="btn btn-secondary" onclick="clearForm()" data-i18n="editor.clear"> Vider le formulaire</button>
  </div>
  <div id="price-breakdown" class="price-breakdown" style="display:none"></div>
@@ -403,6 +425,14 @@
  </nav>
  <span data-i18n="footer.copyright">CrossBlocks © 2025 — Wargame tactique LEGO gratuit</span>
  </footer>
+
+ <!-- ═══ Preview en grand (modal) ═══ -->
+ <div id="bigPreviewModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box">
+  <div style="position:relative;max-width:600px;width:100%;max-height:90vh;overflow:auto">
+   <button onclick="document.getElementById('bigPreviewModal').style.display='none'" style="position:absolute;top:-8px;right:-8px;background:#6e1010;color:#fff;border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;z-index:2">×</button>
+   <div id="bigPreviewContent" style="background:#fff;padding:20px;border-radius:8px;transform-origin:top center"></div>
+  </div>
+ </div>
 
  <!-- ═══ Panneau Admin ═══ -->
  <div id="adminPanel" class="admin-overlay" style="display:none">
@@ -1060,6 +1090,221 @@ window.CB=(function(){
         alert('Donnees importees et fusionnees ! Rechargez.');
       }catch(err){alert('Erreur: '+err.message);}
     };r.readAsText(file);
+  };
+
+  // ════════════════════════════════════════════════════════════
+  // ═══ PASSE 3 — ÉDITEUR AMÉLIORÉ ═══
+  // ════════════════════════════════════════════════════════════
+
+  // ─── #11 Bibliothèque d'icônes ───
+  var ICON_LIBRARY=[
+    '🪖','🎖','⭐','👑','🛡','⚔','🗡','🏹','🔫','💣','🧨','🔥',
+    '🤖','🦾','🦿','🕷','👾','💀','☠','👻','🎃','😈',
+    '🚀','✈','🚁','🛸','🚜','🚗','🛻','🛰','⚓','🛶',
+    '🦅','🦇','🐺','🐻','🦁','🐯','🐉','🐍','🦂','🕸',
+    '✊','🤜','🦿','🪂','⛑','🎯','🏴','🏳','🏁','⚡',
+    '🌟','💥','🌪','🌊','❄','🔱','⚙','🔧','🧬','🔬'
+  ];
+
+  function buildIconLibrary(){
+    var grid=document.getElementById('icon-library-grid');
+    if(!grid||grid.children.length)return;
+    ICON_LIBRARY.forEach(function(icon){
+      var btn=document.createElement('button');
+      btn.type='button';
+      btn.textContent=icon;
+      btn.style.cssText='width:36px;height:36px;font-size:22px;background:#161b22;border:1px solid #30363d;border-radius:4px;cursor:pointer;padding:0';
+      btn.onmouseenter=function(){btn.style.background='#1f2937';btn.style.borderColor='#f0c040';};
+      btn.onmouseleave=function(){btn.style.background='#161b22';btn.style.borderColor='#30363d';};
+      btn.onclick=function(){CB_selectIcon(icon);};
+      grid.appendChild(btn);
+    });
+  }
+
+  window.CB_selectIcon=function(icon){
+    // Render icon as a data URL (SVG with emoji text)
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#1a1a2e"/><text x="60" y="85" font-size="80" text-anchor="middle" fill="#e6edf3">'+icon+'</text></svg>';
+    var dataUrl='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svg)));
+    pendingImage=dataUrl;
+    var prev=document.getElementById('ed-image-preview');
+    if(prev)prev.innerHTML='<div style="display:inline-block;padding:6px;background:#1a1a2e;border:1px solid #f0c040;border-radius:4px;font-size:40px">'+icon+'</div>';
+    if(typeof updatePreview==='function')updatePreview();
+  };
+
+  // ─── Tabs pour les modes d'image ───
+  window.CB_switchImgTab=function(tab){
+    ['upload','icons','crop'].forEach(function(t){
+      var panel=document.getElementById('img-panel-'+t);
+      var btn=document.getElementById('img-tab-'+t);
+      if(panel)panel.style.display=(t===tab)?'block':'none';
+      if(btn){btn.style.background=(t===tab)?'#238636':'#222';btn.style.color=(t===tab)?'#fff':'#aaa';}
+    });
+    if(tab==='icons')buildIconLibrary();
+    if(tab==='crop')initCropTool();
+  };
+
+  // ─── #10 Cropper d'image ───
+  var cropState={img:null,x:0,y:0,w:0,h:0,dragging:false,startX:0,startY:0};
+
+  function initCropTool(){
+    var canvas=document.getElementById('crop-canvas');
+    var overlay=document.getElementById('crop-overlay');
+    if(!canvas||!pendingImage){
+      var tab=document.getElementById('img-tab-crop');
+      if(tab)tab.style.display='none';
+      alert('Chargez d\'abord une image via Upload');
+      CB_switchImgTab('upload');
+      return;
+    }
+    var img=new Image();
+    img.onload=function(){
+      cropState.img=img;
+      var maxW=280;
+      var scale=Math.min(1,maxW/img.width);
+      canvas.width=img.width*scale;
+      canvas.height=img.height*scale;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      // Initial crop box = center square
+      var size=Math.min(canvas.width,canvas.height)*0.8;
+      cropState.x=(canvas.width-size)/2;
+      cropState.y=(canvas.height-size)/2;
+      cropState.w=size;
+      cropState.h=size;
+      updateCropOverlay();
+    };
+    img.src=pendingImage;
+    // Drag handlers
+    canvas.onmousedown=function(e){
+      var r=canvas.getBoundingClientRect();
+      cropState.startX=(e.clientX-r.left)*(canvas.width/r.width);
+      cropState.startY=(e.clientY-r.top)*(canvas.height/r.height);
+      cropState.dragging=true;
+      cropState.x=cropState.startX;
+      cropState.y=cropState.startY;
+      cropState.w=0;cropState.h=0;
+    };
+    canvas.onmousemove=function(e){
+      if(!cropState.dragging)return;
+      var r=canvas.getBoundingClientRect();
+      var mx=(e.clientX-r.left)*(canvas.width/r.width);
+      var my=(e.clientY-r.top)*(canvas.height/r.height);
+      cropState.w=mx-cropState.startX;
+      cropState.h=my-cropState.startY;
+      updateCropOverlay();
+    };
+    canvas.onmouseup=canvas.onmouseleave=function(){cropState.dragging=false;};
+  }
+
+  function updateCropOverlay(){
+    var canvas=document.getElementById('crop-canvas');
+    var overlay=document.getElementById('crop-overlay');
+    if(!canvas||!overlay)return;
+    var r=canvas.getBoundingClientRect();
+    var sx=r.width/canvas.width,sy=r.height/canvas.height;
+    var x=cropState.x*sx,y=cropState.y*sy,w=cropState.w*sx,h=cropState.h*sy;
+    if(w<0){x+=w;w=-w;}
+    if(h<0){y+=h;h=-h;}
+    overlay.style.left=x+'px';
+    overlay.style.top=y+'px';
+    overlay.style.width=w+'px';
+    overlay.style.height=h+'px';
+  }
+
+  window.CB_applyCrop=function(){
+    if(!cropState.img||cropState.w===0||cropState.h===0){alert('Dessinez d\'abord une zone sur l\'image');return;}
+    var canvas=document.getElementById('crop-canvas');
+    var scale=cropState.img.width/canvas.width;
+    var sx=Math.abs(cropState.w<0?cropState.x+cropState.w:cropState.x)*scale;
+    var sy=Math.abs(cropState.h<0?cropState.y+cropState.h:cropState.y)*scale;
+    var sw=Math.abs(cropState.w)*scale;
+    var sh=Math.abs(cropState.h)*scale;
+    var out=document.createElement('canvas');
+    out.width=sw;out.height=sh;
+    out.getContext('2d').drawImage(cropState.img,sx,sy,sw,sh,0,0,sw,sh);
+    pendingImage=out.toDataURL('image/png');
+    var prev=document.getElementById('ed-image-preview');
+    if(prev)prev.innerHTML='<img src="'+pendingImage+'" style="max-width:120px;max-height:80px;border-radius:4px;border:1px solid #f0c040">';
+    if(typeof updatePreview==='function')updatePreview();
+    alert('Image recadrée !');
+    CB_switchImgTab('upload');
+  };
+
+  window.CB_resetCrop=function(){
+    var canvas=document.getElementById('crop-canvas');
+    if(!canvas||!cropState.img)return;
+    canvas.getContext('2d').drawImage(cropState.img,0,0,canvas.width,canvas.height);
+    cropState.w=0;cropState.h=0;
+    updateCropOverlay();
+  };
+
+  // Show crop tab only when an image is loaded
+  var origHandleImage=window.handleUnitImage;
+  window.handleUnitImage=function(input){
+    if(origHandleImage)origHandleImage(input);
+    setTimeout(function(){
+      var tab=document.getElementById('img-tab-crop');
+      if(tab&&pendingImage)tab.style.display='inline-block';
+    },300);
+  };
+
+  // ─── #9 Prévisualisation grand format ───
+  window.CB_showPreviewBig=function(){
+    var src=document.getElementById('card-preview');
+    var modal=document.getElementById('bigPreviewModal');
+    var content=document.getElementById('bigPreviewContent');
+    if(!src||!modal||!content){alert('Preview introuvable');return;}
+    content.innerHTML=src.outerHTML;
+    var clone=content.querySelector('#card-preview');
+    if(clone){
+      clone.id='card-preview-big';
+      clone.style.transform='scale(2)';
+      clone.style.transformOrigin='top center';
+      clone.style.margin='0 auto 300px';
+    }
+    modal.style.display='flex';
+  };
+
+  // ─── #12 Duplication de fiche ───
+  window.CB_duplicateUnit=function(unitName){
+    var u=CB.getUser();if(!u){alert('Connectez-vous');return;}
+    var d=CB.getUserData(u.login);
+    var orig=(d.units||[]).find(function(x){return x.name===unitName;});
+    if(!orig){alert('Unité introuvable');return;}
+    var newName=prompt('Nom de la copie:',unitName+' (copie)');
+    if(!newName||!newName.trim())return;
+    newName=newName.trim();
+    if((d.units||[]).some(function(x){return x.name===newName;})){alert('Ce nom existe déjà');return;}
+    var copy=JSON.parse(JSON.stringify(orig));
+    copy.name=newName;
+    copy.date=new Date().toISOString().slice(0,10);
+    d.units.push(copy);
+    CB.saveUserData(u.login,d);
+    addU2G(copy);
+    // Also pre-fill the editor form with the copy's data
+    var f={'ed-name':newName,'ed-faction':copy.faction,'ed-points':copy.basePts||copy.pts,'ed-hp':copy.hp,'ed-armor':copy.arm,'ed-move':copy.mm,'ed-pa':copy.pa};
+    for(var k in f){var el=document.getElementById(k);if(el)el.value=f[k];}
+    if(copy.image){pendingImage=copy.image;var prev=document.getElementById('ed-image-preview');if(prev)prev.innerHTML='<img src="'+copy.image+'" style="max-width:120px;max-height:80px;border-radius:4px;border:1px solid #f0c040">';}
+    if(typeof updatePreview==='function')updatePreview();
+    alert('Fiche dupliquée ! Modifiez et cliquez "Ajouter fiche d\'unité"');
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+
+  // Hook addU2G to add duplicate button
+  var origAddU2G=addU2G;
+  addU2G=function(u){
+    origAddU2G(u);
+    setTimeout(function(){
+      var card=document.querySelector('.gallery-card[data-uname="'+u.name+'"]');
+      if(card&&!card.querySelector('.btn-duplicate')){
+        var btn=document.createElement('button');
+        btn.className='btn-duplicate';
+        btn.textContent='⎘ Dupliquer';
+        btn.style.cssText='margin-top:3px;padding:2px 6px;font-size:9px;background:#1f6feb;color:#fff;border:none;border-radius:3px;cursor:pointer;width:100%';
+        btn.onclick=function(e){e.stopPropagation();CB_duplicateUnit(u.name);};
+        card.appendChild(btn);
+      }
+    },50);
   };
 
   // ═══ LOAD USER CONTENT ═══
