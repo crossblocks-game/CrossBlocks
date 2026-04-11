@@ -919,6 +919,27 @@ window.CB=(function(){
     return Math.max(10,price);
   };
 
+  // ═══ OVERRIDE calcPrice to include weapons ═══
+  window.calcPrice=function(){
+    var basePts=+((document.getElementById('ed-points')||{}).value)||0;
+    var checks=document.querySelectorAll('#weapon-selector input:checked');
+    var wCost=0;var detail=[];
+    checks.forEach(function(c){
+      var inf=c.parentElement?c.parentElement.querySelector('.wo-info'):null;
+      var nm=c.parentElement?c.parentElement.querySelector('.wo-name'):null;
+      if(inf){var m=inf.textContent.match(/(\d+)pts/);if(m){var p=parseInt(m[1]);wCost+=p;detail.push((nm?nm.textContent:'?')+': '+p+'pts');}}
+    });
+    var total=basePts+wCost;
+    var bd=document.getElementById('price-breakdown');
+    if(bd){
+      bd.style.display='block';
+      bd.innerHTML='<div style="color:#f0c040;font-size:11px;padding:6px;background:#1a1a2e;border-radius:4px;margin-top:4px"><b>Base unité: '+basePts+'pts</b><br>'+(detail.length?detail.join('<br>')+'<br>':'Aucune arme<br>')+'<b style="color:#3fb950">Total: '+total+'pts</b></div>';
+    }
+    // Also update the displayed points in the preview
+    if(typeof updatePreview==='function')updatePreview();
+    return total;
+  };
+
   // ═══ HOOK updatePreview to add weapon prices and image ═══
   var origUpdatePreview=window.updatePreview;
   window.updatePreview=function(){
@@ -1309,7 +1330,7 @@ window.CB=(function(){
     h+='</table>';
     d.innerHTML=h;
   }
-  window.CB_editUser=function(login){var np=prompt('Nouveau MDP pour '+login+':');if(!np||np.length<4){alert('4 car. min');return;}var a=CB.getAccounts();if(a[login]){a[login].pass=np;CB.saveAccounts(a);alert('MDP modifie');}};
+  window.CB_editUser=async function(login){var np=prompt('Nouveau MDP pour '+login+':');if(!np||np.length<4){alert('4 car. min');return;}var hashed=await CB.hashPassword(np);var a=CB.getAccounts();if(a[login]){a[login].pass=hashed;CB.saveAccounts(a);CB.logHistory('edit','account',login,'MDP modifié');alert('MDP modifié et hashé !');}};
   window.CB_delUser=function(login){if(!confirm('Supprimer le compte '+login+' et toutes ses donnees ?'))return;var a=CB.getAccounts();delete a[login];CB.saveAccounts(a);localStorage.removeItem('cb_data_'+login);var u=CB.getAllUsers();var idx=u.indexOf(login);if(idx>=0){u.splice(idx,1);localStorage.setItem('cb_allusers',JSON.stringify(u));}renderAU();alert('Supprime');};
 
   // ═══ EXPORT / IMPORT ═══
@@ -1504,20 +1525,25 @@ window.CB=(function(){
     },300);
   };
 
-  // ─── #9 Prévisualisation grand format ───
+  // ─── #9 Prévisualisation grand format (fixée) ───
   window.CB_showPreviewBig=function(){
     var src=document.getElementById('card-preview');
     var modal=document.getElementById('bigPreviewModal');
     var content=document.getElementById('bigPreviewContent');
     if(!src||!modal||!content){alert('Preview introuvable');return;}
-    content.innerHTML=src.outerHTML;
-    var clone=content.querySelector('#card-preview');
-    if(clone){
-      clone.id='card-preview-big';
-      clone.style.transform='scale(2)';
-      clone.style.transformOrigin='top center';
-      clone.style.margin='0 auto 300px';
-    }
+    // Clone the node and strip all IDs to avoid duplicates in DOM
+    var clone=src.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(function(e){e.removeAttribute('id');});
+    // Use zoom instead of transform:scale so layout reserves real space
+    clone.style.zoom='1.8';
+    clone.style.margin='0 auto';
+    clone.style.display='block';
+    content.innerHTML='';
+    content.appendChild(clone);
+    content.style.padding='30px';
+    content.style.background='#fff';
+    content.style.borderRadius='8px';
     modal.style.display='flex';
   };
 
