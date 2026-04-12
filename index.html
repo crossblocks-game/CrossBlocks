@@ -56,7 +56,6 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="themes.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="config.js"></script>
 </head>
 <body>
@@ -342,7 +341,7 @@
  <div class="cards-actions">
  <span id="card-count" class="card-counter">0 fiche(s)</span>
  <span id="army-total" class="army-total"></span>
- <button class="btn btn-export" onclick="openPDFModal()" id="btn-export" disabled data-i18n="cards.export">📄 Exporter PDF</button>
+ <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled data-i18n="cards.export"> Exporter PDF</button>
  <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none" data-i18n="cards.clear_all"> Tout supprimer</button>
  </div>
  </div>
@@ -466,7 +465,6 @@
  <button class="btn btn-admtab" onclick="switchAdminTab('sync',this)" data-i18n="admin.sync"> Import/Export</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('history',this)" data-i18n="admin.history">📜 Historique</button>
  <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)" data-i18n="admin.balance"> Balance</button>
- <button class="btn btn-admtab" id="admin-dash-tab" style="display:none" onclick="switchAdminTab('dashboard',this)">📊 Dashboard</button>
  </div>
  <div class="admin-body" id="admin-config">
  <h3 data-i18n="admin.themes_title">Thèmes disponibles</h3>
@@ -546,29 +544,6 @@
  </div>
  </div>
  </div>
- </div>
- <div class="admin-body" id="admin-dashboard" style="display:none">
-  <h3>📊 Dashboard — Statistiques</h3>
-  <p class="admin-desc">Activité de la communauté CrossBlocks : créations, utilisateurs actifs, armes populaires.</p>
-  <div id="dash-kpis" style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
-   <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px">
-    <div style="font-size:11px;color:#f0c040;font-weight:700;margin-bottom:8px">📅 Unités créées par jour (30j)</div>
-    <canvas id="dash-chart-daily" height="160"></canvas>
-   </div>
-   <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px">
-    <div style="font-size:11px;color:#f0c040;font-weight:700;margin-bottom:8px">🔫 Armes les plus utilisées</div>
-    <canvas id="dash-chart-weapons" height="160"></canvas>
-   </div>
-   <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px">
-    <div style="font-size:11px;color:#f0c040;font-weight:700;margin-bottom:8px">👥 Créations par utilisateur</div>
-    <canvas id="dash-chart-users" height="160"></canvas>
-   </div>
-   <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px">
-    <div style="font-size:11px;color:#f0c040;font-weight:700;margin-bottom:8px">🏳 Répartition par faction</div>
-    <canvas id="dash-chart-factions" height="160"></canvas>
-   </div>
-  </div>
  </div>
 
 </div>
@@ -934,52 +909,58 @@ window.CB=(function(){
 (function(){
   // ═══ WEAPON PRICE FORMULA ═══
   window.calcWeaponPrice=function(w){
-    var acc=0,nr=0;
-    if(w.melee&&w.melee>0){acc+=(21-w.melee);nr++;}
-    if(w.cat1&&w.cat1>0){acc+=(21-w.cat1);nr++;}
-    if(w.cat2&&w.cat2>0){acc+=(21-w.cat2);nr++;}
-    if(w.catP&&w.catP>0){acc+=(21-w.catP);nr++;}
-    var d=w.dMax||w.dmg||1;
-    var price=Math.round((w.mun||1)*5 + acc*3 + (w.pen||0)*3 + d*12 + (w.once?-20:0) + nr*5);
-    return Math.max(10,price);
+    // === FORMULE CROSSBLOCKS v2 (calibrée fusil_b=100pts) ===
+    // Utilise le champ price pré-calculé si disponible
+    if(w.price && w.price>0) return w.price;
+    // Munitions avec rendements décroissants
+    var eMun=Math.pow(w.mun||1, 0.85);
+    // Meilleure proba de toucher + analyse portées
+    var bestHitP=0, nBands=0, hasMelee=false, hasCatP=false;
+    [{b:'melee',v:w.melee},{b:'cat1',v:w.cat1},{b:'cat2',v:w.cat2},{b:'catP',v:w.catP}].forEach(function(x){
+      if(!x.v||x.v<=0)return;
+      nBands++;
+      if(x.b==='melee')hasMelee=true;
+      if(x.b==='catP')hasCatP=true;
+      var h=Math.max(0,(21-x.v)/20);
+      if(h>bestHitP)bestHitP=h;
+    });
+    if(bestHitP<=0)return 20;
+    // Dégâts moyens
+    var dmg=w.dMax||w.dmg||1;
+    if(typeof dmg==='string'){var p=dmg.split('-');dmg=(parseInt(p[0])+parseInt(p[1]))/2;}
+    // Score offensif de base
+    var base=eMun*bestHitP*dmg;
+    // Multiplicateur pénétration (+15% par point)
+    var penMult=1+(w.pen||0)*0.15;
+    // Bonus polyvalence portée
+    var rangeMult=1.0;
+    if(hasCatP)rangeMult+=0.20;   // portée longue précieuse
+    if(hasMelee)rangeMult+=0.10;  // option mêlée = flexibilité
+    if(nBands>=3)rangeMult+=0.10; // couvre 3+ portées
+    // Malus arme non récupérable (ne peut pas tomber au sol)
+    var onceMult=(w.once)?0.75:1.0;
+    // SCALE=70 calé sur fusil_b=100pts
+    var raw=base*penMult*rangeMult*onceMult*70;
+    return Math.max(20,Math.round(raw/10)*10);
   };
 
-  // ═══ OVERRIDE calcPrice to include weapons (fix: counter-based + checkbox) ═══
+  // ═══ OVERRIDE calcPrice to include weapons ═══
   window.calcPrice=function(){
     var basePts=+((document.getElementById('ed-points')||{}).value)||0;
-    var wCost=0;var detail=[];
-
-    // 1. Counter-based weapons (selectedWeapons from script.js)
-    if(typeof selectedWeapons!=='undefined' && selectedWeapons.length>0){
-      var wCounts={};
-      selectedWeapons.forEach(function(n){wCounts[n]=(wCounts[n]||0)+1;});
-      Object.keys(wCounts).forEach(function(n){
-        var w=CONFIG.weapons[n]; if(!w)return;
-        var p=calcWeaponPrice(w)*wCounts[n];
-        wCost+=p;
-        detail.push((wCounts[n]>1?wCounts[n]+'× ':'')+n+': '+p+'pts');
-      });
-    }
-
-    // 2. Checkbox-based custom weapons (added via addW2S)
     var checks=document.querySelectorAll('#weapon-selector input:checked');
+    var wCost=0;var detail=[];
     checks.forEach(function(c){
       var inf=c.parentElement?c.parentElement.querySelector('.wo-info'):null;
       var nm=c.parentElement?c.parentElement.querySelector('.wo-name'):null;
       if(inf){var m=inf.textContent.match(/(\d+)pts/);if(m){var p=parseInt(m[1]);wCost+=p;detail.push((nm?nm.textContent:'?')+': '+p+'pts');}}
     });
-
     var total=basePts+wCost;
     var bd=document.getElementById('price-breakdown');
     if(bd){
       bd.style.display='block';
-      var rows=detail.length?detail.map(function(d){return '<div style="color:#ccc;font-size:10px;padding:1px 0">'+d+'</div>';}).join(''):'<div style="color:#666;font-size:10px">Aucune arme sélectionnée</div>';
-      bd.innerHTML='<div style="color:#f0c040;font-size:11px;padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:6px;margin-top:6px">'
-        +'<div style="margin-bottom:4px"><b>Base unité :</b> '+basePts+' pts</div>'
-        +rows
-        +'<div style="margin-top:6px;padding-top:4px;border-top:1px solid #30363d"><b style="color:#3fb950;font-size:12px">Total : '+total+' pts</b>'+(wCost>0?' <span style="color:#888;font-size:9px">('+basePts+' + '+wCost+' armes)</span>':'')+'</div>'
-        +'</div>';
+      bd.innerHTML='<div style="color:#f0c040;font-size:11px;padding:6px;background:#1a1a2e;border-radius:4px;margin-top:4px"><b>Base unité: '+basePts+'pts</b><br>'+(detail.length?detail.join('<br>')+'<br>':'Aucune arme<br>')+'<b style="color:#3fb950">Total: '+total+'pts</b></div>';
     }
+    // Also update the displayed points in the preview
     if(typeof updatePreview==='function')updatePreview();
     return total;
   };
@@ -1635,373 +1616,7 @@ window.CB=(function(){
 
   // ═══ LOAD USER CONTENT ═══
   window.loadUserContent=function(){var u=CB.getUser();if(!u)return;var d=CB.getUserData(u.login);(d.weapons||[]).forEach(function(w){addW2S(w.key,w);});renderW();(d.units||[]).forEach(function(x){addU2G(x);});var v=CB.getValidated();(v.units||[]).forEach(function(x){addU2G(x);});(v.weapons||[]).forEach(function(w){addW2S(w.key||('vw_'+w.n),w);});renderF();refreshCreatorFilter();};
-
-  // ═══════════════════════════════════════════════
-  // ── #23 DASHBOARD ADMIN (Chart.js) ─────────────
-  // ═══════════════════════════════════════════════
-  var _dashCharts = {};
-  function _destroyChart(id){if(_dashCharts[id]){_dashCharts[id].destroy();delete _dashCharts[id];}}
-
-  window.renderDashboard = function(){
-    if(typeof Chart==='undefined'){
-      var s=document.getElementById('dash-kpis');
-      if(s)s.innerHTML='<p style="color:#f85149;font-size:11px">Chart.js non chargé.</p>';
-      return;
-    }
-    // ── Collect data ──
-    var users=CB.getAllUsers();
-    var hist=CB.getHistory();
-    var allUnits=[];
-    users.forEach(function(l){var d=CB.getUserData(l);(d.units||[]).forEach(function(u){allUnits.push({...u,creator:l});});});
-    var validated=(CB.getValidated().units||[]);
-
-    // KPIs
-    var totalUnits=allUnits.length+validated.length;
-    var totalUsers=users.length;
-    var totalActions=hist.length;
-    var totalSubmissions=(CB.getSubmissions()||[]).length;
-    var kpiDiv=document.getElementById('dash-kpis');
-    if(kpiDiv){
-      function kpiCard(icon,val,label,color){
-        return '<div style="background:#0d1117;border:1px solid '+(color||'#30363d')+';border-radius:8px;padding:10px 16px;min-width:100px;text-align:center">'
-          +'<div style="font-size:22px;font-weight:900;color:'+(color||'#f0c040')+'">'+val+'</div>'
-          +'<div style="font-size:9px;color:#8b949e;margin-top:2px">'+icon+' '+label+'</div></div>';
-      }
-      kpiDiv.innerHTML=
-        kpiCard('',''+totalUnits,'Unités créées','#f0c040')+
-        kpiCard('',''+totalUsers,'Utilisateurs','#58a6ff')+
-        kpiCard('📤',''+totalSubmissions,'Soumissions','#3fb950')+
-        kpiCard('📜',''+totalActions,'Actions totales','#f09040');
-    }
-
-    // ── Chart 1: Units per day (last 30 days) ──
-    _destroyChart('daily');
-    var days=[];var counts=[];
-    for(var d=29;d>=0;d--){
-      var dt=new Date(); dt.setDate(dt.getDate()-d);
-      var ds=dt.toISOString().slice(0,10);
-      days.push(ds.slice(5)); // MM-DD
-      var c=0;
-      allUnits.forEach(function(u){if((u.date||'').slice(0,10)===ds)c++;});
-      validated.forEach(function(u){if((u.date||'').slice(0,10)===ds)c++;});
-      counts.push(c);
-    }
-    var ctx1=document.getElementById('dash-chart-daily');
-    if(ctx1) _dashCharts['daily']=new Chart(ctx1,{
-      type:'bar',
-      data:{labels:days,datasets:[{label:'Unités',data:counts,backgroundColor:'rgba(240,192,64,0.7)',borderColor:'#f0c040',borderWidth:1,borderRadius:3}]},
-      options:{responsive:true,plugins:{legend:{display:false}},scales:{
-        x:{ticks:{color:'#8b949e',font:{size:8},maxTicksLimit:10},grid:{color:'#21262d'}},
-        y:{ticks:{color:'#8b949e',font:{size:9},stepSize:1},grid:{color:'#21262d'},beginAtZero:true}
-      }}
-    });
-
-    // ── Chart 2: Most used weapons ──
-    _destroyChart('weapons');
-    var wCounts={};
-    allUnits.concat(validated).forEach(function(u){
-      (u.weapons||[]).forEach(function(w){wCounts[w]=(wCounts[w]||0)+1;});
-    });
-    var wEntries=Object.entries(wCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
-    var wLabels=wEntries.map(function(e){var n=e[0];return n.length>18?n.slice(0,16)+'…':n;});
-    var wVals=wEntries.map(function(e){return e[1];});
-    var ctx2=document.getElementById('dash-chart-weapons');
-    if(ctx2) _dashCharts['weapons']=new Chart(ctx2,{
-      type:'bar',
-      data:{labels:wLabels,datasets:[{label:'Utilisations',data:wVals,backgroundColor:'rgba(88,166,255,0.7)',borderColor:'#58a6ff',borderWidth:1,borderRadius:3}]},
-      options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{
-        x:{ticks:{color:'#8b949e',font:{size:8}},grid:{color:'#21262d'},beginAtZero:true},
-        y:{ticks:{color:'#e6edf3',font:{size:8}},grid:{color:'#21262d'}}
-      }}
-    });
-
-    // ── Chart 3: Units per user ──
-    _destroyChart('users');
-    var uCounts={};
-    allUnits.forEach(function(u){uCounts[u.creator]=(uCounts[u.creator]||0)+1;});
-    var uEntries=Object.entries(uCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
-    var palette=['#f0c040','#58a6ff','#3fb950','#f09040','#f85149','#a5d6ff','#7ee787','#ffa657'];
-    var ctx3=document.getElementById('dash-chart-users');
-    if(ctx3) _dashCharts['users']=new Chart(ctx3,{
-      type:'doughnut',
-      data:{labels:uEntries.map(function(e){return e[0];}),
-        datasets:[{data:uEntries.map(function(e){return e[1];}),backgroundColor:palette,borderColor:'#0d1117',borderWidth:2}]},
-      options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'#e6edf3',font:{size:9},boxWidth:12}}}}
-    });
-
-    // ── Chart 4: Units by faction ──
-    _destroyChart('factions');
-    var fCounts={};
-    allUnits.concat(validated).forEach(function(u){
-      var f=u.faction||'Neutre'; fCounts[f]=(fCounts[f]||0)+1;
-    });
-    var fEntries=Object.entries(fCounts).sort(function(a,b){return b[1]-a[1];});
-    var facColors={'République':'#4488dd','Séparatistes':'#cc9966','Rebelles':'#dd5544','Empire':'#cc2222','Neutre':'#888'};
-    var ctx4=document.getElementById('dash-chart-factions');
-    if(ctx4) _dashCharts['factions']=new Chart(ctx4,{
-      type:'pie',
-      data:{labels:fEntries.map(function(e){return e[0];}),
-        datasets:[{data:fEntries.map(function(e){return e[1];}),
-          backgroundColor:fEntries.map(function(e){return facColors[e[0]]||'#555';}),
-          borderColor:'#0d1117',borderWidth:2}]},
-      options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'#e6edf3',font:{size:9},boxWidth:12}}}}
-    });
-  };
-
-  // ═══════════════════════════════════════════════
-  // ── #25 PDF MULTI-CARTES A4 ─────────────────────
-  // ── #26 EXPORT ARMÉE PDF ───────────────────────
-  // ═══════════════════════════════════════════════
-
-  // ── Modal de choix du layout PDF ──
-  window.openPDFModal = function(){
-    var existing=document.getElementById('pdf-layout-modal');
-    if(existing){existing.style.display='flex';return;}
-    var m=document.createElement('div');
-    m.id='pdf-layout-modal';
-    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center';
-    m.innerHTML=
-      '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:24px;min-width:320px;max-width:420px">'
-      +'<h3 style="color:#f0c040;margin:0 0 16px;font-size:14px">📄 Format d'export PDF</h3>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">'
-        +'<button onclick="exportMultiCardPDF(1)" class="pdf-opt-btn">📋 1 carte / page<div>A6 — Impression individuelle</div></button>'
-        +'<button onclick="exportMultiCardPDF(4)" class="pdf-opt-btn">▪️ 4 cartes / A4<div>Format recto divisé</div></button>'
-        +'<button onclick="exportMultiCardPDF(6)" class="pdf-opt-btn">▪️ 6 cartes / A4<div>Compact — découpe facile</div></button>'
-        +'<button onclick="exportMultiCardPDF(8)" class="pdf-opt-btn">▪️ 8 cartes / A4<div>Maximum — papier économisé</div></button>'
-      +'</div>'
-      +'<div style="border-top:1px solid #30363d;padding-top:14px;margin-top:4px">'
-        +'<p style="font-size:10px;color:#8b949e;margin:0 0 10px">Export complet de l'armée :</p>'
-        +'<button onclick="exportArmyRecapPDF()" class="pdf-opt-btn" style="width:100%;background:#161b22;border-color:#3fb950;color:#3fb950">📊 Récapitulatif armée PDF<div>Composition + total points + stats</div></button>'
-      +'</div>'
-      +'<button onclick="document.getElementById('pdf-layout-modal').style.display='none'" style="margin-top:14px;width:100%;padding:6px;background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:4px;cursor:pointer;font-size:11px">Annuler</button>'
-      +'</div>';
-
-    // Inject button styles
-    var st=document.createElement('style');
-    st.textContent='.pdf-opt-btn{background:#0d1117;border:1px solid #30363d;color:#e6edf3;border-radius:6px;padding:10px 12px;cursor:pointer;font-size:11px;font-weight:700;text-align:center;transition:border-color 0.2s}.pdf-opt-btn:hover{border-color:#f0c040;color:#f0c040}.pdf-opt-btn div{font-size:9px;color:#8b949e;font-weight:400;margin-top:3px}';
-    document.head.appendChild(st);
-    document.body.appendChild(m);
-    m.addEventListener('click',function(e){if(e.target===m)m.style.display='none';});
-  };
-
-  // Helper : draw one card on a jsPDF doc at position (ox, oy), size (cw x ch) mm
-  function _drawCardOnPDF(pdf, c, ox, oy, cw, ch){
-    var bgMap={metal:[58,63,72],dark:[22,22,28],military:[58,68,32],parchment:[238,224,192],clone:[238,238,242],empire:[14,10,10],rebel:[38,30,28],neon:[5,5,10],industrial:[40,40,44],wood:[74,46,20]};
-    var bg=bgMap[c.theme]||[30,30,40];
-    var isLight=(c.theme==='parchment'||c.theme==='clone');
-    var txt=isLight?[30,20,10]:[230,230,240];
-    var acc=isLight?[170,110,20]:[240,192,64];
-    var dim=isLight?[120,100,60]:[Math.round(bg[0]*0.55),Math.round(bg[1]*0.55),Math.round(bg[2]*0.55)];
-    var fac=typeof CONFIG!=='undefined'&&CONFIG.factions?CONFIG.factions[c.faction]||{color:'#888'}:{color:'#888'};
-    var bc=hexToRgb(fac.color);
-
-    pdf.setFillColor(bg[0],bg[1],bg[2]); pdf.roundedRect(ox+1,oy+1,cw-2,ch-2,2,2,'F');
-    pdf.setDrawColor(bc[0],bc[1],bc[2]); pdf.setLineWidth(0.5); pdf.roundedRect(ox+1,oy+1,cw-2,ch-2,2,2,'S');
-
-    var sc=cw/105; // scale factor vs reference A6 (105mm wide)
-    var fy=oy+8*sc;
-    pdf.setFontSize(Math.max(5,7*sc)); pdf.setTextColor(txt[0],txt[1],txt[2]); pdf.text((c.faction||'').toUpperCase(),ox+5*sc,fy);
-    pdf.setFontSize(Math.max(5,9*sc)); pdf.setTextColor(acc[0],acc[1],acc[2]); pdf.text((c.points||0)+' pts',ox+cw-4,fy,{align:'right'});
-
-    var ny=oy+16*sc;
-    pdf.setFontSize(Math.max(6,12*sc)); pdf.setFont(undefined,'bold'); pdf.setTextColor(txt[0],txt[1],txt[2]);
-    pdf.text((c.name||'').toUpperCase(),ox+cw/2,ny,{align:'center',maxWidth:cw-8});
-
-    var ly=oy+20*sc;
-    pdf.setDrawColor(acc[0],acc[1],acc[2]); pdf.setLineWidth(0.3); pdf.line(ox+5,ly,ox+cw-5,ly);
-
-    // Stats
-    var stats=[{l:'PV',v:c.hp||0},{l:'ARM',v:c.armor||0},{l:'MOV',v:(parseInt(c.move||0)>=0?'+':'')+c.move},{l:'PA',v:c.pa||5}];
-    var sw2=(cw-10)/4; var sx2=ox+5;
-    stats.forEach(function(s,si){
-      var bx=sx2+si*(sw2+1.5); var by=ly+2;
-      pdf.setFillColor(dim[0],dim[1],dim[2]); pdf.roundedRect(bx,by,sw2,10*sc,1,1,'F');
-      pdf.setFontSize(Math.max(5,9*sc)); pdf.setFont(undefined,'bold'); pdf.setTextColor(acc[0],acc[1],acc[2]);
-      pdf.text(String(s.v),bx+sw2/2,by+7*sc,{align:'center'});
-      pdf.setFontSize(Math.max(4,5*sc)); pdf.setFont(undefined,'normal'); pdf.setTextColor(txt[0],txt[1],txt[2]);
-      pdf.text(s.l,bx+sw2/2,by+10*sc,{align:'center'});
-    });
-
-    // Weapons
-    var wy2=ly+15*sc;
-    pdf.setFontSize(Math.max(4,6*sc)); pdf.setTextColor(acc[0],acc[1],acc[2]); pdf.text('ARMEMENT',ox+5,wy2); wy2+=4*sc;
-    (c.weapons||[]).forEach(function(wName){
-      if(wy2>oy+ch-6)return;
-      var w=typeof CONFIG!=='undefined'&&CONFIG.weapons?CONFIG.weapons[wName]:null;
-      pdf.setFillColor(dim[0],dim[1],dim[2]); pdf.roundedRect(ox+4,wy2-2,cw-8,6*sc,1,1,'F');
-      pdf.setFontSize(Math.max(4,6*sc)); pdf.setFont(undefined,'bold'); pdf.setTextColor(txt[0],txt[1],txt[2]);
-      pdf.text(wName,ox+6,wy2+2);
-      if(w){pdf.setFontSize(Math.max(3,4.5*sc)); pdf.setFont(undefined,'normal'); pdf.setTextColor(acc[0],acc[1],acc[2]);
-        pdf.text('Mun:'+w.mun+' P'+w.pen+' D'+w.dmg,ox+cw-5,wy2+2,{align:'right'});}
-      wy2+=7*sc;
-    });
-  }
-
-  // ── #25 Multi-card PDF ──
-  window.exportMultiCardPDF = function(perPage){
-    document.getElementById('pdf-layout-modal').style.display='none';
-    if(!cards||cards.length===0){alert('Aucune carte à exporter.');return;}
-    perPage=perPage||4;
-
-    var jsPDF=window.jspdf&&window.jspdf.jsPDF;
-    if(!jsPDF){alert('jsPDF non chargé.');return;}
-
-    var btn=document.getElementById('btn-export');
-    if(btn){btn.textContent='⏳ Génération...';btn.disabled=true;}
-
-    setTimeout(function(){
-      var pdf;
-      if(perPage===1){
-        // A6 original behaviour
-        pdf=new jsPDF({orientation:'portrait',unit:'mm',format:[105,148]});
-        cards.forEach(function(c,i){
-          if(i>0)pdf.addPage([105,148],'portrait');
-          _drawCardOnPDF(pdf,c,0,0,105,148);
-        });
-      } else {
-        // A4 portrait: 210×297 mm
-        pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-        var margin=8, gap=4;
-        var cols,rows;
-        if(perPage===4){cols=2;rows=2;}
-        else if(perPage===6){cols=2;rows=3;}
-        else{cols=2;rows=4;}
-        var cw=Math.floor((210-2*margin-gap*(cols-1))/cols);
-        var ch=Math.floor((297-2*margin-gap*(rows-1))/rows);
-        var pageCards=0, pageIndex=0;
-
-        cards.forEach(function(c,i){
-          var slot=pageCards%perPage;
-          if(slot===0&&i>0)pdf.addPage([210,297],'portrait');
-          var col=slot%cols; var row=Math.floor(slot/cols);
-          var ox=margin+col*(cw+gap); var oy=margin+row*(ch+gap);
-          _drawCardOnPDF(pdf,c,ox,oy,cw,ch);
-
-          // Dashed cut lines
-          pdf.setDrawColor(60,60,70); pdf.setLineWidth(0.15);
-          pdf.setLineDash([1,1.5]);
-          if(col<cols-1)pdf.line(ox+cw+gap/2,oy,ox+cw+gap/2,oy+ch);
-          if(row<rows-1)pdf.line(ox,oy+ch+gap/2,ox+cw,oy+ch+gap/2);
-          pdf.setLineDash([]);
-
-          pageCards++;
-        });
-      }
-      pdf.save('CrossBlocks_cartes_'+perPage+'pp.pdf');
-      if(btn){btn.textContent='📄 Exporter PDF';btn.disabled=false;}
-    },60);
-  };
-
-  // ── #26 Army Recap PDF (A4 avec stats complètes) ──
-  window.exportArmyRecapPDF = function(){
-    document.getElementById('pdf-layout-modal').style.display='none';
-    if(!cards||cards.length===0){alert('Aucune carte à exporter.');return;}
-    var jsPDF=window.jspdf&&window.jspdf.jsPDF;
-    if(!jsPDF){alert('jsPDF non chargé.');return;}
-    var btn=document.getElementById('btn-export');
-    if(btn){btn.textContent='⏳ Génération...';btn.disabled=true;}
-
-    setTimeout(function(){
-      var pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-      var W=210,H=297,m=14;
-      var armyTotal=cards.reduce(function(s,c){return s+(parseInt(c.points)||0);},0);
-
-      // ── Page 1 : Récap ──
-      pdf.setFillColor(12,12,20); pdf.rect(0,0,W,H,'F');
-      pdf.setDrawColor(240,192,64); pdf.setLineWidth(0.8); pdf.roundedRect(5,5,W-10,H-10,3,3,'S');
-
-      // Header
-      pdf.setFontSize(28); pdf.setFont(undefined,'bold'); pdf.setTextColor(240,192,64);
-      pdf.text('CROSSBLOCKS',W/2,28,{align:'center'});
-      pdf.setFontSize(12); pdf.setFont(undefined,'normal'); pdf.setTextColor(180,180,200);
-      pdf.text('Récapitulatif d'armée',W/2,36,{align:'center'});
-
-      pdf.setDrawColor(240,192,64); pdf.setLineWidth(0.4); pdf.line(m,42,W-m,42);
-
-      // Total points
-      pdf.setFontSize(42); pdf.setFont(undefined,'bold'); pdf.setTextColor(240,192,64);
-      pdf.text(armyTotal+' pts',W/2,62,{align:'center'});
-      pdf.setFontSize(10); pdf.setFont(undefined,'normal'); pdf.setTextColor(140,140,160);
-      pdf.text(cards.length+' unité(s) — '+new Date().toLocaleDateString('fr-FR'),W/2,70,{align:'center'});
-
-      // Summary bar
-      var fGroups={};
-      cards.forEach(function(c){if(!fGroups[c.faction])fGroups[c.faction]=[];fGroups[c.faction].push(c);});
-      var facColors2={'République':[68,136,221],'Séparatistes':[204,153,102],'Rebelles':[221,85,68],'Empire':[204,34,34],'Neutre':[136,136,136]};
-      var barY=76, barW=W-2*m, barH=6, bx=m;
-      Object.keys(fGroups).forEach(function(f){
-        var ftot=fGroups[f].reduce(function(s,c){return s+(parseInt(c.points)||0);},0);
-        var fw=Math.round(barW*(ftot/armyTotal));
-        var col=facColors2[f]||[100,100,100];
-        pdf.setFillColor(col[0],col[1],col[2]); pdf.rect(bx,barY,fw,barH,'F');
-        bx+=fw;
-      });
-      pdf.setFontSize(7); var legX=m;
-      Object.keys(fGroups).forEach(function(f){
-        var col=facColors2[f]||[100,100,100];
-        var ftot=fGroups[f].reduce(function(s,c){return s+(parseInt(c.points)||0);},0);
-        pdf.setFillColor(col[0],col[1],col[2]); pdf.rect(legX,barY+8,3,3,'F');
-        pdf.setTextColor(200,200,220); pdf.text(f+' — '+ftot+'pts',legX+5,barY+11);
-        legX+=40;
-      });
-
-      // Unit table
-      var ty=barY+22;
-      pdf.setFontSize(8); pdf.setTextColor(240,192,64); pdf.setFont(undefined,'bold');
-      pdf.text('UNITÉ',m,ty); pdf.text('FACTION',70,ty); pdf.text('PV',110,ty); pdf.text('ARM',120,ty); pdf.text('PA',130,ty); pdf.text('MOV',140,ty); pdf.text('ARMES',152,ty); pdf.text('POINTS',W-m,ty,{align:'right'});
-      ty+=2; pdf.setDrawColor(240,192,64); pdf.setLineWidth(0.2); pdf.line(m,ty,W-m,ty); ty+=4;
-
-      cards.forEach(function(c,i){
-        if(ty>H-25){pdf.addPage();pdf.setFillColor(12,12,20);pdf.rect(0,0,W,H,'F');ty=20;}
-        var row=i%2===0?[18,22,32]:[22,26,38];
-        pdf.setFillColor(row[0],row[1],row[2]); pdf.rect(m-2,ty-4,W-2*(m-2),8,'F');
-        var fac2=CONFIG.factions[c.faction]||{color:'#888'}; var fc2=hexToRgb(fac2.color);
-        pdf.setFont(undefined,'bold'); pdf.setFontSize(8); pdf.setTextColor(230,230,240); pdf.text(c.name||'',m,ty);
-        pdf.setFont(undefined,'normal'); pdf.setFontSize(7);
-        pdf.setTextColor(fc2[0],fc2[1],fc2[2]); pdf.text(c.faction||'',70,ty);
-        pdf.setTextColor(200,200,220);
-        pdf.text(String(c.hp||0),110,ty);
-        pdf.text(String(c.armor||0),120,ty);
-        pdf.text(String(c.pa||5),130,ty);
-        pdf.text((parseInt(c.move||0)>=0?'+':'')+String(c.move||0),140,ty);
-        var wnames=(c.weapons||[]).join(', ');
-        if(wnames.length>28)wnames=wnames.slice(0,26)+'…';
-        pdf.text(wnames,152,ty);
-        pdf.setFont(undefined,'bold'); pdf.setTextColor(240,192,64); pdf.text(String(c.points||0)+' pts',W-m,ty,{align:'right'});
-        ty+=8;
-      });
-
-      ty+=6;
-      pdf.setDrawColor(240,192,64); pdf.setLineWidth(0.3); pdf.line(m,ty,W-m,ty); ty+=6;
-      pdf.setFontSize(12); pdf.setFont(undefined,'bold'); pdf.setTextColor(240,192,64);
-      pdf.text('TOTAL : '+armyTotal+' pts',W/2,ty,{align:'center'});
-
-      // ── Page 2 : Cartes ──
-      var cols2=3, rows2=3, perPage2=cols2*rows2;
-      var gap2=4, m2=6;
-      var cw2=Math.floor((W-2*m2-gap2*(cols2-1))/cols2);
-      var ch2=Math.floor((H-2*m2-gap2*(rows2-1))/rows2);
-      pdf.addPage();
-      pdf.setFillColor(12,12,20); pdf.rect(0,0,W,H,'F');
-
-      cards.forEach(function(c,i){
-        if(i>0&&i%perPage2===0){pdf.addPage();pdf.setFillColor(12,12,20);pdf.rect(0,0,W,H,'F');}
-        var slot=i%perPage2;
-        var col2=slot%cols2; var row2=Math.floor(slot/cols2);
-        var ox2=m2+col2*(cw2+gap2); var oy2=m2+row2*(ch2+gap2);
-        _drawCardOnPDF(pdf,c,ox2,oy2,cw2,ch2);
-        pdf.setDrawColor(50,50,65); pdf.setLineWidth(0.1); pdf.setLineDash([1,2]);
-        if(col2<cols2-1)pdf.line(ox2+cw2+gap2/2,oy2-2,ox2+cw2+gap2/2,oy2+ch2+2);
-        if(row2<rows2-1)pdf.line(ox2-2,oy2+ch2+gap2/2,ox2+cw2+2,oy2+ch2+gap2/2);
-        pdf.setLineDash([]);
-      });
-
-      pdf.save('CrossBlocks_armee_complete.pdf');
-      if(btn){btn.textContent='📄 Exporter PDF';btn.disabled=false;}
-    },60);
-  };
-
-    window.promptAdmin=function(){var u=CB.getUser();if(u&&u.isAdmin){var p=document.getElementById('adminPanel');if(p)p.style.display='flex';return;}alert(_t('alert.admin_only','Connectez-vous en admin.'));};
+  window.promptAdmin=function(){var u=CB.getUser();if(u&&u.isAdmin){var p=document.getElementById('adminPanel');if(p)p.style.display='flex';return;}alert(_t('alert.admin_only','Connectez-vous en admin.'));};
   function init(){var v=CB.getValidated();(v.factions||[]).forEach(function(f){var s=document.getElementById('ed-faction');if(s&&!s.querySelector('option[value="'+f.name+'"]')){var o=document.createElement('option');o.value=f.name;o.textContent=f.name;s.appendChild(o);}});(v.weapons||[]).forEach(function(w){addW2S(w.key||('vw_'+w.n),w);});(v.units||[]).forEach(function(u){addU2G(u);});refreshCreatorFilter();if(CB.getUser())loadUserContent();}
   if(document.readyState==='complete')setTimeout(init,500);else window.addEventListener('load',function(){setTimeout(init,500);});
 })();

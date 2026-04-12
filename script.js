@@ -5,29 +5,164 @@ let selectedWeapons = [];
 
 // ═══ GALERIE D'UNITÉS PRÉ-FAITES (d'après les règles officielles) ═══
 var GALLERY = [
- // ── République (Clones) ──
- { name:"SW Clone Phase 2", faction:"République", theme:"clone", points:200, hp:2, armor:15, move:0, pa:5, weapons:["SW Fusil laser (bleu)"] },
- { name:"SW Clone Phase 2 de Geonosis", faction:"République", theme:"clone", points:230, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"] },
- { name:"SW Clone Spécialiste 501ème", faction:"République", theme:"clone", points:250, hp:2, armor:15, move:0, pa:5, weapons:["SW Double fusil laser lourd (bleu)"] },
- { name:"SW Clone Sniper 501ème", faction:"République", theme:"military", points:260, hp:2, armor:15, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"] },
- { name:"SW Clone Phase 2 (Sniper)", faction:"République", theme:"clone", points:260, hp:2, armor:15, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"] },
- { name:"SW Clone Officier 501ème", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet laser (bleu)"] },
- { name:"SW Clone de Coruscant", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet laser (bleu)"] },
- { name:"SW Clone Airborne de Geonosis", faction:"République", theme:"military", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], special:"Largage" },
- { name:"SW Commandant Rex", faction:"République", theme:"metal", points:400, hp:2, armor:12, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"] },
- { name:"SW Commandant Fives", faction:"République", theme:"metal", points:430, hp:2, armor:13, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"], special:"Kit de soin" },
-
- // ── Séparatistes ──
- { name:"SW Droïde de combat B1", faction:"Séparatistes", theme:"parchment", points:170, hp:2, armor:18, move:0, pa:4, weapons:["SW Fusil laser (rouge)"] },
- { name:"SW Droïde de combat lourd B2", faction:"Séparatistes", theme:"industrial", points:300, hp:3, armor:11, move:-2, pa:4, weapons:["x2 SW Fusils de poing laser (rouge)"] },
- { name:"SW Tri-Droïde", faction:"Séparatistes", theme:"industrial", points:1800, hp:10, armor:6, move:2, pa:4, weapons:["x3 SW Tourelles rotatives laser","x3 SW Rockets laser (usage unique)"] },
-
- // ── Rebelles ──
- { name:"SW Rebelle (Blaster)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
- { name:"SW Rebelle (Fusil)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
- { name:"SW Rebelle (Pistolet)", faction:"Rebelles", theme:"rebel", points:150, hp:2, armor:17, move:0, pa:5, weapons:["SW Pistolet laser (rouge)"] },
- { name:"SW Garde Rebelle", faction:"Rebelles", theme:"rebel", points:200, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (bleu)"] },
- { name:"SW Rebelle Jetpack", faction:"Rebelles", theme:"rebel", points:240, hp:2, armor:17, move:2, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Jetpack / Vol" },
+  { name:"SW Clone Phase 1", faction:"République", theme:"clone", points:190, hp:2, armor:15, move:0, pa:5, weapons:["SW Fusil laser (bleu)"] },
+  { name:"SW Clone Phase 2", faction:"République", theme:"clone", points:200, hp:2, armor:15, move:0, pa:5, weapons:["SW Fusil laser (bleu)"] },
+  { name:"SW Clone Phase 2 de Géonosis", faction:"République", theme:"clone", points:230, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"] },
+  { name:"SW Clone Spécialiste 501ème", faction:"République", theme:"clone", points:250, hp:2, armor:15, move:0, pa:5, weapons:["SW Double fusil laser lourd (bleu)"] },
+  { name:"SW Clone Sniper 501ème", faction:"République", theme:"military", points:260, hp:2, armor:15, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"] },
+  { name:"SW Clone Officier 501ème", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet laser (bleu)"] },
+  { name:"SW Clone de Coruscant", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet laser (bleu)"] },
+  { name:"SW Clone Airborne de Géonosis", faction:"République", theme:"military", points:270, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], special:"Largage" },
+  { name:"SW Clone 212ème Bataillon", faction:"République", theme:"military", points:200, hp:2, armor:15, move:0, pa:5, weapons:["SW Fusil laser (bleu)"] },
+  { name:"SW Clone 41ème Corps d'élite", faction:"République", theme:"military", points:210, hp:2, armor:14, move:0, pa:5, weapons:["SW Fusil laser (bleu)"] },
+  { name:"SW Clone de Kashyyyk", faction:"République", theme:"military", points:210, hp:2, armor:14, move:0, pa:5, weapons:["SW Fusil laser (bleu)"] },
+  { name:"SW Clone Parachutiste de Géonosis", faction:"République", theme:"military", points:240, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], special:"Largage" },
+  { name:"SW Clone Shock Trooper", faction:"République", theme:"clone", points:250, hp:2, armor:14, move:0, pa:5, weapons:["SW Blaster laser (bleu)"] },
+  { name:"SW Clone Shadow Trooper", faction:"République", theme:"metal", points:230, hp:2, armor:14, move:0, pa:5, weapons:["SW Blaster laser (bleu)"] },
+  { name:"SW Clone Jet Trooper 501ème", faction:"République", theme:"clone", points:270, hp:2, armor:15, move:2, pa:5, weapons:["SW Fusil laser (bleu)"], special:"Jetpack" },
+  { name:"SW Clone Heavy Gunner", faction:"République", theme:"military", points:290, hp:2, armor:15, move:0, pa:5, weapons:["SW Répéteur Z-6 rotatif"] },
+  { name:"SW Clone Flame Trooper", faction:"République", theme:"military", points:330, hp:2, armor:15, move:0, pa:5, weapons:["SW Lance-flamme Clone"] },
+  { name:"SW Clone Scout Trooper (Ph.2)", faction:"République", theme:"military", points:240, hp:2, armor:15, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"] },
+  { name:"SW Clone Pilote de Gunship", faction:"République", theme:"clone", points:190, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet DC-15s (Clone)"] },
+  { name:"SW Clone Médecin Kix", faction:"République", theme:"clone", points:220, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet DC-15s (Clone)"], special:"Kit de soin" },
+  { name:"SW Commandant Rex", faction:"République", theme:"metal", points:400, hp:2, armor:12, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"] },
+  { name:"SW Commandant Fives", faction:"République", theme:"metal", points:430, hp:2, armor:13, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"], special:"Kit de soin" },
+  { name:"SW ARC Trooper Phase 1", faction:"République", theme:"metal", points:400, hp:2, armor:13, move:0, pa:5, weapons:["SW Blaster DC-17m ARC"] },
+  { name:"SW ARC Trooper Phase 2", faction:"République", theme:"metal", points:420, hp:2, armor:12, move:0, pa:5, weapons:["SW Blaster DC-17m ARC"] },
+  { name:"SW Clone Commando", faction:"République", theme:"metal", points:420, hp:2, armor:12, move:0, pa:5, weapons:["SW Blaster DC-17m ARC"], special:"Furtivité" },
+  { name:"SW ARC Trooper Jesse", faction:"République", theme:"metal", points:420, hp:2, armor:13, move:0, pa:5, weapons:["SW Blaster DC-17m ARC"] },
+  { name:"SW Commandant Cody (212ème)", faction:"République", theme:"metal", points:440, hp:2, armor:13, move:0, pa:5, weapons:["SW Blaster DC-17m ARC"], special:"Commandement" },
+  { name:"SW Commandant Wolffe (104ème)", faction:"République", theme:"metal", points:400, hp:2, armor:13, move:0, pa:5, weapons:["SW Pistolet automatique lourd laser (bleu)"], special:"Commandement" },
+  { name:"SW Commandant Gree (41ème)", faction:"République", theme:"metal", points:360, hp:2, armor:13, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"], special:"Commandement" },
+  { name:"SW Commandant Bly (327ème)", faction:"République", theme:"metal", points:360, hp:2, armor:13, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], special:"Commandement" },
+  { name:"SW Obi-Wan Kenobi (Padawan)", faction:"République", theme:"metal", points:440, hp:2, armor:14, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Forme IV / Force" },
+  { name:"SW Obi-Wan Kenobi (Maître)", faction:"République", theme:"metal", points:480, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Soresu / Force" },
+  { name:"SW Obi-Wan Kenobi (ANH)", faction:"Rebelles", theme:"metal", points:460, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Sagesse / Force" },
+  { name:"SW Anakin Skywalker (Padawan)", faction:"République", theme:"metal", points:440, hp:2, armor:14, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Djem-So / Force" },
+  { name:"SW Anakin Skywalker (Chevalier)", faction:"République", theme:"metal", points:550, hp:2, armor:13, move:0, pa:5, weapons:["SW Double sabre laser"], special:"Djem-So / Force" },
+  { name:"SW Ahsoka Tano (Clone Wars)", faction:"République", theme:"metal", points:530, hp:2, armor:14, move:0, pa:5, weapons:["SW Double sabre laser"], special:"Force" },
+  { name:"SW Ahsoka Tano (Rebelles)", faction:"Rebelles", theme:"metal", points:560, hp:2, armor:13, move:0, pa:5, weapons:["SW Double sabre laser"], special:"Force / Furtivité" },
+  { name:"SW Maître Yoda", faction:"République", theme:"metal", points:600, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (vert)"], special:"Force extrême" },
+  { name:"SW Mace Windu", faction:"République", theme:"metal", points:650, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (violet - Windu)"], special:"Vaapad / Force" },
+  { name:"SW Qui-Gon Jinn", faction:"République", theme:"metal", points:480, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (vert)"], special:"Force / Méditation" },
+  { name:"SW Ki-Adi-Mundi", faction:"République", theme:"metal", points:450, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force" },
+  { name:"SW Plo Koon", faction:"République", theme:"metal", points:450, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force / Télékinésie" },
+  { name:"SW Aayla Secura", faction:"République", theme:"metal", points:440, hp:2, armor:14, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force" },
+  { name:"SW Kit Fisto", faction:"République", theme:"metal", points:480, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (vert)"], special:"Force / Combat sub." },
+  { name:"SW Shaak Ti", faction:"République", theme:"metal", points:450, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force" },
+  { name:"SW Luminara Unduli", faction:"République", theme:"metal", points:470, hp:2, armor:14, move:0, pa:5, weapons:["SW Sabre laser (vert)"], special:"Force" },
+  { name:"SW Barriss Offee", faction:"République", theme:"metal", points:440, hp:2, armor:14, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force" },
+  { name:"SW Luke Skywalker (Ferme)", faction:"Rebelles", theme:"rebel", points:300, hp:2, armor:16, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force (débutant)" },
+  { name:"SW Luke Skywalker (X-Wing)", faction:"Rebelles", theme:"rebel", points:350, hp:2, armor:16, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force" },
+  { name:"SW Luke Skywalker (Jedi)", faction:"Rebelles", theme:"metal", points:560, hp:2, armor:13, move:0, pa:5, weapons:["SW Sabre laser (vert)"], special:"Force / Soresu" },
+  { name:"SW Darth Maul", faction:"Côté Obscur", theme:"dark", points:700, hp:2, armor:12, move:0, pa:5, weapons:["SW Double sabre laser"], special:"Juyo / Force Obscure" },
+  { name:"SW Darth Sidious / Palpatine", faction:"Côté Obscur", theme:"dark", points:800, hp:2, armor:12, move:0, pa:5, weapons:["SW Sabre laser (rouge)", "SW Éclair de Force (Sith)"], special:"Maître Sith" },
+  { name:"SW Général Grievous", faction:"Côté Obscur", theme:"industrial", points:780, hp:3, armor:10, move:0, pa:5, weapons:["SW 4 Sabres laser (Grievous)"], special:"Cyborg / 4 bras" },
+  { name:"SW Asajj Ventress", faction:"Côté Obscur", theme:"dark", points:650, hp:2, armor:12, move:0, pa:5, weapons:["SW Double sabre laser"], special:"Force Obscure" },
+  { name:"SW Comte Dooku", faction:"Côté Obscur", theme:"dark", points:600, hp:2, armor:12, move:0, pa:5, weapons:["SW Sabre courbe (Dooku)"], special:"Makashi / Éclair" },
+  { name:"SW Droïde de combat B1", faction:"Séparatistes", theme:"parchment", points:170, hp:2, armor:18, move:0, pa:4, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Droïde B1 Commandant (orange)", faction:"Séparatistes", theme:"parchment", points:180, hp:2, armor:18, move:0, pa:4, weapons:["SW Fusil laser (rouge)"], special:"Commandement" },
+  { name:"SW Droïde B1 de Sécurité", faction:"Séparatistes", theme:"parchment", points:175, hp:2, armor:18, move:0, pa:4, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Droïde B1 Pilote", faction:"Séparatistes", theme:"parchment", points:160, hp:2, armor:18, move:0, pa:4, weapons:["SW Pistolet laser (rouge)"] },
+  { name:"SW Droïde de combat lourd B2", faction:"Séparatistes", theme:"industrial", points:300, hp:3, armor:11, move:-2, pa:4, weapons:["x2 SW Fusils de poing laser (rouge)"] },
+  { name:"SW Droïde B2 Super (blindé)", faction:"Séparatistes", theme:"industrial", points:330, hp:3, armor:10, move:-2, pa:4, weapons:["x2 SW Fusils de poing laser (rouge)"] },
+  { name:"SW Droïde Destroyer (Droideka)", faction:"Séparatistes", theme:"industrial", points:500, hp:4, armor:9, move:1, pa:4, weapons:["SW Répéteur Z-6 rotatif"], special:"Bouclier / Roulade" },
+  { name:"SW MagnaGuard IG-100", faction:"Séparatistes", theme:"industrial", points:550, hp:3, armor:11, move:0, pa:5, weapons:["SW Électro-Bâton (MagnaGuard)"], special:"Garde du corps" },
+  { name:"SW Guerrier Géonosis (ailé)", faction:"Séparatistes", theme:"parchment", points:160, hp:2, armor:18, move:2, pa:4, weapons:["SW Pistolet laser (rouge)"], special:"Vol" },
+  { name:"SW Guerrier Géonosis (sonique)", faction:"Séparatistes", theme:"parchment", points:170, hp:2, armor:18, move:2, pa:4, weapons:["SW Blaster laser (rouge)"], special:"Vol" },
+  { name:"SW Tri-Droïde", faction:"Séparatistes", theme:"industrial", points:1800, hp:10, armor:6, move:2, pa:4, weapons:["x3 SW Tourelles rotatives laser", "x3 SW Rockets laser (usage unique)"] },
+  { name:"SW Stormtrooper", faction:"Empire", theme:"empire", points:190, hp:2, armor:16, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Stormtrooper Lourd", faction:"Empire", theme:"empire", points:250, hp:2, armor:15, move:0, pa:5, weapons:["SW DLT-19 Blaster lourd (Empire)"] },
+  { name:"SW Scout Trooper", faction:"Empire", theme:"empire", points:220, hp:2, armor:16, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"] },
+  { name:"SW Snowtrooper", faction:"Empire", theme:"empire", points:200, hp:2, armor:16, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Sandtrooper (Tatooine)", faction:"Empire", theme:"empire", points:250, hp:2, armor:16, move:0, pa:5, weapons:["SW DLT-19 Blaster lourd (Empire)"] },
+  { name:"SW Death Star Trooper", faction:"Empire", theme:"empire", points:190, hp:2, armor:16, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Shadow Trooper Impérial", faction:"Empire", theme:"empire", points:210, hp:2, armor:15, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Shoretrooper (Scarif)", faction:"Empire", theme:"empire", points:200, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW TIE Pilot", faction:"Empire", theme:"empire", points:190, hp:2, armor:16, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Hover Tank Pilot", faction:"Empire", theme:"empire", points:190, hp:2, armor:16, move:0, pa:5, weapons:["SW Pistolet laser (rouge)"] },
+  { name:"SW Officier Impérial", faction:"Empire", theme:"empire", points:200, hp:2, armor:16, move:0, pa:5, weapons:["SW Pistolet SE-14r (Officier)"] },
+  { name:"SW Death Trooper (Rogue One)", faction:"Empire", theme:"dark", points:290, hp:2, armor:14, move:0, pa:5, weapons:["SW Sniper IQA-11 (Death Trooper)"] },
+  { name:"SW Range Trooper", faction:"Empire", theme:"empire", points:250, hp:2, armor:15, move:0, pa:5, weapons:["SW DLT-19 Blaster lourd (Empire)"] },
+  { name:"SW Mudtrooper (Solo)", faction:"Empire", theme:"empire", points:180, hp:2, armor:16, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Garde Royal (Palpatine)", faction:"Empire", theme:"dark", points:300, hp:2, armor:14, move:0, pa:5, weapons:["SW Lame vibrante (Mando)"] },
+  { name:"SW Dark Trooper (Phase 3)", faction:"Empire", theme:"dark", points:410, hp:3, armor:10, move:0, pa:5, weapons:["SW Répéteur Z-6 rotatif"] },
+  { name:"SW Incinerator Stormtrooper", faction:"Empire", theme:"empire", points:350, hp:2, armor:15, move:0, pa:5, weapons:["SW Lance-flamme Clone"] },
+  { name:"SW ISB Agent", faction:"Empire", theme:"empire", points:200, hp:2, armor:16, move:0, pa:5, weapons:["SW Pistolet SE-14r (Officier)"] },
+  { name:"SW Darth Vader", faction:"Empire", theme:"dark", points:700, hp:3, armor:11, move:0, pa:5, weapons:["SW Sabre laser (rouge)", "SW Éclair de Force (Sith)"], special:"Force / Choke" },
+  { name:"SW Grand Moff Tarkin", faction:"Empire", theme:"dark", points:240, hp:2, armor:16, move:0, pa:5, weapons:["SW Pistolet SE-14r (Officier)"], special:"Commandement" },
+  { name:"SW Amiral Piett", faction:"Empire", theme:"empire", points:230, hp:2, armor:16, move:0, pa:5, weapons:["SW Pistolet SE-14r (Officier)"], special:"Commandement" },
+  { name:"SW Directeur Krennic (Rogue One)", faction:"Empire", theme:"dark", points:280, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Commandement" },
+  { name:"SW Rebelle (Blaster)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Rebelle (Fusil)", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Rebelle (Pistolet)", faction:"Rebelles", theme:"rebel", points:150, hp:2, armor:17, move:0, pa:5, weapons:["SW Pistolet laser (rouge)"] },
+  { name:"SW Garde Rebelle", faction:"Rebelles", theme:"rebel", points:200, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (bleu)"] },
+  { name:"SW Rebelle Jetpack", faction:"Rebelles", theme:"rebel", points:240, hp:2, armor:17, move:2, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Jetpack / Vol" },
+  { name:"SW Soldat de Hoth", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Commando Rebelle (Endor)", faction:"Rebelles", theme:"rebel", points:190, hp:2, armor:17, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Soldat de Scarif", faction:"Rebelles", theme:"rebel", points:190, hp:2, armor:17, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Trooper U-Wing", faction:"Rebelles", theme:"rebel", points:190, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Han Solo", faction:"Rebelles", theme:"rebel", points:310, hp:2, armor:16, move:0, pa:5, weapons:["SW Pistolet DL-44 (Solo)"], special:"Contrebandier" },
+  { name:"SW Han Solo (Tenue Hoth)", faction:"Rebelles", theme:"rebel", points:320, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet DL-44 (Solo)"], special:"Contrebandier" },
+  { name:"SW Princesse Leia", faction:"Rebelles", theme:"rebel", points:280, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Diplomate" },
+  { name:"SW Chewbacca", faction:"Rebelles", theme:"rebel", points:380, hp:3, armor:15, move:0, pa:5, weapons:["SW Arbalète Wookiee (Bowcaster)"], special:"Wookiee / Mêlée" },
+  { name:"SW Lando Calrissian", faction:"Rebelles", theme:"rebel", points:280, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], special:"Tacticien" },
+  { name:"SW Wedge Antilles", faction:"Rebelles", theme:"rebel", points:240, hp:2, armor:16, move:0, pa:5, weapons:["SW Fusil laser (rouge)"], special:"Pilote As" },
+  { name:"SW Biggs Darklighter", faction:"Rebelles", theme:"rebel", points:220, hp:2, armor:17, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW Amiral Ackbar", faction:"Rebelles", theme:"rebel", points:240, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Commandement" },
+  { name:"SW Cassian Andor", faction:"Rebelles", theme:"rebel", points:290, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Espion / Furtivité" },
+  { name:"SW Jyn Erso (Rogue One)", faction:"Rebelles", theme:"rebel", points:270, hp:2, armor:17, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW K-2SO", faction:"Rebelles", theme:"industrial", points:230, hp:3, armor:15, move:0, pa:5, weapons:["SW Blaster laser (bleu)"], special:"Droïde reconfiguré" },
+  { name:"SW Le Mandalorien (Din Djarin)", faction:"Mandalorien", theme:"metal", points:480, hp:2, armor:11, move:2, pa:5, weapons:["SW Blaster Mandalorien", "SW Lame vibrante (Mando)"], special:"Beskar / Jetpack" },
+  { name:"SW Bo-Katan Kryze", faction:"Mandalorien", theme:"metal", points:600, hp:2, armor:11, move:2, pa:5, weapons:["SW Darksaber", "SW Blaster Mandalorien"], special:"Nite Owls / Beskar" },
+  { name:"SW Jango Fett", faction:"Mandalorien", theme:"metal", points:550, hp:2, armor:11, move:2, pa:5, weapons:["SW Pistolets WESTAR-35 (Mando)", "SW Roquettes de poignet (Mando)"], special:"Jetpack / Chasseur" },
+  { name:"SW Boba Fett (jeune)", faction:"Chasseur de primes", theme:"metal", points:400, hp:2, armor:12, move:0, pa:5, weapons:["SW Carabine EE-3 (Fett)"] },
+  { name:"SW Boba Fett (armure Beskar)", faction:"Chasseur de primes", theme:"metal", points:520, hp:2, armor:11, move:2, pa:5, weapons:["SW Carabine EE-3 (Fett)", "SW Roquettes de poignet (Mando)"], special:"Jetpack / Chasseur" },
+  { name:"SW Pré Vizsla", faction:"Mandalorien", theme:"metal", points:480, hp:2, armor:11, move:2, pa:5, weapons:["SW Darksaber", "SW Blaster Mandalorien"], special:"Clan Vizsla" },
+  { name:"SW Guerrier Mandalorien", faction:"Mandalorien", theme:"metal", points:280, hp:2, armor:12, move:0, pa:5, weapons:["SW Blaster Mandalorien"] },
+  { name:"SW Guerrier Mandalorien Jetpack", faction:"Mandalorien", theme:"metal", points:330, hp:2, armor:12, move:2, pa:5, weapons:["SW Blaster Mandalorien"], special:"Jetpack" },
+  { name:"SW Paz Vizsla", faction:"Mandalorien", theme:"metal", points:450, hp:2, armor:11, move:0, pa:5, weapons:["SW Blaster Mandalorien", "SW Répéteur Z-6 rotatif"], special:"Armure lourde" },
+  { name:"SW Fennec Shand", faction:"Chasseur de primes", theme:"metal", points:320, hp:2, armor:14, move:0, pa:5, weapons:["SW Sniper laser lourd (bleu)"], special:"Sniper" },
+  { name:"SW Moff Gideon", faction:"Empire", theme:"dark", points:380, hp:2, armor:13, move:0, pa:5, weapons:["SW Pistolet SE-14r (Officier)", "SW Darksaber"], special:"Commandement" },
+  { name:"SW Stormtrooper Première Ordre", faction:"Première Ordre", theme:"empire", points:200, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Flametrooper Première Ordre", faction:"Première Ordre", theme:"empire", points:300, hp:2, armor:15, move:0, pa:5, weapons:["SW Lance-flamme Clone"] },
+  { name:"SW Snowtrooper Première Ordre", faction:"Première Ordre", theme:"empire", points:210, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Executioner Stormtrooper", faction:"Première Ordre", theme:"dark", points:300, hp:2, armor:15, move:0, pa:5, weapons:["SW Lame vibrante (Mando)"] },
+  { name:"SW Capitaine Phasma", faction:"Première Ordre", theme:"metal", points:380, hp:2, armor:12, move:0, pa:5, weapons:["SW DLT-19 Blaster lourd (Empire)"], special:"Commandement" },
+  { name:"SW Général Hux", faction:"Première Ordre", theme:"empire", points:250, hp:2, armor:15, move:0, pa:5, weapons:["SW Pistolet SE-14r (Officier)"], special:"Commandement" },
+  { name:"SW Kylo Ren", faction:"Première Ordre", theme:"dark", points:650, hp:2, armor:12, move:0, pa:5, weapons:["SW Sabre laser (rouge)"], special:"Force Obscure" },
+  { name:"SW Rey (Jakku)", faction:"Résistance", theme:"rebel", points:380, hp:2, armor:16, move:0, pa:5, weapons:["SW Lame vibrante (Mando)"], special:"Force (éveil)" },
+  { name:"SW Rey (Jedi des Sables)", faction:"Résistance", theme:"metal", points:520, hp:2, armor:15, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force" },
+  { name:"SW Finn", faction:"Résistance", theme:"rebel", points:260, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Poe Dameron", faction:"Résistance", theme:"rebel", points:270, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Pilote As" },
+  { name:"SW Rose Tico", faction:"Résistance", theme:"rebel", points:220, hp:2, armor:17, move:0, pa:5, weapons:["SW Fusil laser (rouge)"] },
+  { name:"SW IG-88", faction:"Chasseur de primes", theme:"industrial", points:450, hp:2, armor:13, move:0, pa:5, weapons:["SW DLT-19 Blaster lourd (Empire)", "SW Répéteur Z-6 rotatif"] },
+  { name:"SW IG-11", faction:"Chasseur de primes", theme:"industrial", points:450, hp:2, armor:13, move:0, pa:5, weapons:["SW DLT-19 Blaster lourd (Empire)", "SW Répéteur Z-6 rotatif"], special:"Mode protecteur" },
+  { name:"SW Bossk", faction:"Chasseur de primes", theme:"parchment", points:310, hp:2, armor:15, move:0, pa:5, weapons:["SW Répéteur T-21 (Scout)"] },
+  { name:"SW Dengar", faction:"Chasseur de primes", theme:"rebel", points:260, hp:2, armor:16, move:0, pa:5, weapons:["SW DLT-19 Blaster lourd (Empire)"] },
+  { name:"SW 4-LOM", faction:"Chasseur de primes", theme:"industrial", points:260, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Zam Wesell", faction:"Chasseur de primes", theme:"metal", points:340, hp:2, armor:15, move:0, pa:5, weapons:["SW Blaster laser (rouge)", "SW Détonateur thermique"] },
+  { name:"SW Greedo", faction:"Chasseur de primes", theme:"parchment", points:220, hp:2, armor:17, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Cad Bane", faction:"Chasseur de primes", theme:"metal", points:380, hp:2, armor:14, move:1, pa:5, weapons:["SW Pistolets WESTAR-35 (Mando)", "SW Détonateur thermique"] },
+  { name:"SW Embo", faction:"Chasseur de primes", theme:"metal", points:300, hp:2, armor:14, move:0, pa:5, weapons:["SW Arbalète Wookiee (Bowcaster)"] },
+  { name:"SW Hunter (Bad Batch)", faction:"République", theme:"metal", points:420, hp:2, armor:12, move:0, pa:5, weapons:["SW Blaster DC-17m ARC"], special:"Sens augmentés" },
+  { name:"SW Crosshair (Bad Batch)", faction:"République", theme:"military", points:420, hp:2, armor:12, move:0, pa:5, weapons:["SW Sniper IQA-11 (Death Trooper)"], special:"Sniper extrême" },
+  { name:"SW Tech (Bad Batch)", faction:"République", theme:"metal", points:320, hp:2, armor:13, move:0, pa:5, weapons:["SW Blaster DC-17m ARC"], special:"Hacker / Support" },
+  { name:"SW Wrecker (Bad Batch)", faction:"République", theme:"metal", points:460, hp:3, armor:11, move:0, pa:5, weapons:["SW Répéteur Z-6 rotatif"], special:"Force surhumaine" },
+  { name:"SW Echo (Bad Batch)", faction:"République", theme:"metal", points:380, hp:2, armor:13, move:0, pa:5, weapons:["SW Blaster DC-17m ARC"], special:"Interface droïde" },
+  { name:"SW Ezra Bridger (Rebelles TV)", faction:"Rebelles", theme:"rebel", points:380, hp:2, armor:15, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force" },
+  { name:"SW Kanan Jarrus", faction:"Rebelles", theme:"metal", points:450, hp:2, armor:14, move:0, pa:5, weapons:["SW Sabre laser (bleu)"], special:"Force" },
+  { name:"SW Hera Syndulla", faction:"Rebelles", theme:"rebel", points:270, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Pilote As" },
+  { name:"SW Sabine Wren", faction:"Rebelles", theme:"metal", points:350, hp:2, armor:13, move:2, pa:5, weapons:["SW Pistolets WESTAR-35 (Mando)", "SW Détonateur thermique"], special:"Jetpack / Art" },
+  { name:"SW Reine Amidala (Naboo)", faction:"Rebelles", theme:"rebel", points:240, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"], special:"Diplomate / Chef" },
+  { name:"SW Padmé Amidala (Géonosis)", faction:"Rebelles", theme:"rebel", points:250, hp:2, armor:16, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Garde de Sécurité Naboo", faction:"Rebelles", theme:"rebel", points:180, hp:2, armor:17, move:0, pa:5, weapons:["SW Blaster laser (rouge)"] },
+  { name:"SW Pilote Naboo", faction:"Rebelles", theme:"rebel", points:170, hp:2, armor:17, move:0, pa:5, weapons:["SW Pistolet laser (rouge)"] },
+  { name:"SW Tusken Raider", faction:"Neutre", theme:"parchment", points:130, hp:2, armor:18, move:0, pa:4, weapons:["SW Lame vibrante (Mando)"], special:"Désert" },
+  { name:"SW Guerrier Ewok", faction:"Rebelles", theme:"wood", points:120, hp:2, armor:19, move:0, pa:4, weapons:["SW Détonateur thermique"], special:"Embuscade" },
+  { name:"SW Garde Gamorrean", faction:"Neutre", theme:"industrial", points:200, hp:2, armor:16, move:0, pa:4, weapons:["SW Lame vibrante (Mando)"] },
+  { name:"SW C-3PO", faction:"Neutre", theme:"parchment", points:80, hp:1, armor:19, move:0, pa:3, weapons:[], special:"Protocole" },
+  { name:"SW R2-D2", faction:"Neutre", theme:"industrial", points:100, hp:2, armor:17, move:0, pa:3, weapons:[], special:"Outils" },
 ];
 
 // ═══ VÉHICULES (onglet séparé) ═══
@@ -822,25 +957,22 @@ function hexToRgb(hex) {
 // Exponential cost based on N² combat power scaling
 
 function calcWeaponDmg(w, targetArm) {
- // Best range damage across all range bands (melee/cat1/cat2/catP)
+ // Best range damage of a weapon vs target armor
  if (!w) return 0;
+ var best = 0;
+ var bands = [w.diff]; // simplified: use main diff
+ var hitP = Math.max(0, (21 - w.diff) / 20);
  var pen = w.pen || 0;
  var saveP = Math.max(0, (21 - (targetArm + pen)) / 20);
  var failSave = 1 - saveP;
  var dmg = w.dmg;
  if (typeof dmg === "string") {
-  var parts = dmg.split("-");
-  dmg = (parseInt(parts[0]) + parseInt(parts[1])) / 2;
+ // Handle "1-4" style damage
+ var parts = dmg.split("-");
+ dmg = (parseInt(parts[0]) + parseInt(parts[1])) / 2;
  }
  var mun = w.mun || 1;
- var best = 0;
- ["melee","cat1","cat2","catP"].forEach(function(band) {
-  var diff = w[band]; if (!diff || diff <= 0) return;
-  var exp = mun * Math.max(0,(21-diff)/20) * failSave * dmg;
-  if (exp > best) best = exp;
- });
- if (best === 0 && w.diff) best = mun * Math.max(0,(21-w.diff)/20) * failSave * dmg;
- return best;
+ return mun * hitP * failSave * dmg;
 }
 
 function calcPrice() {
