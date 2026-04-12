@@ -822,22 +822,25 @@ function hexToRgb(hex) {
 // Exponential cost based on N² combat power scaling
 
 function calcWeaponDmg(w, targetArm) {
- // Best range damage of a weapon vs target armor
+ // Best range damage across all range bands (melee/cat1/cat2/catP)
  if (!w) return 0;
- var best = 0;
- var bands = [w.diff]; // simplified: use main diff
- var hitP = Math.max(0, (21 - w.diff) / 20);
  var pen = w.pen || 0;
  var saveP = Math.max(0, (21 - (targetArm + pen)) / 20);
  var failSave = 1 - saveP;
  var dmg = w.dmg;
  if (typeof dmg === "string") {
- // Handle "1-4" style damage
- var parts = dmg.split("-");
- dmg = (parseInt(parts[0]) + parseInt(parts[1])) / 2;
+  var parts = dmg.split("-");
+  dmg = (parseInt(parts[0]) + parseInt(parts[1])) / 2;
  }
  var mun = w.mun || 1;
- return mun * hitP * failSave * dmg;
+ var best = 0;
+ ["melee","cat1","cat2","catP"].forEach(function(band) {
+  var diff = w[band]; if (!diff || diff <= 0) return;
+  var exp = mun * Math.max(0,(21-diff)/20) * failSave * dmg;
+  if (exp > best) best = exp;
+ });
+ if (best === 0 && w.diff) best = mun * Math.max(0,(21-w.diff)/20) * failSave * dmg;
+ return best;
 }
 
 function calcPrice() {

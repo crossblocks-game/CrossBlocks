@@ -20,6 +20,8 @@ function openAdmin() {
   // Show balance tab only in admin mode
   var balTab = document.getElementById("admin-bal-tab");
   if (balTab) balTab.style.display = isAdmin ? "inline-flex" : "none";
+  var dashTab = document.getElementById("admin-dash-tab");
+  if (dashTab) dashTab.style.display = isAdmin ? "inline-flex" : "none";
   renderAdmin();
   renderPending();
   if (isAdmin) renderBalance();
