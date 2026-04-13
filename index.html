@@ -72,7 +72,7 @@
    <option value="fr">🇫🇷 FR</option>
    <option value="en">🇬🇧 EN</option>
   </select>
-  <span id="sync-indicator" style="font-size:9px;color:#888;padding:2px 6px;border-radius:3px;background:#1a1a2e;border:1px solid #333" data-i18n-title="nav.sync_tooltip" title="Etat synchronisation JSONBin" data-i18n="nav.connecting">Connexion...</span>
+  <span id="sync-indicator" style="font-size:9px;color:#888;padding:2px 6px;border-radius:3px;background:#1a1a2e;border:1px solid #333" data-i18n-title="nav.sync_tooltip" title="Etat synchronisation JSONBin" data-i18n="nav.connecting">Connexion...</span> <button id="cb-manual-refresh" onclick="CB&&CB.refresh&&CB.refresh(function(){renderGallery&&renderGallery();})" title="Rafraîchir depuis le serveur" style="background:none;border:1px solid #30363d;border-radius:3px;padding:0 5px;cursor:pointer;color:#58a6ff;font-size:10px;vertical-align:middle">🔄</button>
   <button onclick="CB.refresh()" style="padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#aaa;cursor:pointer;font-size:9px" data-i18n-title="nav.refresh_tooltip" title="Rafraichir">↻</button>
   <div id="auth-login" style="display:flex;gap:4px;align-items:center">
    <input id="auth-user" placeholder="Login" data-i18n-placeholder="nav.login_placeholder" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
@@ -138,6 +138,25 @@
  .form-actions{flex-direction:column;gap:4px!important}
  .form-actions button{width:100%}
 }
+/* ── RÈGLES SPÉCIALES ADMIN ── */
+.sp-preset{display:inline-block;background:#21262d;border:1px solid #30363d;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;color:#f0c040;transition:.15s;user-select:none}
+.sp-preset:hover{background:#30363d;border-color:#f0c040}
+.sp-row{background:#161b22;border:1px solid #21262d;border-radius:5px;padding:6px 8px}
+.sp-row:hover{border-color:#30363d}
+.sp-row-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sp-name{color:#e6edf3;font-size:10px;font-weight:600;flex:1;min-width:120px}
+.sp-faction-tag{font-size:8px;border-radius:3px;padding:1px 5px;white-space:nowrap}
+.sp-current{color:#58a6ff;font-size:9px;font-style:italic;margin-top:3px;padding-left:2px}
+.sp-none{color:#8b949e;font-size:9px;font-style:italic;padding-left:2px}
+.sp-edit-btn{background:#21262d;border:1px solid #30363d;border-radius:3px;color:#8b949e;cursor:pointer;font-size:10px;padding:2px 8px;white-space:nowrap;transition:.15s}
+.sp-edit-btn:hover{color:#f0c040;border-color:#f0c040}
+.sp-edit-btn.active{color:#f0c040;border-color:#f0c040;background:#2d2a1a}
+.sp-edit-area{display:none;margin-top:6px;padding-top:6px;border-top:1px solid #21262d}
+.sp-edit-area textarea{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:4px;color:#e6edf3;padding:5px;font-size:10px;resize:vertical;min-height:40px;font-family:inherit;box-sizing:border-box}
+.sp-edit-area textarea:focus{border-color:#f0c040;outline:none}
+.sp-save-btn{background:#238636;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;padding:5px 10px}
+.sp-save-btn:hover{background:#2ea043}
+.sp-del-btn{background:#6e1010;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;padding:5px 8px}
 </style>
 
 <!-- Fond fixe -->
@@ -481,6 +500,7 @@
  <button class="btn btn-admtab" onclick="switchAdminTab('users',this)" data-i18n="admin.users"> Utilisateurs</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('sync',this)" data-i18n="admin.sync"> Import/Export</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('history',this)" data-i18n="admin.history">📜 Historique</button>
+<button class="btn btn-admtab" onclick="switchAdminTab('specials',this)">⚡ Règles spéciales</button>
  <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)" data-i18n="admin.balance"> Balance</button>
  </div>
  <div class="admin-body" id="admin-config">
@@ -547,7 +567,42 @@
  </div>
  <div id="admin-history-list" style="max-height:400px;overflow-y:auto"></div>
  </div>
- <div class="admin-body" id="admin-balance" style="display:none">
+ <div class="admin-body" id="admin-specials" style="display:none">
+  <h3 style="color:var(--accent);font-size:13px;margin:0 0 8px">⚡ Règles Spéciales — Attribution par figurine</h3>
+  <p style="color:var(--text2);font-size:10px;margin:0 0 10px">
+    Assignez ou modifiez les règles spéciales de chaque unité. Elles s'afficheront sur les cartes galerie.<br>
+    Les règles officielles sont celles du livre de règles Crossblocks.
+  </p>
+  <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px;margin-bottom:10px">
+    <div style="color:#f0c040;font-size:11px;font-weight:700;margin-bottom:6px">📖 Règles officielles Crossblocks — clic = copier dans le champ édité</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">
+      <span class="sp-preset" onclick="CB_insertPreset('Jet-pack','Au premier tour, vous pouvez placer cette unité n\'importe où sur le plateau à plus de 2 M.M. d\'une unité ennemie.')">🚀 Jet-pack</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Largage','Déploiement : vous pouvez placer cette unité n\'importe où sur le plateau à plus de 2 segments d\'une unité ennemie.')">✈ Largage</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Vol','En vol, vous ignorez tous les décors sur votre route. Les règles de déplacement normales s\'appliquent.')">🦅 Vol</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Kit de soin','Dépensez 3 actions pour soigner 1 PV au porteur ou à une figurine à moins d\'un segment (1×/tour).')">💉 Kit de soin</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Poste de canonnier','Peut utiliser deux armes appartenant à un ou plusieurs passagers du véhicule.')">🎯 Canonnier</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Arme non récupérable','Cette arme ne peut pas être ramassée si elle tombe au sol — trop lourde ou intégrée à la figurine.')">🔒 Non récup.</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Corps à corps spécialisé','Cette figurine peut attaquer en corps-à-corps avec cette arme sans malus. Ignoré au tir.')">⚔ Mêlée spé.</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Immunisé peur','Cette unité est immunisée aux effets de peur et de moral.')">🛡 Immunisé peur</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+    <input id="sp-search" type="text" placeholder="Filtrer par nom ou n° de set…"
+      oninput="renderSP()"
+      style="flex:1;min-width:150px;background:#161b22;border:1px solid #30363d;border-radius:5px;color:#e6edf3;padding:5px 8px;font-size:11px"/>
+    <select id="sp-faction" onchange="renderSP()"
+      style="background:#161b22;border:1px solid #30363d;border-radius:5px;color:#e6edf3;padding:5px;font-size:10px">
+      <option value="">Toutes factions</option>
+      <option>République</option><option>Séparatistes</option><option>Rebelles</option>
+      <option>Empire</option><option>Côté Obscur</option><option>Mandalorien</option>
+      <option>Première Ordre</option><option>Résistance</option><option>Chasseur de primes</option><option>Neutre</option>
+    </select>
+    <span style="color:#8b949e;font-size:10px;align-self:center" id="sp-count"></span>
+  </div>
+  <div id="sp-list" style="max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:3px"></div>
+</div>
+
+<div class="admin-body" id="admin-balance" style="display:none">
  <h3>Rééquilibrage — Simulation Monte Carlo</h3>
  <p class="admin-desc">Système intelligent : chaque unité est testée en combat simulé (150 batailles) contre des Clones Phase 2 à budget égal. Le prix est ajusté pour que le taux de victoire soit ~50%. Max ±30% de changement par unité.</p>
  <h4 style="margin-top:12px;color:var(--accent);font-size:12px">Unités</h4>
@@ -645,7 +700,7 @@ window.CB=(function(){
   function isHashed(p){return typeof p==='string'&&p.length===64&&/^[a-f0-9]+$/.test(p);}
 
   // ─── Local cache (updated from remote) ───
-  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{},likes:{},comments:{},history:[],version:0};
+  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{},likes:{},comments:{},history:[],specialRules:{},version:0};
   var remoteReady=false;
   var syncStatus='En attente...';
   var pushPending=false;
@@ -670,10 +725,13 @@ window.CB=(function(){
         if(!cache.userData)cache.userData={};
         if(!cache.likes)cache.likes={};
         if(!cache.comments)cache.comments={};
+        if(!cache.specialRules)cache.specialRules={};
         if(!cache.history)cache.history=[];
         if(typeof cache.version!=='number')cache.version=0;
         remoteReady=true;
         setStatus('Sync OK v'+cache.version+' ('+new Date().toLocaleTimeString()+')');
+        _lastSyncVersion = cache.version || 0;
+        startPolling(); // démarre le polling auto toutes les 45s
         if(cb)cb();
       })
       .catch(function(err){
@@ -764,6 +822,89 @@ window.CB=(function(){
           pushPending=false;
         });
     },500);
+  }
+
+  // ─── Auto-polling : sync commentaires/likes depuis le serveur ──────────────
+  var _pollTimer = null;
+  var _lastSyncVersion = 0;
+  var _newNotifShown = false;
+
+  function startPolling() {
+    if (_pollTimer) clearInterval(_pollTimer);
+    _pollTimer = setInterval(function() {
+      // Ne pas polluer si un push est en cours
+      if (pushPending) return;
+      fetch(BIN_URL + '/latest', {headers: {'X-Access-Key': ACCESS_KEY, 'X-Bin-Meta': 'false'}})
+        .then(function(r) { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(remote) {
+          if (!remote || typeof remote.version !== 'number') return;
+          var remoteVer = remote.version;
+          if (remoteVer > (cache.version || 0)) {
+            // Merge only likes and comments to avoid overwriting local edits
+            var prevLikes = JSON.stringify(cache.likes || {});
+            var prevComments = JSON.stringify(cache.comments || {});
+            cache = mergeData(cache, remote);
+            try { localStorage.setItem('cb_cache', JSON.stringify(cache)); } catch(e) {}
+            setStatus('Sync v' + cache.version + ' (' + new Date().toLocaleTimeString() + ')');
+            // Detect new likes/comments
+            var newLikes = JSON.stringify(cache.likes || {});
+            var newComments = JSON.stringify(cache.comments || {});
+            var changed = (prevLikes !== newLikes || prevComments !== newComments);
+            if (changed) {
+              _showSyncBadge();
+              // Refresh gallery cards counters live
+              _refreshCounters();
+            }
+          }
+        })
+        .catch(function(err) {
+          // Silently ignore poll errors (network may be offline)
+          console.warn('Poll error:', err.message);
+        });
+    }, 45000); // toutes les 45 secondes
+  }
+
+  function _refreshCounters() {
+    // Met à jour les compteurs ⭐ et 💬 sur toutes les cartes visibles sans rerender
+    var cards = document.querySelectorAll('#gallery-grid .gallery-card');
+    var likes = cache.likes || {};
+    var comments = cache.comments || {};
+    var curUser = cur ? cur.login : null;
+    cards.forEach(function(card) {
+      var uname = card.dataset.uname;
+      if (!uname) return;
+      var likeArr = likes[uname] || [];
+      var commentArr = comments[uname] || [];
+      // Update like count
+      var likeSpan = card.querySelector('.like-count');
+      if (likeSpan) likeSpan.textContent = likeArr.length;
+      // Update like button color
+      var likeBtn = card.querySelector('.like-count') ? card.querySelector('.like-count').parentNode : null;
+      if (likeBtn) {
+        var myLike = curUser && likeArr.indexOf(curUser) >= 0;
+        likeBtn.style.borderColor = myLike ? '#f0c040' : '#555';
+        likeBtn.style.color = myLike ? '#f0c040' : '#8b949e';
+      }
+      // Update comment count
+      var commentSpan = card.querySelector('.comment-count');
+      if (commentSpan) commentSpan.textContent = commentArr.length;
+    });
+  }
+
+  function _showSyncBadge() {
+    var badge = document.getElementById('sync-new-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = 'sync-new-badge';
+      badge.textContent = '● Nouveau';
+      badge.style.cssText = 'background:#238636;color:#fff;font-size:9px;border-radius:4px;padding:1px 5px;margin-left:6px;animation:syncPulse 1s ease-in-out 3';
+      var indicator = document.getElementById('sync-indicator');
+      if (indicator && indicator.parentNode) indicator.parentNode.appendChild(badge);
+    }
+    badge.style.display = 'inline';
+    // Auto-hide after 8s
+    clearTimeout(badge._hideTimer);
+    badge._hideTimer = setTimeout(function() { badge.style.display = 'none'; }, 8000);
   }
 
   // ─── Data accessors (cache-based, auto-push) ───
@@ -915,6 +1056,13 @@ window.CB=(function(){
     getLikes:getLikes,getComments:getComments,getHistory:getHistory,
     toggleLike:toggleLike,addComment:addComment,deleteComment:deleteComment,
     logHistory:logHistory,
+    getSpecialRules:function(){return cache.specialRules||{}; },
+    setSpecialRule:function(unitName,rule){
+      cache.specialRules=cache.specialRules||{};
+      if(rule&&rule.trim()){cache.specialRules[unitName]=rule.trim();}
+      else{delete cache.specialRules[unitName];}
+      pushRemote();
+    },
     getStatus:function(){return syncStatus;},
     isRemoteReady:function(){return remoteReady;}
   };
@@ -1121,7 +1269,7 @@ window.CB=(function(){
       return '<div style="background:#161b22;border:1px solid #30363d;border-radius:4px;padding:6px 8px;margin:4px 0;font-size:11px"><div style="color:#58a6ff;font-weight:700;font-size:10px">'+c.user+' <span style="color:#8b949e;font-weight:400">— '+c.date.slice(0,10)+'</span>'+(canDel?' <button onclick="CB_delComment(\''+unitName.replace(/\'/g,"\\'")+'\','+i+')" style="float:right;background:none;border:none;color:#f44;cursor:pointer;font-size:11px">×</button>':'')+'</div><div style="color:#e6edf3;margin-top:3px">'+c.text.replace(/</g,'&lt;')+'</div></div>';
     }).join(''):'<p style="color:#8b949e;font-size:11px;text-align:center">Aucun commentaire. Soyez le premier !</p>';
     modal.innerHTML='<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="color:#f0c040;margin:0;font-size:14px">💬 '+unitName+'</h3><button onclick="document.getElementById(\'commentsModal\').remove()" style="background:#6e1010;color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px">×</button></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="color:#f0c040;margin:0;font-size:14px">💬 '+unitName+'</h3><div style="display:flex;gap:6px;align-items:center"><button onclick="CB&&CB.refresh&&CB.refresh(function(){CB_showComments(\''+unitName.replace(/\'/g,"\\\'")+'\')})" title="Actualiser les commentaires" style="background:#161b22;border:1px solid #30363d;border-radius:4px;color:#58a6ff;cursor:pointer;font-size:11px;padding:2px 8px">🔄 Actualiser</button><button onclick="document.getElementById(\'commentsModal\').remove()" style="background:#6e1010;color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px">×</button></div>'+
       '<div id="comments-list">'+commentsHtml+'</div>'+
       (cur?'<div style="margin-top:10px;border-top:1px solid #30363d;padding-top:8px"><textarea id="new-comment-text" placeholder="Ajouter un commentaire..." style="width:100%;background:#161b22;border:1px solid #30363d;border-radius:4px;color:#e6edf3;padding:6px;font-size:11px;resize:vertical;min-height:50px;box-sizing:border-box"></textarea><button onclick="CB_postComment(\''+unitName.replace(/\'/g,"\\'")+'\')" style="margin-top:4px;padding:5px 12px;background:#238636;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:11px">Poster</button></div>':'<p style="color:#8b949e;font-size:10px;margin-top:10px;text-align:center">Connectez-vous pour commenter</p>')+
       '</div>';
@@ -1149,6 +1297,100 @@ window.CB=(function(){
   };
 
   // ─── PASSE 4: Gallery filters & sort ───
+  // ── RÈGLES SPÉCIALES ADMIN ─────────────────────────────────────────────
+  var _spActiveRow = null; // currently-open edit row
+
+  window.CB_insertPreset = function(name, desc) {
+    var ta = document.getElementById('sp-active-ta');
+    if (!ta) {
+      alert('Ouvrez d'abord une figurine à modifier en cliquant sur ✏ Éditer');
+      return;
+    }
+    ta.value = name + ' : ' + desc;
+    ta.focus();
+  };
+
+  window.renderSP = function(q) {
+    var list = document.getElementById('sp-list');
+    var countEl = document.getElementById('sp-count');
+    if (!list) return;
+    q = (q !== undefined ? q : (document.getElementById('sp-search')||{}).value || '').toLowerCase();
+    var fac = (document.getElementById('sp-faction')||{}).value || '';
+    var rules = CB.getSpecialRules();
+    var filtered = GALLERY.filter(function(u) {
+      if (fac && u.faction !== fac) return false;
+      if (q && (u.name||'').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    if (countEl) countEl.textContent = filtered.length + ' / ' + GALLERY.length + ' unités';
+    var factions = typeof CONFIG !== 'undefined' ? CONFIG.factions : {};
+    list.innerHTML = filtered.map(function(u, fi) {
+      var facData = factions[u.faction] || {color:'#888'};
+      var rule = rules[u.name];
+      var hasRule = rule && rule.length > 0;
+      var safeId = 'sp_' + u.name.replace(/[^a-z0-9]/gi, '_');
+      return (
+        '<div class="sp-row" id="row_'+safeId+'">' +
+          '<div class="sp-row-top">' +
+            '<div class="sp-name">' +
+              '<span class="sp-faction-tag" style="background:'+facData.color+'22;color:'+facData.color+'">'+u.faction+'</span> ' +
+              u.name +
+            '</div>' +
+            '<button class="sp-edit-btn" onclick="CB_toggleSpEdit(this,''+u.name.replace(/'/g,"\'")+'')" title="Éditer la règle spéciale">✏ Éditer</button>' +
+            (hasRule ? '<button onclick="CB_delSpecial(''+u.name.replace(/'/g,"\'")+'')" class="sp-del-btn" title="Supprimer la règle">✕</button>' : '') +
+          '</div>' +
+          (hasRule
+            ? '<div class="sp-current">⚡ '+rule+'</div>'
+            : '<div class="sp-none">— aucune règle spéciale —</div>') +
+          '<div class="sp-edit-area" id="edit_'+safeId+'">' +
+            '<textarea id="ta_'+safeId+'" rows="2" placeholder="Ex: Jet-pack : au premier tour, déployez cette unité n'importe où…">'+( hasRule ? rule : '')+'</textarea>' +
+            '<div style="display:flex;gap:4px;flex-direction:column">' +
+              '<button class="sp-save-btn" onclick="CB_saveSpecial(''+u.name.replace(/'/g,"\'")+'',' +'''+safeId+'')">💾 Sauver</button>' +
+              '<button class="sp-del-btn" onclick="CB_delSpecial(''+u.name.replace(/'/g,"\'")+'')" title="Effacer la règle">✕</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+  };
+
+  window.CB_toggleSpEdit = function(btn, unitName) {
+    var safeId = 'sp_' + unitName.replace(/[^a-z0-9]/gi, '_');
+    var area = document.getElementById('edit_' + safeId);
+    var ta = document.getElementById('ta_' + safeId);
+    if (!area) return;
+    var isOpen = area.style.display === 'flex';
+    // Close any previously open
+    document.querySelectorAll('.sp-edit-area').forEach(function(a){a.style.display='none';});
+    document.querySelectorAll('.sp-edit-btn').forEach(function(b){b.classList.remove('active');});
+    document.getElementById('sp-active-ta') && (document.getElementById('sp-active-ta').id = 'sp-inactive-ta');
+    if (!isOpen) {
+      area.style.display = 'flex';
+      btn.classList.add('active');
+      if (ta) { ta.id = 'sp-active-ta'; ta.focus(); }
+    }
+  };
+
+  window.CB_saveSpecial = function(unitName, safeId) {
+    var ta = document.getElementById('ta_' + safeId);
+    if (!ta) return;
+    var rule = ta.value.trim();
+    CB.setSpecialRule(unitName, rule);
+    CB.logHistory('edit','unit',unitName, rule ? ('Règle: '+rule.slice(0,40)) : 'Règle supprimée');
+    // Update display inline
+    var row = document.getElementById('row_sp_' + safeId.replace('sp_',''));
+    renderSP();
+    // Flash feedback
+    var btn = document.querySelector('#row_sp_'+safeId+' .sp-save-btn') || document.querySelector('.sp-save-btn');
+    if (btn) { var old=btn.textContent; btn.textContent='✓ Sauvé !'; setTimeout(function(){renderSP();},800); }
+  };
+
+  window.CB_delSpecial = function(unitName) {
+    CB.setSpecialRule(unitName, '');
+    CB.logHistory('edit','unit',unitName,'Règle spéciale supprimée');
+    renderSP();
+  };
+
   window.CB_filterByCreator=function(mode){
     var cards=document.querySelectorAll('#gallery-grid .gallery-card');
     var cur=CB.getUser();
@@ -1249,9 +1491,9 @@ window.CB=(function(){
 
   // ═══ ADMIN PANEL ═══
   window.switchAdminTab=function(tab,btn){
-    ['admin-config','admin-pending','admin-creations','admin-balance','admin-users','admin-sync','admin-history'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+    ['admin-config','admin-pending','admin-creations','admin-balance','admin-users','admin-sync','admin-history','admin-specials'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
     var t=document.getElementById('admin-'+tab);if(t)t.style.display='block';
-    if(tab==='pending')renderAP();if(tab==='creations')renderAC();if(tab==='users')renderAU();if(tab==='config')renderACfg();if(tab==='history')renderAH();
+    if(tab==='pending')renderAP();if(tab==='creations')renderAC();if(tab==='users')renderAU();if(tab==='config')renderACfg();if(tab==='history')renderAH();if(tab==='specials')renderSP();
     if(typeof I18N!=='undefined'&&I18N.setLang)I18N.setLang(I18N.getLang());
     if(btn){var tabs=btn.closest('.admin-tabs');if(tabs)tabs.querySelectorAll('.btn-admtab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
   };
