@@ -309,11 +309,28 @@
  <button class="btn btn-tab active" onclick="switchGalleryTab('units',this)" data-i18n="gallery.tab_units"> Unités</button>
  <button class="btn btn-tab" onclick="switchGalleryTab('vehicles',this)" data-i18n="gallery.tab_vehicles"> Véhicules</button>
  </div>
- <div class="gallery-filters">
+ <div class="gallery-filters" style="flex-wrap:wrap;gap:4px">
  <button class="btn btn-filter active" onclick="filterGallery('all',this)" data-i18n="gallery.filter_all">Toutes</button>
- <button class="btn btn-filter" onclick="filterGallery('République',this)">République</button>
- <button class="btn btn-filter" onclick="filterGallery('Séparatistes',this)">Séparatistes</button>
- <button class="btn btn-filter" onclick="filterGallery('Rebelles',this)">Rebelles</button>
+ <button class="btn btn-filter" onclick="filterGallery('République',this)">🔵 République</button>
+ <button class="btn btn-filter" onclick="filterGallery('Séparatistes',this)">🟤 Séparatistes</button>
+ <button class="btn btn-filter" onclick="filterGallery('Rebelles',this)">🔴 Rebelles</button>
+ <button class="btn btn-filter" onclick="filterGallery('Empire',this)">⚫ Empire</button>
+ <button class="btn btn-filter" onclick="filterGallery('Côté Obscur',this)">🟣 Côté Obscur</button>
+ <button class="btn btn-filter" onclick="filterGallery('Mandalorien',this)">🟡 Mandalorien</button>
+ <button class="btn btn-filter" onclick="filterGallery('Première Ordre',this)">🔴 1ère Ordre</button>
+ <button class="btn btn-filter" onclick="filterGallery('Résistance',this)">🔵 Résistance</button>
+ <button class="btn btn-filter" onclick="filterGallery('Chasseur de primes',this)">🟠 Chasseurs</button>
+ <button class="btn btn-filter" onclick="filterGallery('Neutre',this)">⬜ Neutre</button>
+ </div>
+ <!-- ── BARRE DE RECHERCHE ── -->
+ <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
+   <span style="color:var(--accent);font-size:13px">🔍</span>
+   <input id="gallery-search" type="text"
+     placeholder="Chercher par nom ou n° de set (ex: 75280, Rex, Kashyyyk…)"
+     oninput="gallerySearch(this.value)"
+     style="flex:1;background:var(--card);color:var(--text1);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;outline:none"/>
+   <button onclick="document.getElementById('gallery-search').value='';gallerySearch('');"
+     style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px" title="Effacer">✕</button>
  </div>
  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0;font-size:11px">
   <label style="color:#8b949e" data-i18n="gallery.filter_creator">Créateur :</label>
