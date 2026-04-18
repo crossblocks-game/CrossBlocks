@@ -595,7 +595,7 @@ function updatePreview() {
  document.getElementById("pv-hp").textContent = hp;
  document.getElementById("pv-arm").textContent = armor;
  const mv = parseInt(move);
- document.getElementById("pv-move").textContent = (mv >= 0 ? "+" : "") + move;
+ document.getElementById("pv-move").textContent = (mv > 0 ? "+" : "") + move;
  document.getElementById("pv-pa").textContent = pa;
 
  // Weapons
@@ -729,7 +729,7 @@ function displayCards() {
  '<div class="card-stats">' +
  '<div class="card-stat"><span class="stat-icon">\u2764\uFE0F</span><span class="stat-val">' + c.hp + '</span><span class="stat-label">PV</span></div>' +
  '<div class="card-stat"><span class="stat-icon">\uD83D\uDEE1\uFE0F</span><span class="stat-val">' + c.armor + '</span><span class="stat-label">Armure</span></div>' +
- '<div class="card-stat"><span class="stat-icon">\uD83C\uDFC3</span><span class="stat-val">' + (mv >= 0 ? "+" : "") + c.move + '</span><span class="stat-label">Mouv.</span></div>' +
+ '<div class="card-stat"><span class="stat-icon">\uD83C\uDFC3</span><span class="stat-val">' + (mv > 0 ? "+" : "") + c.move + '</span><span class="stat-label">Mouv.</span></div>' +
  '<div class="card-stat"><span class="stat-icon">\u26A1</span><span class="stat-val">' + c.pa + '</span><span class="stat-label">PA</span></div>' +
  '</div>' +
  '<div class="card-weapons">' + weaponHTML + '</div>' +
@@ -916,7 +916,7 @@ function exportPDF() {
  var stats = [
  { label:"PV", val:c.hp },
  { label:"ARM", val:c.armor },
- { label:"MOV", val:(parseInt(c.move) >= 0 ? "+" : "") + c.move },
+ { label:"MOV", val:(parseInt(c.move) > 0 ? "+" : "") + c.move },
  { label:"PA", val:c.pa }
  ];
  var sw = 21, sx = 9;
@@ -990,8 +990,10 @@ function calcWeaponDmg(w, targetArm) {
  // Best range damage of a weapon vs target armor
  if (!w) return 0;
  var best = 0;
- var bands = [w.diff]; // simplified: use main diff
- var hitP = Math.max(0, (21 - w.diff) / 20);
+ // FIX: w.diff inexistant — meilleure portée disponible
+ var _bd=0;["melee","cat1","cat2","catP"].forEach(function(b){var d=w[b]||0;if(d>0&&(_bd===0||d<_bd))_bd=d;});
+ if(!_bd)return 0;
+ var hitP=Math.max(0,(21-_bd)/20);
  var pen = w.pen || 0;
  var saveP = Math.max(0, (21 - (targetArm + pen)) / 20);
  var failSave = 1 - saveP;
@@ -1336,7 +1338,7 @@ function injectSuggestions(arr) {
  } else if (s.type === "weapon") {
  if (!CONFIG.weapons[s.name]) {
  CONFIG.weapons[s.name] = {
- mun: s.mun, diff: s.diff, pen: s.pen, dmg: s.dmg,
+ mun: s.mun, pen: s.pen, dmg: s.dmg, melee: s.melee||0, cat1: s.cat1||0, cat2: s.cat2||0, catP: s.catP||0,
  portee: s.portee,
  _pending: isPending, _sgIndex: i
  };
@@ -1409,7 +1411,7 @@ function submitSuggestion(type) {
  renderGallery();
  } else {
  CONFIG.weapons[sg.name] = {
- mun: sg.mun, diff: sg.diff, pen: sg.pen, dmg: sg.dmg,
+ mun: sg.mun, pen: sg.pen, dmg: sg.dmg, melee: sg.melee||0, cat1: sg.cat1||0, cat2: sg.cat2||0, catP: sg.catP||0,
  portee: sg.portee, _pending: true, _sgIndex: idx
  };
  populateWeapons();
@@ -1477,7 +1479,7 @@ function renderPending() {
  } else {
  html += '<div class="pending-item">' +
  '<div class="pi-info"><span class="pi-name">' + s.name + '</span>' +
- '<div class="pi-meta">Mun:' + s.mun + ' Diff:' + s.diff + ' Pen:' + s.pen +
+ '<div class="pi-meta">Mun:' + s.mun + ' Pen:' + s.pen +
  ' Dmg:' + s.dmg + ' | ' + s.portee +
  (s.notes ? ' | ' + s.notes : '') + ' | ' + s.date + '</div></div>' +
  '<button class="btn-approve" onclick="approveSuggestion(' + i + ')">Approuver</button>' +
