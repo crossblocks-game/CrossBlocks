@@ -864,3 +864,105 @@ body {
   }
 }
 
+
+
+/* ─── F1: Mode escouade ──────────────────────────────────────── */
+.squad-badge {
+  position: absolute; top: -6px; left: -6px; z-index: 20;
+  background: var(--accent); color: #000;
+  font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 900;
+  border-radius: 50%; width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px #0006;
+}
+.btn-squad { background: none; border: 1px solid var(--border); color: var(--text2); }
+.btn-squad.active { border-color: var(--accent); color: var(--accent); background: var(--accent)15; }
+
+/* ─── F3: Budget ─────────────────────────────────────────────── */
+#army-total.over-budget { color: #f85149 !important; animation: budgetPulse .6s ease-in-out 3; }
+#army-budget.over { border-color: #f85149 !important; }
+@keyframes budgetPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.budget-warning {
+  color: #f85149; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px; background: #f8514915;
+  border: 1px solid #f8514933;
+}
+
+/* ─── F4: Comparateur d'armées ───────────────────────────────── */
+.compare-panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; margin-top: 12px;
+  display: none;
+}
+.compare-panel.open { display: block; }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compare-army {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px;
+}
+.compare-army h4 { color: var(--accent); font-size: 12px; margin: 0 0 6px; }
+.compare-row {
+  display: flex; justify-content: space-between;
+  font-size: 11px; padding: 2px 0;
+  border-bottom: 1px solid var(--border);
+}
+.compare-row .cr-label { color: var(--text2); }
+.compare-row .cr-val   { font-weight: 700; font-family: 'Orbitron', monospace; font-size: 10px; }
+.faction-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin: 6px 0; }
+.faction-seg { height: 100%; transition: width .3s; }
+
+/* ─── F5: Drag & drop ─────────────────────────────────────────── */
+.card-wrapper { cursor: grab; transition: opacity .15s, box-shadow .15s; user-select: none; }
+.card-wrapper.dragging { opacity: .4; cursor: grabbing; }
+.card-wrapper.drag-over { box-shadow: 0 0 0 2px var(--accent); }
+
+/* ─── F7: Print ───────────────────────────────────────────────── */
+@media print {
+  body > *:not(.cards-section) { display: none !important; }
+  .cards-section { display: block !important; }
+  .cards-toolbar, .save-indicator, .card-delete, .squad-badge { display: none !important; }
+  .card-wrapper .card {
+    aspect-ratio: 105 / 148 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 12px !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    grid-template-columns: unset !important;
+  }
+  .card-wrapper .card .card-footer { display: block !important; }
+  .card-wrapper .card .cw-range    { display: table !important; }
+  .card-wrapper .card .stat-label  { display: block !important; }
+  .card-wrapper .card .card-stats  { display: grid !important; grid-template-columns: repeat(4,1fr) !important; }
+  .card-wrapper .card::before { display: block !important; }
+  .cards-grid { grid-template-columns: repeat(2, 105mm) !important; gap: 8mm !important; }
+}
+
+/* ─── F9: QR code ─────────────────────────────────────────────── */
+.qr-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 20000;
+  display: flex; align-items: center; justify-content: center;
+}
+.qr-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px; text-align: center; max-width: 340px;
+}
+.qr-box h3 { color: var(--accent); font-size: 14px; margin: 0 0 10px; }
+.qr-box canvas { border-radius: 8px; background: white; padding: 8px; }
+.qr-box p { color: var(--text2); font-size: 10px; margin: 8px 0 0; }
+
+/* ─── F10: Historique d'armées ────────────────────────────────── */
+.armies-list {
+  display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto;
+}
+.army-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 10px; cursor: pointer;
+  transition: border-color .15s;
+}
+.army-item:hover { border-color: var(--accent); }
+.army-item-name { flex: 1; font-size: 12px; font-weight: 600; color: var(--text1); }
+.army-item-meta { font-size: 10px; color: var(--text2); }
+.army-item-pts  { font-family: 'Orbitron', monospace; font-size: 11px; color: var(--accent); }
+.army-item-del  { background: none; border: none; color: #f85149; cursor: pointer; font-size: 14px; padding: 0 4px; }

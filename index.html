@@ -379,8 +379,27 @@
  <div class="cards-actions">
  <span id="card-count" class="card-counter">0 fiche(s)</span>
  <span id="army-total" class="army-total"></span>
- <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled data-i18n="cards.export"> Exporter PDF</button>
+ <!-- F3: Budget limite -->
+ <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)">
+   🎯
+   <input id="army-budget" type="number" min="0" step="50" placeholder="Budget max" title="Budget maximum de l'armée"
+     oninput="checkBudget()"
+     style="width:90px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text1);font-size:11px">
+   pts
+ </label>
+ <!-- F1: Mode escouade toggle -->
+ <button id="btn-squad" class="btn btn-squad" onclick="toggleSquad(this)" title="Regrouper les unités identiques">
+   ⊞ Escouade
+ </button>
+ <!-- F7: Impression -->
+ <button class="btn" onclick="printArmy()" title="Imprimer uniquement les fiches" style="background:none;border:1px solid var(--border)">
+   🖨 Imprimer
+ </button>
+ <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled data-i18n="cards.export"> PDF</button>
  <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none" data-i18n="cards.clear_all"> Tout supprimer</button>
+ <button class="btn" onclick="toggleArmiesPanel()" title="Historique des armées sauvegardées" style="background:none;border:1px solid var(--border)">📚</button>
+ <button class="btn" onclick="toggleCompare()" title="Comparer avec une autre armée" style="background:none;border:1px solid var(--border)">⚔</button>
+ <button class="btn" onclick="shareQR()" title="Partager via QR code" style="background:none;border:1px solid var(--border)">📱</button>
  </div>
  </div>
  <div id="save-indicator" class="save-indicator" data-i18n="cards.autosave"> Sauvegarde auto activée</div>
@@ -389,7 +408,51 @@
  </div>
  </section>
 
- <!-- ═══ ÉDITEUR DE FACTIONS ═══ -->
+ <!-- ═══ F4: COMPARATEUR D'ARMÉES ═══ -->
+<div id="compare-panel" class="compare-panel" style="margin:0 0 16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <h3 style="color:var(--accent);font-size:13px;margin:0">⚔ Comparaison d'armées</h3>
+    <button onclick="document.getElementById('compare-panel').classList.remove('open')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">×</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+    <div style="flex:1;min-width:120px">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Armée 1 (fiches actuelles)</div>
+      <div id="cmp-a1-name" style="font-size:12px;color:var(--accent);font-weight:700">Armée en cours</div>
+    </div>
+    <div style="flex:1;min-width:120px">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Armée 2 (depuis l'historique)</div>
+      <select id="cmp-a2-select" onchange="loadCompareArmy(this.value)" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text1);padding:4px;border-radius:4px;font-size:11px">
+        <option value="">— Sélectionner une armée sauvegardée —</option>
+      </select>
+    </div>
+  </div>
+  <div id="compare-grid" class="compare-grid"></div>
+</div>
+
+<!-- ═══ F10: HISTORIQUE DES ARMÉES ═══ -->
+<div id="armies-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <h3 style="color:var(--accent);font-size:13px;margin:0">📚 Historique des armées</h3>
+    <button onclick="document.getElementById('armies-panel').style.display='none'" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">×</button>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+    <input id="army-save-name" type="text" placeholder="Nom de cette armée…" style="flex:1;min-width:120px;background:var(--card);border:1px solid var(--border);color:var(--text1);padding:5px 8px;border-radius:4px;font-size:11px">
+    <button class="btn" onclick="saveArmy()" style="background:var(--accent);color:#000;font-weight:700;border:none">💾 Sauver</button>
+  </div>
+  <div id="armies-list" class="armies-list"><p style="color:var(--text2);font-size:11px;text-align:center">Aucune armée sauvegardée</p></div>
+</div>
+
+<!-- ═══ F9: QR CODE MODAL ═══ -->
+<div id="qr-modal" class="qr-modal" style="display:none">
+  <div class="qr-box">
+    <h3>📱 QR Code — Partage armée</h3>
+    <div id="qr-canvas-wrap"></div>
+    <p id="qr-summary">Scannez pour importer cette liste d'armée</p>
+    <button onclick="document.getElementById('qr-modal').style.display='none'" style="margin-top:10px;padding:6px 18px;border:1px solid var(--border);background:none;color:var(--text1);border-radius:4px;cursor:pointer">Fermer</button>
+  </div>
+</div>
+
+<!-- ═══ ÉDITEUR DE FACTIONS ═══ -->
  <section class="suggest-section" style="margin-top:16px">
  <h2 class="section-title" data-i18n="faction.title"> Éditeur de factions</h2>
  <p class="suggest-desc" data-i18n="faction.desc">Créez de nouvelles factions pour vos unités. Soumettez-les à l'admin pour les rendre disponibles à tous.</p>

@@ -685,12 +685,28 @@ function displayCards() {
  }
 
  container.innerHTML = "";
- cards.forEach(function(c, i) {
- var fac = CONFIG.factions[c.faction] || { color:"#888", accent:"#f0c040" };
- var mv = parseInt(c.move);
 
- var wrapper = document.createElement("div");
- wrapper.className = "card-wrapper";
+  // ── FEATURE 1: Mode escouade — regrouper les doublons ──
+  var cardsToRender;
+  if (window.squadMode) {
+    var _groups = [], _gmap = {};
+    cards.forEach(function(c, i) {
+      var key = c.name + '|' + c.faction;
+      if (_gmap[key] === undefined) { _gmap[key] = _groups.length; _groups.push({c:c, count:1, idx:i}); }
+      else _groups[_gmap[key]].count++;
+    });
+    cardsToRender = _groups;
+  } else {
+    cardsToRender = cards.map(function(c, i) { return {c:c, count:1, idx:i}; });
+  }
+
+  cardsToRender.forEach(function(item) {
+    var c = item.c, count = item.count, i = item.idx;
+    var fac = CONFIG.factions[c.faction] || { color:"#888", accent:"#f0c040" };
+    var mv = parseInt(c.move);
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "card-wrapper";
 
  // Weapons HTML
  var weaponHTML = "";
@@ -720,6 +736,7 @@ function displayCards() {
 
  wrapper.innerHTML =
  '<button class="card-delete" onclick="deleteCard(' + i + ')" title="Supprimer">\u2715</button>' +
+    (count > 1 ? '<span class="squad-badge">×' + count + '</span>' : '') +
  '<div class="card theme-' + c.theme + '">' +
  '<div class="card-header">' +
  '<span class="card-faction-badge" style="border-left:3px solid ' + fac.color + '">' + c.faction + '</span>' +
@@ -1551,3 +1568,329 @@ function rejectSuggestion(index) {
  renderPending();
  updateSuggestCount();
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 1: MODE ESCOUADE
+// ═══════════════════════════════════════════════════════════════════════════
+window.squadMode = false;
+function toggleSquad(btn) {
+  window.squadMode = !window.squadMode;
+  if (btn) btn.classList.toggle('active', window.squadMode);
+  displayCards();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 3: BUDGET D'ARMÉE
+// ═══════════════════════════════════════════════════════════════════════════
+function checkBudget() {
+  var budgetEl = document.getElementById('army-budget');
+  var totalEl  = document.getElementById('army-total');
+  var budget   = parseInt((budgetEl||{}).value) || 0;
+  if (!budget || !totalEl) return;
+  var total = 0;
+  cards.forEach(function(c){ total += parseInt(c.points)||0; });
+  var over = budget > 0 && total > budget;
+  if (totalEl)  totalEl.classList.toggle('over-budget', over);
+  if (budgetEl) budgetEl.classList.toggle('over', over);
+  // Show warning
+  var warn = document.getElementById('budget-warning-el');
+  if (over) {
+    if (!warn) {
+      warn = document.createElement('span');
+      warn.id = 'budget-warning-el';
+      warn.className = 'budget-warning';
+      totalEl.parentNode.insertBefore(warn, totalEl.nextSibling);
+    }
+    warn.textContent = '+' + (total - budget) + ' pts au-dessus du budget !';
+  } else if (warn) { warn.remove(); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 4: COMPARATEUR D'ARMÉES
+// ═══════════════════════════════════════════════════════════════════════════
+var _compareArmy2 = null;
+
+function toggleCompare() {
+  var panel = document.getElementById('compare-panel');
+  if (!panel) return;
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    populateCompareSelect();
+    renderCompare();
+  }
+}
+
+function populateCompareSelect() {
+  var sel = document.getElementById('cmp-a2-select');
+  if (!sel) return;
+  var armies = loadArmiesFromStorage();
+  sel.innerHTML = '<option value="">— Sélectionner une armée sauvegardée —</option>';
+  armies.forEach(function(a, i) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = a.name + ' (' + a.total + 'pts, ' + a.cards.length + ' unités)';
+    sel.appendChild(opt);
+  });
+}
+
+function loadCompareArmy(idx) {
+  if (idx === '') { _compareArmy2 = null; renderCompare(); return; }
+  var armies = loadArmiesFromStorage();
+  _compareArmy2 = armies[parseInt(idx)] || null;
+  renderCompare();
+}
+
+function armyStats(cardList) {
+  var total = 0, hp = 0, byFac = {};
+  cardList.forEach(function(c) {
+    var pts = parseInt(c.points) || 0;
+    total += pts; hp += parseInt(c.hp)||0;
+    byFac[c.faction] = (byFac[c.faction]||0) + pts;
+  });
+  return { total:total, count:cardList.length, hp:hp, factions:byFac };
+}
+
+function renderCompare() {
+  var grid = document.getElementById('compare-grid');
+  if (!grid) return;
+  var s1 = armyStats(cards);
+  var s2 = _compareArmy2 ? armyStats(_compareArmy2.cards) : null;
+
+  function armyHTML(stats, name, fac) {
+    if (!stats) return '<div class="compare-army" style="opacity:.4;text-align:center;font-size:12px;padding:20px">Sélectionnez une armée</div>';
+    var facEntries = Object.entries(stats.factions).sort(function(a,b){return b[1]-a[1];});
+    var barHTML = '<div class="faction-bar">';
+    facEntries.forEach(function(fe){
+      var pct = stats.total > 0 ? (fe[1]/stats.total*100).toFixed(1) : 0;
+      var col = (CONFIG.factions[fe[0]]||{color:'#888'}).color;
+      barHTML += '<div class="faction-seg" style="width:'+pct+'%;background:'+col+'" title="'+fe[0]+': '+fe[1]+'pts"></div>';
+    });
+    barHTML += '</div>';
+    return '<div class="compare-army">' +
+      '<h4>' + name + '</h4>' +
+      '<div class="compare-row"><span class="cr-label">Total pts</span><span class="cr-val">' + stats.total + '</span></div>' +
+      '<div class="compare-row"><span class="cr-label">Unités</span><span class="cr-val">' + stats.count + '</span></div>' +
+      '<div class="compare-row"><span class="cr-label">PV total</span><span class="cr-val">' + stats.hp + '</span></div>' +
+      '<div style="font-size:10px;color:var(--text2);margin-top:6px">Répartition par faction</div>' +
+      barHTML +
+      facEntries.map(function(fe){ return '<div class="compare-row"><span class="cr-label" style="color:'+((CONFIG.factions[fe[0]]||{color:'#888'}).color)+'">'+fe[0]+'</span><span class="cr-val">'+fe[1]+'pts</span></div>'; }).join('') +
+      '</div>';
+  }
+  grid.innerHTML = armyHTML(s1, 'Armée en cours') + armyHTML(s2, _compareArmy2 ? _compareArmy2.name : '—');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 5: DRAG & DROP POUR RÉORDONNER
+// ═══════════════════════════════════════════════════════════════════════════
+var _dragIdx = null;
+
+function initDragDrop() {
+  var container = document.getElementById('cards-container');
+  if (!container) return;
+  container.addEventListener('dragstart', function(e) {
+    var wrap = e.target.closest('.card-wrapper');
+    if (!wrap) return;
+    _dragIdx = Array.from(container.children).indexOf(wrap);
+    wrap.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  container.addEventListener('dragend', function(e) {
+    var wrap = e.target.closest('.card-wrapper');
+    if (wrap) wrap.classList.remove('dragging');
+    container.querySelectorAll('.card-wrapper').forEach(function(w){ w.classList.remove('drag-over'); });
+  });
+  container.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    var wrap = e.target.closest('.card-wrapper');
+    if (!wrap || _dragIdx === null) return;
+    container.querySelectorAll('.card-wrapper').forEach(function(w){ w.classList.remove('drag-over'); });
+    wrap.classList.add('drag-over');
+  });
+  container.addEventListener('drop', function(e) {
+    e.preventDefault();
+    var wrap = e.target.closest('.card-wrapper');
+    if (!wrap || _dragIdx === null) return;
+    var dropIdx = Array.from(container.children).indexOf(wrap);
+    if (dropIdx !== _dragIdx) {
+      var moved = cards.splice(_dragIdx, 1)[0];
+      cards.splice(dropIdx, 0, moved);
+      saveCards();
+      displayCards();
+    }
+    _dragIdx = null;
+  });
+}
+
+// Rendre les wrappers draggable après displayCards
+var _origDisplayCards = displayCards;
+displayCards = function() {
+  _origDisplayCards();
+  var container = document.getElementById('cards-container');
+  if (container) {
+    container.querySelectorAll('.card-wrapper').forEach(function(w){ w.draggable = true; });
+  }
+  checkBudget();
+  renderCompare();
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 7: IMPRESSION
+// ═══════════════════════════════════════════════════════════════════════════
+function printArmy() {
+  if (cards.length === 0) { alert('Aucune fiche à imprimer !'); return; }
+  window.print();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 9: QR CODE (partage armée)
+// ═══════════════════════════════════════════════════════════════════════════
+function shareQR() {
+  if (cards.length === 0) { alert('Aucune carte à partager !'); return; }
+  var modal = document.getElementById('qr-modal');
+  var wrap  = document.getElementById('qr-canvas-wrap');
+  var sumEl = document.getElementById('qr-summary');
+  if (!modal || !wrap) return;
+
+  // Compact army data for QR
+  var data = {
+    v: 1,
+    n: 'Mon armée',
+    c: cards.map(function(c){ return { n:c.name, f:c.faction, t:c.theme, pts:c.points, hp:c.hp, arm:c.armor, mv:c.move, pa:c.pa, w:c.weapons }; })
+  };
+  var url = window.location.origin + window.location.pathname + '#army=' + btoa(encodeURIComponent(JSON.stringify(data)));
+  // Limit QR data: use only the hash part if too long
+  var qrData = url.length < 1500 ? url : JSON.stringify(data).slice(0, 1200) + '...';
+
+  var total = cards.reduce(function(s,c){ return s+(parseInt(c.points)||0); }, 0);
+  if (sumEl) sumEl.textContent = cards.length + ' unités — ' + total + ' pts';
+
+  // Clear and render QR
+  wrap.innerHTML = '';
+  var canvas = document.createElement('canvas');
+  canvas.id = 'qr-canvas';
+  wrap.appendChild(canvas);
+  modal.style.display = 'flex';
+
+  // Load QRCode.js from CDN if not already loaded
+  if (typeof QRCode === 'undefined') {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    script.onload = function() { _renderQR(canvas, qrData); };
+    document.head.appendChild(script);
+  } else {
+    _renderQR(canvas, qrData);
+  }
+}
+
+function _renderQR(canvas, data) {
+  try {
+    new QRCode(canvas, {
+      text: data.slice(0, 1500),
+      width: 220, height: 220,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e) {
+    canvas.parentElement.innerHTML = '<p style="color:#f85149;font-size:11px">QR trop grand — exporter JSON à la place</p>';
+  }
+}
+
+// Import depuis QR hash
+(function() {
+  var hash = window.location.hash;
+  if (hash && hash.startsWith('#army=')) {
+    try {
+      var data = JSON.parse(decodeURIComponent(atob(hash.slice(6))));
+      if (data && data.c) {
+        cards = data.c.map(function(c){ return { name:c.n, faction:c.f, theme:c.t, points:c.pts, hp:c.hp, armor:c.arm, move:c.mv, pa:c.pa, weapons:c.w||[] }; });
+        saveCards();
+        setTimeout(displayCards, 300);
+      }
+    } catch(e) { /* invalid QR data */ }
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 10: HISTORIQUE DES ARMÉES
+// ═══════════════════════════════════════════════════════════════════════════
+var ARMIES_KEY = 'crossblocks_armies';
+
+function loadArmiesFromStorage() {
+  try { return JSON.parse(localStorage.getItem(ARMIES_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveArmiesToStorage(a) {
+  try { localStorage.setItem(ARMIES_KEY, JSON.stringify(a)); } catch(e) {}
+}
+
+function saveArmy() {
+  var nameEl = document.getElementById('army-save-name');
+  var name = (nameEl && nameEl.value.trim()) || ('Armée ' + new Date().toLocaleDateString('fr-FR'));
+  if (cards.length === 0) { alert('Aucune carte à sauvegarder !'); return; }
+  var total = cards.reduce(function(s,c){ return s+(parseInt(c.points)||0); }, 0);
+  var armies = loadArmiesFromStorage();
+  armies.unshift({ name:name, date:new Date().toISOString(), total:total, cards: JSON.parse(JSON.stringify(cards)) });
+  if (armies.length > 20) armies = armies.slice(0, 20); // Keep max 20
+  saveArmiesToStorage(armies);
+  if (nameEl) nameEl.value = '';
+  renderArmiesList();
+  populateCompareSelect();
+  var btn = document.querySelector('.btn[onclick="saveArmy()"]');
+  if (btn) { var old = btn.textContent; btn.textContent = '✓ Sauvé !'; setTimeout(function(){ btn.textContent = old; }, 1200); }
+}
+
+function loadArmy(idx) {
+  var armies = loadArmiesFromStorage();
+  var a = armies[idx];
+  if (!a) return;
+  if (cards.length > 0 && !confirm('Remplacer les fiches actuelles par "' + a.name + '" ?')) return;
+  cards = JSON.parse(JSON.stringify(a.cards));
+  saveCards();
+  displayCards();
+  document.getElementById('armies-panel').style.display = 'none';
+}
+
+function deleteArmy(idx, e) {
+  e.stopPropagation();
+  var armies = loadArmiesFromStorage();
+  armies.splice(idx, 1);
+  saveArmiesToStorage(armies);
+  renderArmiesList();
+  populateCompareSelect();
+}
+
+function renderArmiesList() {
+  var list = document.getElementById('armies-list');
+  if (!list) return;
+  var armies = loadArmiesFromStorage();
+  if (armies.length === 0) {
+    list.innerHTML = '<p style="color:var(--text2);font-size:11px;text-align:center">Aucune armée sauvegardée</p>';
+    return;
+  }
+  list.innerHTML = armies.map(function(a, i) {
+    var d = new Date(a.date).toLocaleDateString('fr-FR');
+    return '<div class="army-item" onclick="loadArmy(' + i + ')">' +
+      '<div>' +
+        '<div class="army-item-name">' + a.name + '</div>' +
+        '<div class="army-item-meta">' + d + ' — ' + a.cards.length + ' unités</div>' +
+      '</div>' +
+      '<span class="army-item-pts">' + a.total + ' pts</span>' +
+      '<button class="army-item-del" onclick="deleteArmy(' + i + ', event)" title="Supprimer">🗑</button>' +
+    '</div>';
+  }).join('');
+}
+
+function toggleArmiesPanel() {
+  var panel = document.getElementById('armies-panel');
+  if (!panel) return;
+  var open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  if (!open) renderArmiesList();
+}
+
+// Init on load
+window.addEventListener('load', function() {
+  initDragDrop();
+  renderArmiesList();
+});
+
