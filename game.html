@@ -44,21 +44,17 @@ const WEAPS={
   f_poing_x2:{n:"×2 Fusils poing",melee:0,cat1:16,cat2:16,catP:0,mun:4,pen:3,dmg:1},
   tourelle_x3:{n:"×3 Tourelles",melee:0,cat1:14,cat2:14,catP:0,mun:12,pen:3,dmg:1},
   rocket_x3:{n:"×3 Rockets",melee:0,cat1:0,cat2:11,catP:11,mun:3,pen:10,dmg:0,dMax:4,once:true},
-  // ── Nouvelles armes ──
-  fusil_e11:{n:"Fusil E-11",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
-  sabre_b:{n:"Sabre laser bleu",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
-  sabre_r:{n:"Sabre laser rouge",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
-  sabre_g:{n:"Sabre laser vert",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
-  force_choke:{n:"Choke Force",melee:0,cat1:14,cat2:0,catP:0,mun:2,pen:8,dmg:2},
-  pist_dl44:{n:"DL-44",melee:15,cat1:15,cat2:0,catP:0,mun:4,pen:6,dmg:1},
-  blast_mando:{n:"Blaster Mando",melee:15,cat1:15,cat2:16,catP:0,mun:4,pen:5,dmg:1},
-  arc_rifle:{n:"Fusil ARC",melee:0,cat1:14,cat2:0,catP:15,mun:3,pen:6,dmg:2},
-  z6:{n:"Répéteur Z-6",melee:0,cat1:14,cat2:16,catP:0,mun:8,pen:4,dmg:1},
+  fusil_e11:{n:"E-11",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
+  sabre_b:{n:"Sabre bleu",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  sabre_r:{n:"Sabre rouge",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  sabre_g:{n:"Sabre vert",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
   sabre_vio:{n:"Sabre violet",melee:11,cat1:0,cat2:0,catP:0,mun:3,pen:8,dmg:2},
   sabre_w:{n:"Sabre blanc",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
   double_sabre:{n:"Double sabre",melee:11,cat1:0,cat2:0,catP:0,mun:3,pen:7,dmg:2},
-  double_sabre_dark:{n:"Darksaber",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:9,dmg:3},
+  pist_dl44:{n:"DL-44",melee:15,cat1:15,cat2:0,catP:0,mun:4,pen:6,dmg:1},
+  blast_mando:{n:"Blaster Mando",melee:15,cat1:15,cat2:16,catP:0,mun:4,pen:5,dmg:1},
   bowcaster:{n:"Bowcaster",melee:0,cat1:14,cat2:15,catP:0,mun:2,pen:7,dmg:3},
+  z6:{n:"Z-6 Rotatif",melee:0,cat1:14,cat2:16,catP:0,mun:8,pen:4,dmg:1},
   pist_r:{n:"Pistolet rouge",melee:17,cat1:17,cat2:0,catP:0,mun:4,pen:3,dmg:1},
 };
 
@@ -79,57 +75,24 @@ const UDEFS={
   rebel_p:{n:"Rebelle Pistol.",pts:150,act:5,mm:0,arm:17,hp:2,w:["pist_r"],ic:"🫡",fac:"reb",co:"#993333"},
   rebel_jet:{n:"Rebelle Jetpack",pts:240,act:5,mm:2,arm:17,hp:2,w:["blast_r"],ic:"🚀",fac:"reb",co:"#DD5555",air:1,fly:true},
   guard:{n:"Garde Reb.",pts:200,act:5,mm:0,arm:16,hp:2,w:["blast_b"],ic:"🛡",fac:"reb",co:"#884422"},
-  // ── Nouvelles unités (sync avec index.html) ──
   stormtrooper:{n:"Stormtrooper",pts:180,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"⬜",fac:"emp",co:"#ffffff"},
-  vader:{n:"Darth Vader",pts:730,act:5,mm:0,arm:11,hp:3,w:["sabre_r","force_choke"],ic:"🔴",fac:"emp",co:"#111111"},
+  vader:{n:"Darth Vader",pts:730,act:5,mm:0,arm:11,hp:3,w:["sabre_r"],ic:"🔴",fac:"emp",co:"#111111"},
   luke_jedi:{n:"Luke Jedi",pts:590,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🟢",fac:"reb",co:"#333333"},
   han:{n:"Han Solo",pts:330,act:5,mm:0,arm:16,hp:2,w:["pist_dl44"],ic:"🤠",fac:"reb",co:"#8B6C42"},
-  mando:{n:"Mandalorien",pts:500,act:5,mm:2,arm:11,hp:2,w:["blast_mando"],ic:"⬡",fac:"mando",co:"#888899",air:1,fly:true},
-  obi_wan:{n:"Obi-Wan",pts:510,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"🔵",fac:"cl",co:"#3a6fb5"},
-  yoda:{n:"Maître Yoda",pts:630,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🧙",fac:"cl",co:"#4a7a3a"},
-  anakin:{n:"Anakin",pts:570,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚡",fac:"cl",co:"#2a5a99"},
-  grievous:{n:"Général Grievous",pts:810,act:5,mm:0,arm:10,hp:3,w:["sabre_b","sabre_r"],ic:"🕷",fac:"sep",co:"#778899"},
-  kylo:{n:"Kylo Ren",pts:680,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"🔴",fac:"fo",co:"#111111"},
-  // ─── Bad Batch ───
-  hunter:{n:"Hunter",pts:430,act:5,mm:0,arm:12,hp:2,w:["arc_rifle"],ic:"🗡",fac:"cl",co:"#332211"},
-  crosshair:{n:"Crosshair",pts:460,act:5,mm:0,arm:12,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#223344"},
-  wrecker:{n:"Wrecker",pts:490,act:5,mm:0,arm:11,hp:3,w:["z6"],ic:"💪",fac:"cl",co:"#553322"},
-  echo:{n:"Echo",pts:390,act:5,mm:0,arm:13,hp:2,w:["arc_rifle"],ic:"🤖",fac:"cl",co:"#334455"},
-  tech:{n:"Tech",pts:330,act:5,mm:0,arm:13,hp:2,w:["arc_rifle"],ic:"🔧",fac:"cl",co:"#445566"},
-  // ─── Jedi du Conseil ───
-  mace:{n:"Mace Windu",pts:680,act:5,mm:0,arm:13,hp:2,w:["sabre_vio"],ic:"🟣",fac:"cl",co:"#5a1a8a"},
-  plo:{n:"Plo Koon",pts:460,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"🔵",fac:"cl",co:"#2233aa"},
-  kit:{n:"Kit Fisto",pts:480,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🟢",fac:"cl",co:"#2a5a3a"},
-  ahsoka:{n:"Ahsoka Tano",pts:540,act:5,mm:0,arm:14,hp:2,w:["sabre_w","sabre_w"],ic:"⬜",fac:"cl",co:"#ffffff"},
-  qui_gon:{n:"Qui-Gon Jinn",pts:490,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🟢",fac:"cl",co:"#4a5a3a"},
-  // ─── Côté Obscur ───
-  maul:{n:"Darth Maul",pts:730,act:5,mm:0,arm:12,hp:2,w:["double_sabre"],ic:"🔴",fac:"emp",co:"#440000"},
-  dooku:{n:"Comte Dooku",pts:630,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"🔴",fac:"emp",co:"#111133"},
-  palpatine:{n:"Palpatine",pts:830,act:5,mm:0,arm:12,hp:2,w:["sabre_r","force_choke"],ic:"⚡",fac:"emp",co:"#0a0a0a"},
-  ventress:{n:"Asajj Ventress",pts:670,act:5,mm:0,arm:12,hp:2,w:["sabre_r","sabre_r"],ic:"🔴",fac:"sep",co:"#220033"},
-  // ─── Empire complet ───
-  scout_trooper:{n:"Scout Trooper",pts:230,act:5,mm:0,arm:16,hp:2,w:["sniper"],ic:"🔭",fac:"emp",co:"#ddddcc"},
-  death_trooper:{n:"Death Trooper",pts:310,act:5,mm:0,arm:14,hp:2,w:["sniper"],ic:"💀",fac:"emp",co:"#0a0a11"},
-  dark_trooper:{n:"Dark Trooper",pts:420,act:5,mm:0,arm:10,hp:3,w:["z6"],ic:"🤖",fac:"emp",co:"#1a1a2e"},
-  snowtrooper:{n:"Snowtrooper",pts:200,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"❄",fac:"emp",co:"#e8e8ee"},
-  // ─── Rebelles / Alliance ───
   leia:{n:"Princesse Leia",pts:290,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"👑",fac:"reb",co:"#ffffff"},
   chewie:{n:"Chewbacca",pts:410,act:5,mm:0,arm:15,hp:3,w:["bowcaster"],ic:"🐻",fac:"reb",co:"#8B6040"},
-  lando:{n:"Lando Calrissian",pts:280,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"🎩",fac:"reb",co:"#ffffff"},
-  luke_xwing:{n:"Luke X-Wing",pts:370,act:5,mm:0,arm:16,hp:2,w:["sabre_b","pist_dl44"],ic:"🚀",fac:"reb",co:"#ff8800"},
-  cassian:{n:"Cassian Andor",pts:300,act:5,mm:0,arm:16,hp:2,w:["blast_r"],ic:"🕵",fac:"reb",co:"#445544"},
-  jyn:{n:"Jyn Erso",pts:280,act:5,mm:0,arm:17,hp:2,w:["blast_r"],ic:"✊",fac:"reb",co:"#556644"},
-  // ─── Mandalorien complet ───
+  obi_wan:{n:"Obi-Wan Kenobi",pts:510,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"🔵",fac:"cl",co:"#3a6fb5"},
+  anakin:{n:"Anakin Skywalker",pts:570,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚡",fac:"cl",co:"#2a5a99"},
+  yoda:{n:"Maître Yoda",pts:630,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🧙",fac:"cl",co:"#4a7a3a"},
+  mace:{n:"Mace Windu",pts:680,act:5,mm:0,arm:13,hp:2,w:["sabre_vio"],ic:"🟣",fac:"cl",co:"#5a1a8a"},
+  ahsoka:{n:"Ahsoka Tano",pts:540,act:5,mm:0,arm:14,hp:2,w:["sabre_w"],ic:"⬜",fac:"cl",co:"#CC8855"},
+  maul:{n:"Darth Maul",pts:730,act:5,mm:0,arm:12,hp:2,w:["double_sabre"],ic:"🔴",fac:"emp",co:"#440000"},
+  grievous:{n:"Général Grievous",pts:810,act:5,mm:0,arm:10,hp:3,w:["sabre_b","sabre_r"],ic:"🕷",fac:"sep",co:"#778899"},
+  kylo:{n:"Kylo Ren",pts:680,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"🔴",fac:"fo",co:"#111111"},
+  mando:{n:"Mandalorien",pts:500,act:5,mm:2,arm:11,hp:2,w:["blast_mando"],ic:"⬡",fac:"mando",co:"#888899",air:1,fly:true},
   boba:{n:"Boba Fett",pts:550,act:5,mm:2,arm:11,hp:2,w:["blast_mando"],ic:"🪐",fac:"mando",co:"#336644",air:1,fly:true},
-  jango:{n:"Jango Fett",pts:560,act:5,mm:2,arm:11,hp:2,w:["blast_mando","blast_mando"],ic:"⬡",fac:"mando",co:"#778899",air:1,fly:true},
-  bo_katan:{n:"Bo-Katan",pts:640,act:5,mm:2,arm:11,hp:2,w:["double_sabre_dark","blast_mando"],ic:"⬡",fac:"mando",co:"#4455aa",air:1,fly:true},
-  // ─── Chasseurs de primes ───
   ig88:{n:"IG-88",pts:470,act:5,mm:0,arm:13,hp:2,w:["z6","fusil_e11"],ic:"🤖",fac:"hunt",co:"#888877"},
-  bossk:{n:"Bossk",pts:320,act:5,mm:0,arm:15,hp:2,w:["blast_r"],ic:"🦎",fac:"hunt",co:"#667744"},
-  cad_bane:{n:"Cad Bane",pts:410,act:5,mm:1,arm:14,hp:2,w:["blast_mando","blast_mando"],ic:"🤠",fac:"hunt",co:"#334455"},
-  // ─── Résistance / Première Ordre ───
   rey:{n:"Rey",pts:550,act:5,mm:0,arm:15,hp:2,w:["sabre_b"],ic:"🌅",fac:"res",co:"#c4a070"},
-  finn:{n:"Finn",pts:270,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"🏃",fac:"res",co:"#222222"},
   phasma:{n:"Capitaine Phasma",pts:400,act:5,mm:0,arm:12,hp:2,w:["fusil_e11"],ic:"⚡",fac:"fo",co:"#cccccc"},
 };
 
@@ -689,7 +652,15 @@ function CrossBlock(){
     aL("Action annulée");
   };
 
-  // saveGame moved to sync section below
+  // Save game to localStorage
+  const saveGame=()=>{
+    try{
+      const s=snapState();
+      s.learn=learn;s.balArm=balArm;
+      localStorage.setItem("crossblock_save",JSON.stringify(s));
+      aL("Partie sauvegardée !");
+    }catch(e){aL("Erreur sauvegarde: "+e.message);}
+  };
 
   // Load game from localStorage
   const loadGame=()=>{
@@ -706,74 +677,6 @@ function CrossBlock(){
       undoStack.current=[];
       aL("Partie chargée !");
     }catch(e){aL("Erreur chargement: "+e.message);}
-  };
-
-  // ── SYNC depuis index.html (crossblocks_cards) ──────────────
-  const [custom3dModels, setCustom3d] = React.useState(()=>{
-    try{return JSON.parse(localStorage.getItem("crossblocks_3d_models")||"{}");} catch(e){return {};}
-  });
-
-  const syncFromIndex=()=>{
-    try{
-      const raw=localStorage.getItem("crossblocks_cards");
-      if(!raw){aL("⚠ Aucune fiche dans index.html (crossblocks_cards vide)");return;}
-      const cards=JSON.parse(raw);
-      if(!Array.isArray(cards)||cards.length===0){aL("⚠ Aucune carte dans index.html");return;}
-      // Convertir les cartes index.html en unités game.html
-      const newArmy=cards.slice(0,8).map(c=>({
-        id:uid(), type:"custom_"+uid(), pl:1,
-        name:c.name.replace(/\s*\([^)]+\)/g,"").replace("SW ",""),
-        pts:c.points||200, mAct:c.pa||5, act:c.pa||5,
-        mm:c.move||0, arm:c.armor||15, mHp:c.hp||2, hp:c.hp||2,
-        ws:[{key:"fusil_b",...WEAPS.fusil_b,cur:3}],
-        ic:"🃏", fac:"cl", co:"\#4488dd",
-        air:false, fly:false, dep:true, done:false, sqId:null, prone:false, origUnit:null, alt:0, x:-999, y:-999,
-        _fromIndex:true, _card:c,
-      }));
-      sA1(newArmy);
-      sP1(newArmy.reduce((s,u)=>s+u.pts,0));
-      aL(\`✅ \${newArmy.length} unités importées depuis index.html !\`);
-      // Écrire sync inverse
-      localStorage.setItem("crossblocks_game_sync",JSON.stringify({
-        source:"game.html", army:newArmy, ts:Date.now()
-      }));
-    }catch(e){aL("Erreur sync: "+e.message);}
-  };
-
-  // ── UPLOAD modèle 3D personnalisé ───────────────────────────
-  const handle3DUpload=(e)=>{
-    const file=e.target.files[0]; if(!file)return;
-    const statusEl=document.getElementById("upload3d-status");
-    if(statusEl)statusEl.textContent="⏳ "+file.name+"…";
-    const ext=file.name.split(".").pop().toLowerCase();
-    if(!["glb","gltf","svg","png"].includes(ext)){
-      if(statusEl)statusEl.textContent="⚠ Format non supporté (GLB/GLTF/SVG/PNG)"; return;
-    }
-    const url=URL.createObjectURL(file);
-    const unitName=prompt("Lier ce modèle à quelle unité ? (nom exact ou nouveau nom)","custom_"+file.name.replace(/\.[^.]+$/,""));
-    if(!unitName){URL.revokeObjectURL(url);return;}
-    const updated={...custom3dModels,[unitName]:{name:file.name,url,ext,type:ext==="glb"||ext==="gltf"?"3d":"sprite"}};
-    setCustom3d(updated);
-    try{localStorage.setItem("crossblocks_3d_models",JSON.stringify(
-      Object.fromEntries(Object.entries(updated).map(([k,v])=>([k,{name:v.name,ext:v.ext}])))
-    ));}catch(e){}
-    if(statusEl)statusEl.textContent=\`✅ "\${unitName}" lié à \${file.name}\`;
-    aL(\`📦 Modèle 3D personnalisé: \${file.name} → \${unitName}\`);
-    e.target.value="";
-  };
-
-  // ── Écrire sync auto vers index.html à chaque sauvegarde ────
-  const saveGame=()=>{
-    try{
-      const s=snapState();
-      s.learn=learn;s.balArm=balArm;
-      localStorage.setItem("crossblock_save",JSON.stringify(s));
-      // Sync vers index.html et viewer 3D
-      localStorage.setItem("crossblocks_game_sync",JSON.stringify({
-        source:"game.html", army:[...a1,...a2], p1, p2, turn, phase, ts:Date.now()
-      }));
-      aL("Partie sauvegardée !");
-    }catch(e){aL("Erreur sauvegarde: "+e.message);}
   };
 
   const all=useMemo(()=>[...a1,...a2],[a1,a2]);
@@ -2957,7 +2860,7 @@ function CrossBlock(){
             {/* Army builders */}
             <div style={{display:"flex",gap:10,marginBottom:10,flexWrap:"wrap"}}>
               {[1,2].map(pl=>{const sArmy=pl===1?simA1:simA2;const setSArmy=pl===1?sSimA1:sSimA2;
-                const c=pl===1?"#58a6ff":"#f85149";const fac=pl===1?["cl"]:["sep","reb","emp","mando","fo"];const vFac=pl===1?"cl":"sep";
+                const c=pl===1?"#58a6ff":"#f85149";const fac=pl===1?["cl","mando","res"]:["sep","reb","emp","fo","hunt","mando"];const vFac=pl===1?"cl":"sep";
                 const getPts=(t)=>t.startsWith("v_")?VDEFS[t.slice(2)]?.pts||0:UDEFS[t]?.pts||0;
                 const getInfo=(t)=>t.startsWith("v_")?VDEFS[t.slice(2)]:UDEFS[t];
                 const pts=sArmy.reduce((s,t)=>getPts(t)+s,0);
@@ -2976,7 +2879,7 @@ function CrossBlock(){
                     ))}
                   </div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:2,marginBottom:5}}>
-                    {Object.entries(VDEFS).filter(([,v])=>pl===1?v.fac==="cl":v.fac!=="cl").map(([k,v])=>(
+                    {Object.entries(VDEFS).filter(([,v])=>v.fac===vFac).map(([k,v])=>(
                       <button key={k} onClick={()=>setSArmy(p=>[...p,`v_${k}`])} style={{...BS("#2a1f00"),fontSize:8,padding:"2px 5px",border:"1px solid #f0c04055"}}>{v.ic}{v.n}({v.pts})</button>
                     ))}
                   </div>
@@ -3158,10 +3061,6 @@ function CrossBlock(){
           <div style={{marginTop:8,display:"flex",gap:6}}>
             <span style={{color:"#8b949e",fontSize:10}}>Écart: {Math.abs(p1-p2)}pts {Math.abs(p1-p2)>50?"⚠":"✓"}</span>
             <button onClick={()=>{if(!a1.length)preset(1);if(!a2.length)preset(2);setPhase("deploy_choice");setTab("battle");}} style={BS("#238636")}>▶ Déploiement</button>
-            <button onClick={syncFromIndex} style={{...BS("#1f6feb"),fontSize:10,padding:"5px 10px"}}>📥 Sync index.html</button>
-            <button onClick={()=>document.getElementById("custom3d-upload").click()} style={{...BS("#6e40c9"),fontSize:10,padding:"5px 10px"}}>⬆ Upload 3D</button>
-            <input id="custom3d-upload" type="file" accept=".glb,.gltf,.svg,.png" style={{display:"none"}} onChange={handle3DUpload}/>
-            <span id="upload3d-status" style={{fontSize:9,color:"#8b949e"}}></span>
           </div>
         </div>
       )}
@@ -3250,7 +3149,7 @@ function CrossBlock(){
               <div style={{transform:`translate3d(${camSt.px}px, ${camSt.py}px, 0) scale(${camSt.z}) rotateX(${camSt.rx}deg) rotateY(${camSt.ry}deg)`,transformOrigin:"50% 50%",transformStyle:"preserve-3d",transition:dragRef.current?"none":"transform 0.3s ease-out",position:"relative",width:dispW,height:dispH}}>
               <svg ref={bRef} viewBox={`0 0 ${BW} ${BH}`}
                 width={dispW} height={dispH}
-                onClick={onBoardClick} style={{position:"absolute",top:0,left:0,background:"linear-gradient(180deg,#1a3d16 0%,#2d5a27 30%,#3a6b30 70%,#2a5020 100%)",borderRadius:6,border:"4px solid #5C3317",cursor:"crosshair",display:"block",boxShadow:"0 30px 60px rgba(0,0,0,0.6), inset 0 0 80px rgba(0,0,0,0.3)"}}>
+                onClick={onBoardClick} style={{position:"absolute",top:0,left:0,background:"linear-gradient(180deg,#0d1f0a 0%,#1a3d12 20%,#2a5520 50%,#1a3d12 80%,#0d1f0a 100%)",borderRadius:6,border:"4px solid #5C3317",cursor:"crosshair",display:"block",boxShadow:"0 30px 60px rgba(0,0,0,0.6), inset 0 0 80px rgba(0,0,0,0.3)"}}>
 
                 {/* 3D defs */}
                 <defs>
@@ -3265,7 +3164,27 @@ function CrossBlock(){
                     <stop offset="50%" stopColor="rgba(0,0,0,0)"/>
                     <stop offset="100%" stopColor="rgba(0,0,0,0.1)"/>
                   </linearGradient>
-                  {/* ─── GRADIENTS FIGURINES ─── */}
+                  <filter id="unitSh" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx={1.5} dy={2.5} stdDeviation={1.2} floodColor="#000" floodOpacity={0.5}/>
+                  </filter>
+                  <filter id="terrSh" x="-30%" y="-30%" width="170%" height="200%">
+                    <feDropShadow dx={3} dy={5} stdDeviation={2.5} floodColor="#000" floodOpacity={0.45}/>
+                  </filter>
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation={1.5} result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <filter id="glowStrong" x="-100%" y="-100%" width="300%" height="300%">
+                    <feGaussianBlur stdDeviation={4} result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <filter id="glowSaber" x="-150%" y="-150%" width="400%" height="400%">
+                    <feGaussianBlur stdDeviation={3} result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <filter id="hitFlash" x="-30%" y="-30%" width="160%" height="160%">
+                    <feColorMatrix type="matrix" values="3 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+                  </filter>
                   <linearGradient id="cloneG" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="#f0f0f0"/><stop offset="100%" stopColor="#b8c8e0"/>
                   </linearGradient>
@@ -3281,48 +3200,17 @@ function CrossBlock(){
                   <linearGradient id="metalG" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="#888888"/><stop offset="100%" stopColor="#444444"/>
                   </linearGradient>
-                  {/* ─── FILTRES AMÉLIORÉS ─── */}
-                  <filter id="unitSh" x="-50%" y="-50%" width="200%" height="200%">
-                    <feDropShadow dx={1.5} dy={3} stdDeviation={1.5} floodColor="#000" floodOpacity={0.65}/>
-                  </filter>
-                  <filter id="terrSh" x="-30%" y="-30%" width="170%" height="200%">
-                    <feDropShadow dx={3} dy={5} stdDeviation={2.5} floodColor="#000" floodOpacity={0.45}/>
-                  </filter>
-                  <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-                    <feGaussianBlur stdDeviation={2.5} result="blur"/>
-                    <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                  </filter>
-                  <filter id="glowStrong" x="-100%" y="-100%" width="300%" height="300%">
-                    <feGaussianBlur stdDeviation={4} result="blur"/>
-                    <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                  </filter>
-                  <filter id="glowSaber" x="-150%" y="-150%" width="400%" height="400%">
-                    <feGaussianBlur stdDeviation={3} result="blur"/>
-                    <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                  </filter>
-                  <filter id="smoke" x="-50%" y="-150%" width="200%" height="400%">
-                    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="2" result="noise"/>
-                    <feDisplacementMap in="SourceGraphic" in2="noise" scale={8} xChannelSelector="R" yChannelSelector="G" result="disp"/>
-                    <feGaussianBlur in="disp" stdDeviation={1.5}/>
-                  </filter>
-                  <filter id="hitFlash" x="-30%" y="-30%" width="160%" height="160%">
-                    <feColorMatrix type="matrix" values="3 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
-                  </filter>
                   <radialGradient id="shadowG">
-                    <stop offset="0%" stopColor="rgba(0,0,0,0.5)"/>
-                    <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+                    <stop offset="0%" stopColor="rgba(0,0,0,0.5)"/><stop offset="100%" stopColor="rgba(0,0,0,0)"/>
                   </radialGradient>
                   <radialGradient id="saberGlowB">
-                    <stop offset="0%" stopColor="rgba(100,170,255,0.9)"/>
-                    <stop offset="100%" stopColor="rgba(68,136,255,0)"/>
+                    <stop offset="0%" stopColor="rgba(100,170,255,0.9)"/><stop offset="100%" stopColor="rgba(68,136,255,0)"/>
                   </radialGradient>
                   <radialGradient id="saberGlowR">
-                    <stop offset="0%" stopColor="rgba(255,100,100,0.9)"/>
-                    <stop offset="100%" stopColor="rgba(255,50,50,0)"/>
+                    <stop offset="0%" stopColor="rgba(255,100,100,0.9)"/><stop offset="100%" stopColor="rgba(255,50,50,0)"/>
                   </radialGradient>
                   <radialGradient id="saberGlowG">
-                    <stop offset="0%" stopColor="rgba(80,255,120,0.9)"/>
-                    <stop offset="100%" stopColor="rgba(40,200,80,0)"/>
+                    <stop offset="0%" stopColor="rgba(80,255,120,0.9)"/><stop offset="100%" stopColor="rgba(40,200,80,0)"/>
                   </radialGradient>
                 </defs>
 
@@ -3353,12 +3241,59 @@ function CrossBlock(){
                 {phase==="terr_p2"&&<rect x={0} y={HALF} width={BW} height={HALF} fill="#0d1117" opacity={0.8}/>}
 
                 {/* ═══ TERRAIN FOOTPRINTS (3D volume is CSS) ═══ */}
-                {terr.map(t=>(
-                  <g key={t.id} onClick={e=>{if(phase.startsWith("terr")){e.stopPropagation();sTSel(t.id);}}} >
-                    <rect x={t.x} y={t.y} width={t.w} height={t.h} fill={t.color} stroke={tSel===t.id?"#ff0":"#333"} strokeWidth={tSel===t.id?2:0.5} rx={1} opacity={0.5}/>
-                    <text x={t.x+t.w/2} y={t.y+t.h/2+1} textAnchor="middle" dominantBaseline="middle" fontSize={Math.min(t.w,t.h)*0.22} fill="rgba(255,255,255,0.3)" fontWeight="700" style={{pointerEvents:"none"}}>{t.kind}</text>
-                  </g>
-                ))}
+                {terr.map(t=>{
+                  const sel=tSel===t.id;
+                  const ISO=Math.max(8,(t.h3d||16)*0.45);
+                  const ac=(col,f)=>{try{const p=col.replace('#','');const r=parseInt(p.slice(0,2),16),g=parseInt(p.slice(2,4),16),b=parseInt(p.slice(4,6),16);return`rgb(${~~(r*f)},${~~(g*f)},${~~(b*f)})`}catch(e){return col}};
+                  const tc=ac(t.color,1.2),fc=ac(t.color,0.72),sc=ac(t.color,0.48);
+                  const x=t.x,y=t.y,w=t.w,h=t.h;
+                  return(<g key={t.id}
+                    onClick={e=>{if(phase.startsWith("terr")){e.stopPropagation();sTSel(t.id);}}}
+                    style={{filter:sel?"drop-shadow(0 0 5px #ff0)":"drop-shadow(0 5px 8px rgba(0,0,0,0.7))"}}>
+                    {/* Ombre sol */}
+                    <ellipse cx={x+w/2} cy={y+h+1} rx={w*0.5} ry={ISO*0.35} fill="rgba(0,0,0,0.4)"/>
+                    {/* Toit */}
+                    <polygon points={`${x},${y-ISO} ${x+w},${y-ISO} ${x+w},${y+h-ISO} ${x},${y+h-ISO}`}
+                      fill={tc} stroke={sel?"#ff0":"rgba(255,255,255,0.2)"} strokeWidth={sel?1.5:0.4} opacity={0.93}/>
+                    {/* Face avant */}
+                    <polygon points={`${x},${y+h-ISO} ${x+w},${y+h-ISO} ${x+w},${y+h} ${x},${y+h}`}
+                      fill={fc} stroke={sel?"#ff0":"rgba(0,0,0,0.3)"} strokeWidth={sel?1.5:0.4}/>
+                    {/* Face droite */}
+                    <polygon points={`${x+w},${y-ISO} ${x+w+ISO*0.4},${y-ISO*0.6} ${x+w+ISO*0.4},${y+h-ISO*0.6} ${x+w},${y+h-ISO}`}
+                      fill={sc} stroke={sel?"#ff0":"rgba(0,0,0,0.3)"} strokeWidth={sel?1.5:0.4}/>
+                    {/* Textures */}
+                    {t.tex==="wall"&&<>{[0,1,2].map(r=>[0,1,2,3].map(c=>
+                      <rect key={`b${r}${c}`} x={x+c*w/4+0.5} y={y+h-ISO+r*ISO/3+0.5} width={w/4-1} height={ISO/3-1} fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth={0.4} rx={0.3}/>
+                    ))}{[0,1,2,3].map(i=><rect key={`cr${i}`} x={x+i*w/4+1} y={y-ISO-4} width={w/4-3} height={4} fill={tc} stroke="rgba(255,255,255,0.2)" strokeWidth={0.3}/>)}</>}
+                    {t.tex==="rock"&&<>
+                      <polygon points={`${x+w*0.15},${y-ISO} ${x+w*0.45},${y-ISO-7} ${x+w*0.75},${y-ISO-3} ${x+w},${y-ISO} ${x+w},${y+h-ISO} ${x},${y+h-ISO}`} fill={tc} opacity={0.9}/>
+                      <line x1={x+4} y1={y-ISO+3} x2={x+w-3} y2={y-ISO+2} stroke="rgba(255,255,255,0.25)" strokeWidth={0.7}/>
+                    </>}
+                    {t.tex==="house"&&<>
+                      <rect x={x+3} y={y+h-ISO+3} width={6} height={6} fill="#88aaff" opacity={0.65} rx={0.5}/>
+                      <rect x={x+w-9} y={y+h-ISO+3} width={6} height={6} fill="#88aaff" opacity={0.65} rx={0.5}/>
+                      <rect x={x+w/2-3} y={y+h-ISO+7} width={6} height={ISO-7} fill="#5a3a1a" rx={0.5}/>
+                      <polygon points={`${x-1},${y-ISO} ${x+w+1},${y-ISO} ${x+w/2},${y-ISO-10}`} fill="#8B4513" stroke="#5a2a0a" strokeWidth={0.6}/>
+                    </>}
+                    {t.tex==="tower"&&<>{[0,1].map(r=>[0,1].map(c=>
+                      <rect key={`tw${r}${c}`} x={x+c*w/2+3} y={y+h-ISO+r*ISO/2+3} width={4} height={6} fill="#1a1a3e" opacity={0.7} rx={0.5}/>
+                    ))}{[0,1,2,3,4].map(i=><rect key={`tc${i}`} x={x+i*w/5} y={y-ISO-5} width={w/5-1} height={5} fill={tc} rx={0.3}/>)}</>}
+                    {t.tex==="forest"&&<>{[0.18,0.5,0.82].map((xf,i)=><g key={`tr${i}`}>
+                      <line x1={x+w*xf} y1={y+h} x2={x+w*xf} y2={y-ISO-8} stroke="#5a3a1a" strokeWidth={2}/>
+                      <polygon points={`${x+w*xf},${y-ISO-18} ${x+w*xf-7},${y-ISO-4} ${x+w*xf+7},${y-ISO-4}`} fill="#228B22"/>
+                      <polygon points={`${x+w*xf},${y-ISO-25} ${x+w*xf-5},${y-ISO-15} ${x+w*xf+5},${y-ISO-15}`} fill="#2ea52e"/>
+                    </g>)}</>}
+                    {t.tex==="ruin"&&<>
+                      <rect x={x+1} y={y-ISO} width={w*0.35} height={ISO*0.65} fill={sc} stroke="rgba(0,0,0,0.3)" strokeWidth={0.4}/>
+                      <rect x={x+w*0.6} y={y-ISO} width={w*0.35} height={ISO*0.8} fill={sc} stroke="rgba(0,0,0,0.3)" strokeWidth={0.4}/>
+                      <polygon points={`${x+w*0.3},${y+h} ${x+w*0.5},${y+h-ISO*0.6} ${x+w*0.65},${y+h}`} fill={sc} opacity={0.7}/>
+                    </>}
+                    {/* Label */}
+                    <text x={x+w/2} y={y+h-ISO*0.5} textAnchor="middle" dominantBaseline="middle"
+                      fontSize={Math.min(w,ISO)*0.3} fill="rgba(255,255,255,0.5)" fontWeight="700"
+                      style={{pointerEvents:"none"}}>{t.e}</text>
+                  </g>);
+                })}
 
                 {/* LOS lines — with glow + cover indicator */}
                 {los.map((l,i)=>(
@@ -3415,11 +3350,11 @@ function CrossBlock(){
                       {sC&&<ellipse cx={cx} cy={cy+1} rx={BR+3} ry={BR*0.4} fill="none" stroke={sC} strokeWidth={1.2} opacity={0.6}/>}
                       <ellipse cx={cx+0.5} cy={cy+H*0.3+3} rx={BR+(u.isVeh?5:2)} ry={BR*(u.isVeh?0.5:0.4)} fill="rgba(0,0,0,0.3)"/>
                       {u.isVeh?
-                        drawVeh(u.vtype,cx,cy-H+1,0.8,u.pl,1)
+                        drawVeh(u.vtype,cx,cy-H+1,1.2,u.pl,1)
                       :u.prone?
-                        drawProne(u.type,cx,cy-1,0.6,u.pl)
+                        drawProne(u.type,cx,cy-1,0.9,u.pl)
                       :
-                        drawFig(u.type,cx,cy-H+1,0.7,u.pl)
+                        onTerr(u.x,u.y,terr)?<g opacity={0.5} style={{filter:"blur(0.3px)"}}>{drawFig(u.type,cx,cy-H+1,1.1,u.pl)}</g>:drawFig(u.type,cx,cy-H+1,1.1,u.pl)
                       }
 
                       {/* HP bars */}
