@@ -627,6 +627,11 @@ function CrossBlock(){
       const s=snapState();
       s.learn=learn;s.balArm=balArm;
       localStorage.setItem("crossblock_save",JSON.stringify(s));
+      // Sync vers index.html et viewer 3D
+      try {
+        var syncData = { source:'game.html', army: (s.a1||[]).concat(s.a2||[]), turn:s.turn, phase:s.phase, ts:Date.now() };
+        localStorage.setItem('crossblocks_game_sync', JSON.stringify(syncData));
+      } catch(e){}
       aL("Partie sauvegardée !");
     }catch(e){aL("Erreur sauvegarde: "+e.message);}
   };
