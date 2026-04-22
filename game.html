@@ -44,6 +44,22 @@ const WEAPS={
   f_poing_x2:{n:"×2 Fusils poing",melee:0,cat1:16,cat2:16,catP:0,mun:4,pen:3,dmg:1},
   tourelle_x3:{n:"×3 Tourelles",melee:0,cat1:14,cat2:14,catP:0,mun:12,pen:3,dmg:1},
   rocket_x3:{n:"×3 Rockets",melee:0,cat1:0,cat2:11,catP:11,mun:3,pen:10,dmg:0,dMax:4,once:true},
+  // ── Nouvelles armes ──
+  fusil_e11:{n:"Fusil E-11",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
+  sabre_b:{n:"Sabre laser bleu",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  sabre_r:{n:"Sabre laser rouge",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  sabre_g:{n:"Sabre laser vert",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  force_choke:{n:"Choke Force",melee:0,cat1:14,cat2:0,catP:0,mun:2,pen:8,dmg:2},
+  pist_dl44:{n:"DL-44",melee:15,cat1:15,cat2:0,catP:0,mun:4,pen:6,dmg:1},
+  blast_mando:{n:"Blaster Mando",melee:15,cat1:15,cat2:16,catP:0,mun:4,pen:5,dmg:1},
+  arc_rifle:{n:"Fusil ARC",melee:0,cat1:14,cat2:0,catP:15,mun:3,pen:6,dmg:2},
+  z6:{n:"Répéteur Z-6",melee:0,cat1:14,cat2:16,catP:0,mun:8,pen:4,dmg:1},
+  sabre_vio:{n:"Sabre violet",melee:11,cat1:0,cat2:0,catP:0,mun:3,pen:8,dmg:2},
+  sabre_w:{n:"Sabre blanc",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  double_sabre:{n:"Double sabre",melee:11,cat1:0,cat2:0,catP:0,mun:3,pen:7,dmg:2},
+  double_sabre_dark:{n:"Darksaber",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:9,dmg:3},
+  bowcaster:{n:"Bowcaster",melee:0,cat1:14,cat2:15,catP:0,mun:2,pen:7,dmg:3},
+  pist_r:{n:"Pistolet rouge",melee:17,cat1:17,cat2:0,catP:0,mun:4,pen:3,dmg:1},
 };
 
 const UDEFS={
@@ -63,6 +79,58 @@ const UDEFS={
   rebel_p:{n:"Rebelle Pistol.",pts:150,act:5,mm:0,arm:17,hp:2,w:["pist_r"],ic:"🫡",fac:"reb",co:"#993333"},
   rebel_jet:{n:"Rebelle Jetpack",pts:240,act:5,mm:2,arm:17,hp:2,w:["blast_r"],ic:"🚀",fac:"reb",co:"#DD5555",air:1,fly:true},
   guard:{n:"Garde Reb.",pts:200,act:5,mm:0,arm:16,hp:2,w:["blast_b"],ic:"🛡",fac:"reb",co:"#884422"},
+  // ── Nouvelles unités (sync avec index.html) ──
+  stormtrooper:{n:"Stormtrooper",pts:180,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"⬜",fac:"emp",co:"#ffffff"},
+  vader:{n:"Darth Vader",pts:730,act:5,mm:0,arm:11,hp:3,w:["sabre_r","force_choke"],ic:"🔴",fac:"emp",co:"#111111"},
+  luke_jedi:{n:"Luke Jedi",pts:590,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🟢",fac:"reb",co:"#333333"},
+  han:{n:"Han Solo",pts:330,act:5,mm:0,arm:16,hp:2,w:["pist_dl44"],ic:"🤠",fac:"reb",co:"#8B6C42"},
+  mando:{n:"Mandalorien",pts:500,act:5,mm:2,arm:11,hp:2,w:["blast_mando"],ic:"⬡",fac:"mando",co:"#888899",air:1,fly:true},
+  obi_wan:{n:"Obi-Wan",pts:510,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"🔵",fac:"cl",co:"#3a6fb5"},
+  yoda:{n:"Maître Yoda",pts:630,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🧙",fac:"cl",co:"#4a7a3a"},
+  anakin:{n:"Anakin",pts:570,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚡",fac:"cl",co:"#2a5a99"},
+  grievous:{n:"Général Grievous",pts:810,act:5,mm:0,arm:10,hp:3,w:["sabre_b","sabre_r"],ic:"🕷",fac:"sep",co:"#778899"},
+  kylo:{n:"Kylo Ren",pts:680,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"🔴",fac:"fo",co:"#111111"},
+  // ─── Bad Batch ───
+  hunter:{n:"Hunter",pts:430,act:5,mm:0,arm:12,hp:2,w:["arc_rifle"],ic:"🗡",fac:"cl",co:"#332211"},
+  crosshair:{n:"Crosshair",pts:460,act:5,mm:0,arm:12,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#223344"},
+  wrecker:{n:"Wrecker",pts:490,act:5,mm:0,arm:11,hp:3,w:["z6"],ic:"💪",fac:"cl",co:"#553322"},
+  echo:{n:"Echo",pts:390,act:5,mm:0,arm:13,hp:2,w:["arc_rifle"],ic:"🤖",fac:"cl",co:"#334455"},
+  tech:{n:"Tech",pts:330,act:5,mm:0,arm:13,hp:2,w:["arc_rifle"],ic:"🔧",fac:"cl",co:"#445566"},
+  // ─── Jedi du Conseil ───
+  mace:{n:"Mace Windu",pts:680,act:5,mm:0,arm:13,hp:2,w:["sabre_vio"],ic:"🟣",fac:"cl",co:"#5a1a8a"},
+  plo:{n:"Plo Koon",pts:460,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"🔵",fac:"cl",co:"#2233aa"},
+  kit:{n:"Kit Fisto",pts:480,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🟢",fac:"cl",co:"#2a5a3a"},
+  ahsoka:{n:"Ahsoka Tano",pts:540,act:5,mm:0,arm:14,hp:2,w:["sabre_w","sabre_w"],ic:"⬜",fac:"cl",co:"#ffffff"},
+  qui_gon:{n:"Qui-Gon Jinn",pts:490,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🟢",fac:"cl",co:"#4a5a3a"},
+  // ─── Côté Obscur ───
+  maul:{n:"Darth Maul",pts:730,act:5,mm:0,arm:12,hp:2,w:["double_sabre"],ic:"🔴",fac:"emp",co:"#440000"},
+  dooku:{n:"Comte Dooku",pts:630,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"🔴",fac:"emp",co:"#111133"},
+  palpatine:{n:"Palpatine",pts:830,act:5,mm:0,arm:12,hp:2,w:["sabre_r","force_choke"],ic:"⚡",fac:"emp",co:"#0a0a0a"},
+  ventress:{n:"Asajj Ventress",pts:670,act:5,mm:0,arm:12,hp:2,w:["sabre_r","sabre_r"],ic:"🔴",fac:"sep",co:"#220033"},
+  // ─── Empire complet ───
+  scout_trooper:{n:"Scout Trooper",pts:230,act:5,mm:0,arm:16,hp:2,w:["sniper"],ic:"🔭",fac:"emp",co:"#ddddcc"},
+  death_trooper:{n:"Death Trooper",pts:310,act:5,mm:0,arm:14,hp:2,w:["sniper"],ic:"💀",fac:"emp",co:"#0a0a11"},
+  dark_trooper:{n:"Dark Trooper",pts:420,act:5,mm:0,arm:10,hp:3,w:["z6"],ic:"🤖",fac:"emp",co:"#1a1a2e"},
+  snowtrooper:{n:"Snowtrooper",pts:200,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"❄",fac:"emp",co:"#e8e8ee"},
+  // ─── Rebelles / Alliance ───
+  leia:{n:"Princesse Leia",pts:290,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"👑",fac:"reb",co:"#ffffff"},
+  chewie:{n:"Chewbacca",pts:410,act:5,mm:0,arm:15,hp:3,w:["bowcaster"],ic:"🐻",fac:"reb",co:"#8B6040"},
+  lando:{n:"Lando Calrissian",pts:280,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"🎩",fac:"reb",co:"#ffffff"},
+  luke_xwing:{n:"Luke X-Wing",pts:370,act:5,mm:0,arm:16,hp:2,w:["sabre_b","pist_dl44"],ic:"🚀",fac:"reb",co:"#ff8800"},
+  cassian:{n:"Cassian Andor",pts:300,act:5,mm:0,arm:16,hp:2,w:["blast_r"],ic:"🕵",fac:"reb",co:"#445544"},
+  jyn:{n:"Jyn Erso",pts:280,act:5,mm:0,arm:17,hp:2,w:["blast_r"],ic:"✊",fac:"reb",co:"#556644"},
+  // ─── Mandalorien complet ───
+  boba:{n:"Boba Fett",pts:550,act:5,mm:2,arm:11,hp:2,w:["blast_mando"],ic:"🪐",fac:"mando",co:"#336644",air:1,fly:true},
+  jango:{n:"Jango Fett",pts:560,act:5,mm:2,arm:11,hp:2,w:["blast_mando","blast_mando"],ic:"⬡",fac:"mando",co:"#778899",air:1,fly:true},
+  bo_katan:{n:"Bo-Katan",pts:640,act:5,mm:2,arm:11,hp:2,w:["double_sabre_dark","blast_mando"],ic:"⬡",fac:"mando",co:"#4455aa",air:1,fly:true},
+  // ─── Chasseurs de primes ───
+  ig88:{n:"IG-88",pts:470,act:5,mm:0,arm:13,hp:2,w:["z6","fusil_e11"],ic:"🤖",fac:"hunt",co:"#888877"},
+  bossk:{n:"Bossk",pts:320,act:5,mm:0,arm:15,hp:2,w:["blast_r"],ic:"🦎",fac:"hunt",co:"#667744"},
+  cad_bane:{n:"Cad Bane",pts:410,act:5,mm:1,arm:14,hp:2,w:["blast_mando","blast_mando"],ic:"🤠",fac:"hunt",co:"#334455"},
+  // ─── Résistance / Première Ordre ───
+  rey:{n:"Rey",pts:550,act:5,mm:0,arm:15,hp:2,w:["sabre_b"],ic:"🌅",fac:"res",co:"#c4a070"},
+  finn:{n:"Finn",pts:270,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"🏃",fac:"res",co:"#222222"},
+  phasma:{n:"Capitaine Phasma",pts:400,act:5,mm:0,arm:12,hp:2,w:["fusil_e11"],ic:"⚡",fac:"fo",co:"#cccccc"},
 };
 
 /* ═══ VEHICLE WEAPONS ═══ */
@@ -621,20 +689,7 @@ function CrossBlock(){
     aL("Action annulée");
   };
 
-  // Save game to localStorage
-  const saveGame=()=>{
-    try{
-      const s=snapState();
-      s.learn=learn;s.balArm=balArm;
-      localStorage.setItem("crossblock_save",JSON.stringify(s));
-      // Sync vers index.html et viewer 3D
-      try {
-        var syncData = { source:'game.html', army: (s.a1||[]).concat(s.a2||[]), turn:s.turn, phase:s.phase, ts:Date.now() };
-        localStorage.setItem('crossblocks_game_sync', JSON.stringify(syncData));
-      } catch(e){}
-      aL("Partie sauvegardée !");
-    }catch(e){aL("Erreur sauvegarde: "+e.message);}
-  };
+  // saveGame moved to sync section below
 
   // Load game from localStorage
   const loadGame=()=>{
@@ -651,6 +706,74 @@ function CrossBlock(){
       undoStack.current=[];
       aL("Partie chargée !");
     }catch(e){aL("Erreur chargement: "+e.message);}
+  };
+
+  // ── SYNC depuis index.html (crossblocks_cards) ──────────────
+  const [custom3dModels, setCustom3d] = React.useState(()=>{
+    try{return JSON.parse(localStorage.getItem("crossblocks_3d_models")||"{}");} catch(e){return {};}
+  });
+
+  const syncFromIndex=()=>{
+    try{
+      const raw=localStorage.getItem("crossblocks_cards");
+      if(!raw){aL("⚠ Aucune fiche dans index.html (crossblocks_cards vide)");return;}
+      const cards=JSON.parse(raw);
+      if(!Array.isArray(cards)||cards.length===0){aL("⚠ Aucune carte dans index.html");return;}
+      // Convertir les cartes index.html en unités game.html
+      const newArmy=cards.slice(0,8).map(c=>({
+        id:uid(), type:"custom_"+uid(), pl:1,
+        name:c.name.replace(/\s*\([^)]+\)/g,"").replace("SW ",""),
+        pts:c.points||200, mAct:c.pa||5, act:c.pa||5,
+        mm:c.move||0, arm:c.armor||15, mHp:c.hp||2, hp:c.hp||2,
+        ws:[{key:"fusil_b",...WEAPS.fusil_b,cur:3}],
+        ic:"🃏", fac:"cl", co:"\#4488dd",
+        air:false, fly:false, dep:true, done:false, sqId:null, prone:false, origUnit:null, alt:0, x:-999, y:-999,
+        _fromIndex:true, _card:c,
+      }));
+      sA1(newArmy);
+      sP1(newArmy.reduce((s,u)=>s+u.pts,0));
+      aL(\`✅ \${newArmy.length} unités importées depuis index.html !\`);
+      // Écrire sync inverse
+      localStorage.setItem("crossblocks_game_sync",JSON.stringify({
+        source:"game.html", army:newArmy, ts:Date.now()
+      }));
+    }catch(e){aL("Erreur sync: "+e.message);}
+  };
+
+  // ── UPLOAD modèle 3D personnalisé ───────────────────────────
+  const handle3DUpload=(e)=>{
+    const file=e.target.files[0]; if(!file)return;
+    const statusEl=document.getElementById("upload3d-status");
+    if(statusEl)statusEl.textContent="⏳ "+file.name+"…";
+    const ext=file.name.split(".").pop().toLowerCase();
+    if(!["glb","gltf","svg","png"].includes(ext)){
+      if(statusEl)statusEl.textContent="⚠ Format non supporté (GLB/GLTF/SVG/PNG)"; return;
+    }
+    const url=URL.createObjectURL(file);
+    const unitName=prompt("Lier ce modèle à quelle unité ? (nom exact ou nouveau nom)","custom_"+file.name.replace(/\.[^.]+$/,""));
+    if(!unitName){URL.revokeObjectURL(url);return;}
+    const updated={...custom3dModels,[unitName]:{name:file.name,url,ext,type:ext==="glb"||ext==="gltf"?"3d":"sprite"}};
+    setCustom3d(updated);
+    try{localStorage.setItem("crossblocks_3d_models",JSON.stringify(
+      Object.fromEntries(Object.entries(updated).map(([k,v])=>([k,{name:v.name,ext:v.ext}])))
+    ));}catch(e){}
+    if(statusEl)statusEl.textContent=\`✅ "\${unitName}" lié à \${file.name}\`;
+    aL(\`📦 Modèle 3D personnalisé: \${file.name} → \${unitName}\`);
+    e.target.value="";
+  };
+
+  // ── Écrire sync auto vers index.html à chaque sauvegarde ────
+  const saveGame=()=>{
+    try{
+      const s=snapState();
+      s.learn=learn;s.balArm=balArm;
+      localStorage.setItem("crossblock_save",JSON.stringify(s));
+      // Sync vers index.html et viewer 3D
+      localStorage.setItem("crossblocks_game_sync",JSON.stringify({
+        source:"game.html", army:[...a1,...a2], p1, p2, turn, phase, ts:Date.now()
+      }));
+      aL("Partie sauvegardée !");
+    }catch(e){aL("Erreur sauvegarde: "+e.message);}
   };
 
   const all=useMemo(()=>[...a1,...a2],[a1,a2]);
@@ -1665,142 +1788,544 @@ function CrossBlock(){
   useEffect(()=>{if(!bul.length)return;const iv=setInterval(()=>sBul(p=>p.map(b=>({...b,t:b.t+0.12})).filter(b=>b.t<1)),30);return()=>clearInterval(iv);},[bul.length]);
 
   const BS=(bg)=>({padding:"5px 12px",borderRadius:5,border:"1px solid #30363d",background:bg||"#21262d",color:"#e6edf3",cursor:"pointer",fontWeight:600,fontSize:11});
-  /* ═══ LEGO MINIFIGURE SVG RENDERER ═══ */
-  /* Each draws relative to (cx, y0) = center-top. Scale s~0.7 for board */
+  /* ═══ LEGO MINIFIGURE SVG RENDERER v2 — Graphismes HD ═══ */
+  /* NOUVEAU: gradients, filtres glow, ombres, sabres laser HD */
   const drawFig=(type,cx,y0,s,pl)=>{
-    // Resolve base type for vehicle pilots
     const bt=type.startsWith("v_")?null:type;
     if(!bt)return drawVeh(type.slice(2),cx,y0,s,pl,1);
     const el=[];const k=`${bt}_${cx}_${y0}`;
-    // ── LEGO stud on head ──
-    const stud=(sy)=><circle key={k+"st"} cx={cx} cy={y0+sy*s} r={0.8*s} fill="#ccc" stroke="#aaa" strokeWidth={0.15*s}/>;
-    // ── Helmet shapes ──
+    const ud=UDEFS[bt]||{};
+
+    // ─── Ombre au sol ───
+    el.push(<ellipse key={k+"shd"} cx={cx} cy={y0+10.2*s} rx={2.5*s} ry={0.6*s} fill="url(#shadowG)" opacity={0.5}/>);
+
+    // ─── Helpers ───
+    const stud=(sy)=>[
+      <circle key={k+"sth"+sy} cx={cx} cy={y0+sy*s} r={0.9*s} fill="#dddddd" stroke="#aaaaaa" strokeWidth={0.15*s}/>,
+      <circle key={k+"stc"+sy} cx={cx} cy={y0+sy*s} r={0.4*s} fill="rgba(255,255,255,0.4)"/>
+    ];
+
+    // Clone helmet - amélioré avec découpe T
     const cloneHelm=(c1,c2,vy)=>[
-      <rect key={k+"hb"} x={cx-2.2*s} y={y0+vy*s} width={4.4*s} height={3.2*s} rx={1.2*s} fill={c1} stroke={c2||"#bbb"} strokeWidth={0.2*s}/>,
-      <path key={k+"hv"} d={`M${cx-1.3*s},${y0+(vy+1.2)*s} L${cx},${y0+(vy+2.6)*s} L${cx+1.3*s},${y0+(vy+1.2)*s}`} fill="none" stroke="#111" strokeWidth={0.5*s}/>,
-      <rect key={k+"hvi"} x={cx-1.2*s} y={y0+(vy+1.1)*s} width={2.4*s} height={1.4*s} rx={0.3*s} fill="#0a0a1a" opacity={0.75}/>,
+      <rect key={k+"hb"} x={cx-2.4*s} y={y0+vy*s} width={4.8*s} height={3.6*s} rx={1.4*s} fill={c1} stroke={c2||"#999"} strokeWidth={0.25*s}/>,
+      <rect key={k+"hv"} x={cx-1.3*s} y={y0+(vy+0.9)*s} width={2.6*s} height={1.5*s} rx={0.35*s} fill="#0a0a1a" opacity={0.82}/>,
+      // T-visor highlight
+      <rect key={k+"hvh"} x={cx-1.1*s} y={y0+(vy+1.0)*s} width={2.2*s} height={0.3*s} rx={0.15*s} fill="rgba(100,160,255,0.25)"/>,
+      // Vent chin
+      <rect key={k+"hcg"} x={cx-0.7*s} y={y0+(vy+2.6)*s} width={1.4*s} height={0.4*s} rx={0.15*s} fill="rgba(0,0,0,0.5)"/>,
     ];
+
+    // Droid head
     const droidHead=(c1,vy)=>[
-      <circle key={k+"dh"} cx={cx} cy={y0+(vy+1.5)*s} r={1.6*s} fill={c1} stroke="#999" strokeWidth={0.2*s}/>,
-      <rect key={k+"dm"} x={cx-0.8*s} y={y0+(vy+1.8)*s} width={1.6*s} height={0.4*s} rx={0.15*s} fill="#222"/>,
-      <circle key={k+"de1"} cx={cx-0.5*s} cy={y0+(vy+1.2)*s} r={0.35*s} fill="#1a1a2e"/>,
-      <circle key={k+"de2"} cx={cx+0.5*s} cy={y0+(vy+1.2)*s} r={0.35*s} fill="#1a1a2e"/>,
+      <circle key={k+"dh"} cx={cx} cy={y0+(vy+1.5)*s} r={1.7*s} fill={c1} stroke="#888" strokeWidth={0.2*s}/>,
+      <ellipse key={k+"dme"} cx={cx} cy={y0+(vy+1.7)*s} rx={0.9*s} ry={0.35*s} fill="#221100" opacity={0.8}/>,
+      <circle key={k+"de1"} cx={cx-0.55*s} cy={y0+(vy+1.1)*s} r={0.38*s} fill="#1a1a2e"/>,
+      <circle key={k+"de2"} cx={cx+0.55*s} cy={y0+(vy+1.1)*s} r={0.38*s} fill="#1a1a2e"/>,
+      // eye glints
+      <circle key={k+"dg1"} cx={cx-0.45*s} cy={y0+(vy+1.0)*s} r={0.1*s} fill="rgba(255,200,100,0.6)"/>,
+      <circle key={k+"dg2"} cx={cx+0.45*s} cy={y0+(vy+1.0)*s} r={0.1*s} fill="rgba(255,200,100,0.6)"/>,
     ];
-    const humanHead=(skin,vy,hair)=>[
-      <circle key={k+"hh"} cx={cx} cy={y0+(vy+1.6)*s} r={1.7*s} fill={skin} stroke="#a87" strokeWidth={0.15*s}/>,
-      <circle key={k+"he1"} cx={cx-0.5*s} cy={y0+(vy+1.3)*s} r={0.25*s} fill="#222"/>,
-      <circle key={k+"he2"} cx={cx+0.5*s} cy={y0+(vy+1.3)*s} r={0.25*s} fill="#222"/>,
-      <ellipse key={k+"hmo"} cx={cx} cy={y0+(vy+2)*s} rx={0.4*s} ry={0.15*s} fill="#c97"/>,
-      hair&&<path key={k+"hhr"} d={`M${cx-1.7*s},${y0+(vy+1.2)*s} Q${cx},${y0+(vy-0.2)*s} ${cx+1.7*s},${y0+(vy+1.2)*s}`} fill={hair} stroke="none"/>,
-    ];
-    // ── Torso ──
-    const torso=(c1,c2,ty,details)=>{
+
+    // Human head
+    const humanHead=(skin,vy,hair,helmetCol)=>{
       const r=[
-        <rect key={k+"tb"} x={cx-2.8*s} y={y0+ty*s} width={5.6*s} height={3.8*s} rx={0.4*s} fill={c1} stroke="#222" strokeWidth={0.15*s}/>,
+        <circle key={k+"hh"} cx={cx} cy={y0+(vy+1.7)*s} r={1.8*s} fill={skin} stroke="#c8965a" strokeWidth={0.15*s}/>,
+        <circle key={k+"he1"} cx={cx-0.55*s} cy={y0+(vy+1.4)*s} r={0.27*s} fill="#1a1218"/>,
+        <circle key={k+"he2"} cx={cx+0.55*s} cy={y0+(vy+1.4)*s} r={0.27*s} fill="#1a1218"/>,
+        // eye glints
+        <circle key={k+"hg1"} cx={cx-0.45*s} cy={y0+(vy+1.32)*s} r={0.08*s} fill="rgba(255,255,255,0.8)"/>,
+        <circle key={k+"hg2"} cx={cx+0.45*s} cy={y0+(vy+1.32)*s} r={0.08*s} fill="rgba(255,255,255,0.8)"/>,
+        <ellipse key={k+"hmo"} cx={cx} cy={y0+(vy+2.1)*s} rx={0.45*s} ry={0.18*s} fill="#c97060"/>,
+        hair&&<path key={k+"hhr"} d={`M${cx-1.9*s},${y0+(vy+1.3)*s} Q${cx},${y0+(vy-0.3)*s} ${cx+1.9*s},${y0+(vy+1.3)*s}`} fill={hair} stroke="none"/>,
       ];
-      if(c2)r.push(<line key={k+"tl"} x1={cx} y1={y0+ty*s} x2={cx} y2={y0+(ty+3.8)*s} stroke={c2} strokeWidth={0.35*s} opacity={0.4}/>);
-      if(details==="pauldron")r.push(<rect key={k+"pau"} x={cx-3.2*s} y={y0+ty*s} width={2*s} height={1.2*s} rx={0.3*s} fill="#DD8833" opacity={0.9}/>);
-      if(details==="arc")r.push(<circle key={k+"arc"} cx={cx} cy={y0+(ty+1.8)*s} r={0.8*s} fill="none" stroke="#FFD700" strokeWidth={0.4*s}/>);
-      if(details==="rex_mark"){r.push(<line key={k+"rxl"} x1={cx-1.2*s} y1={y0+(ty+0.5)*s} x2={cx-0.3*s} y2={y0+(ty+1.8)*s} stroke="#3366CC" strokeWidth={0.6*s}/>);
-        r.push(<line key={k+"rxr"} x1={cx+1.2*s} y1={y0+(ty+0.5)*s} x2={cx+0.3*s} y2={y0+(ty+1.8)*s} stroke="#3366CC" strokeWidth={0.6*s}/>);}
+      if(helmetCol)r.push(
+        <rect key={k+"hch"} x={cx-2.3*s} y={y0+(vy-0.2)*s} width={4.6*s} height={3.2*s} rx={1.2*s} fill={helmetCol} stroke="#888" strokeWidth={0.2*s} opacity={0.9}/>,
+        <rect key={k+"hcv"} x={cx-1.2*s} y={y0+(vy+0.8)*s} width={2.4*s} height={1.2*s} rx={0.3*s} fill="#0a0a1a" opacity={0.7}/>
+      );
       return r;
     };
-    // ── Arms ──
+
+    // Torso with gradient
+    const torso=(gradId,c1,c2,ty,details)=>{
+      const r=[
+        <rect key={k+"tb"} x={cx-3*s} y={y0+ty*s} width={6*s} height={4*s} rx={0.5*s} fill={gradId?`url(#${gradId})`:c1} stroke="#111" strokeWidth={0.18*s}/>,
+      ];
+      if(c2)r.push(<line key={k+"tl"} x1={cx} y1={y0+ty*s} x2={cx} y2={y0+(ty+4)*s} stroke={c2} strokeWidth={0.4*s} opacity={0.35}/>);
+      // chest detail - horizontal line
+      r.push(<rect key={k+"tcd"} x={cx-2*s} y={y0+(ty+1.5)*s} width={4*s} height={0.3*s} rx={0.1*s} fill="rgba(255,255,255,0.12)"/>);
+      if(details==="pauldron")r.push(<rect key={k+"pau"} x={cx-3.4*s} y={y0+ty*s} width={2.2*s} height={1.4*s} rx={0.35*s} fill="#DD8833" opacity={0.95}/>);
+      if(details==="arc")r.push(
+        <circle key={k+"arc"} cx={cx} cy={y0+(ty+1.9)*s} r={0.9*s} fill="none" stroke="#FFD700" strokeWidth={0.45*s}/>,
+        <circle key={k+"arci"} cx={cx} cy={y0+(ty+1.9)*s} r={0.5*s} fill="#FFD70044"/>
+      );
+      if(details==="rex_mark"){
+        r.push(<line key={k+"rxl"} x1={cx-1.3*s} y1={y0+(ty+0.5)*s} x2={cx-0.3*s} y2={y0+(ty+2)*s} stroke="#3366CC" strokeWidth={0.65*s}/>);
+        r.push(<line key={k+"rxr"} x1={cx+1.3*s} y1={y0+(ty+0.5)*s} x2={cx+0.3*s} y2={y0+(ty+2)*s} stroke="#3366CC" strokeWidth={0.65*s}/>);
+      }
+      if(details==="vader_chest"){
+        // vader chest controls
+        for(let i=0;i<3;i++)r.push(<rect key={k+"vc"+i} x={cx-1.2*s+i*0.9*s} y={y0+(ty+0.6)*s} width={0.6*s} height={0.6*s} rx={0.1*s} fill={i===0?"#f44":i===1?"#44f":"#4f4"}/>);
+        r.push(<rect key={k+"vcb"} x={cx-1.6*s} y={y0+(ty+1.8)*s} width={3.2*s} height={0.4*s} rx={0.1*s} fill="#ff4400" opacity={0.6}/>);
+      }
+      if(details==="mando"){
+        // beskar chest plate
+        r.push(<rect key={k+"mbp"} x={cx-2*s} y={y0+(ty+0.3)*s} width={4*s} height={2*s} rx={0.3*s} fill="rgba(150,155,170,0.5)" stroke="rgba(200,205,220,0.4)" strokeWidth={0.15*s}/>);
+      }
+      return r;
+    };
+
+    // Arms improved
     const arms=(c1,ty)=>[
-      <rect key={k+"al"} x={cx-3.6*s} y={y0+(ty+0.3)*s} width={1.2*s} height={3*s} rx={0.4*s} fill={c1} stroke="#222" strokeWidth={0.1*s}/>,
-      <rect key={k+"ar"} x={cx+2.4*s} y={y0+(ty+0.3)*s} width={1.2*s} height={3*s} rx={0.4*s} fill={c1} stroke="#222" strokeWidth={0.1*s}/>,
+      // shoulders
+      <circle key={k+"asl"} cx={cx-3.2*s} cy={y0+(ty+0.5)*s} r={0.8*s} fill={c1} stroke="#111" strokeWidth={0.1*s}/>,
+      <circle key={k+"asr"} cx={cx+3.2*s} cy={y0+(ty+0.5)*s} r={0.8*s} fill={c1} stroke="#111" strokeWidth={0.1*s}/>,
+      <rect key={k+"al"} x={cx-3.9*s} y={y0+(ty+0.5)*s} width={1.4*s} height={3.2*s} rx={0.45*s} fill={c1} stroke="#111" strokeWidth={0.12*s}/>,
+      <rect key={k+"ar"} x={cx+2.5*s} y={y0+(ty+0.5)*s} width={1.4*s} height={3.2*s} rx={0.45*s} fill={c1} stroke="#111" strokeWidth={0.12*s}/>,
     ];
-    // ── Legs ──
+
+    // Legs improved
     const legs=(c1,c2,ly)=>[
-      <rect key={k+"ll"} x={cx-2.4*s} y={y0+ly*s} width={2.2*s} height={3*s} rx={0.3*s} fill={c1} stroke="#222" strokeWidth={0.12*s}/>,
-      <rect key={k+"lr"} x={cx+0.2*s} y={y0+ly*s} width={2.2*s} height={3*s} rx={0.3*s} fill={c2||c1} stroke="#222" strokeWidth={0.12*s}/>,
+      <rect key={k+"ll"} x={cx-2.6*s} y={y0+ly*s} width={2.3*s} height={3.2*s} rx={0.35*s} fill={c1} stroke="#111" strokeWidth={0.14*s}/>,
+      <rect key={k+"lr"} x={cx+0.3*s} y={y0+ly*s} width={2.3*s} height={3.2*s} rx={0.35*s} fill={c2||c1} stroke="#111" strokeWidth={0.14*s}/>,
+      // feet
+      <rect key={k+"fl"} x={cx-2.8*s} y={y0+(ly+2.8)*s} width={2.6*s} height={0.8*s} rx={0.3*s} fill={c1} stroke="#111" strokeWidth={0.1*s}/>,
+      <rect key={k+"fr"} x={cx+0.2*s} y={y0+(ly+2.8)*s} width={2.6*s} height={0.8*s} rx={0.3*s} fill={c2||c1} stroke="#111" strokeWidth={0.1*s}/>,
     ];
-    // ── Weapons ──
-    const blaster=(wx,wy,len,col)=><line key={k+"w"+wx} x1={cx+wx*s} y1={y0+wy*s} x2={cx+(wx+len)*s} y2={y0+(wy-2)*s} stroke={col||"#555"} strokeWidth={0.6*s} strokeLinecap="round"/>;
-    const longRifle=(wx,wy,len,col)=>[<line key={k+"wr"+wx} x1={cx+wx*s} y1={y0+wy*s} x2={cx+(wx+len)*s} y2={y0+(wy-1.5)*s} stroke={col||"#445"} strokeWidth={0.7*s} strokeLinecap="round"/>,<circle key={k+"wrs"+wx} cx={cx+(wx+len)*s} cy={y0+(wy-1.5)*s} r={0.5*s} fill={col||"#445"} stroke="#333" strokeWidth={0.15*s}/>];
-    const jetpack=(jy)=>[<rect key={k+"jp"} x={cx+2.8*s} y={y0+jy*s} width={1.8*s} height={3*s} rx={0.4*s} fill="#666" stroke="#444" strokeWidth={0.15*s}/>,<line key={k+"jf1"} x1={cx+3.7*s} y1={y0+(jy+3)*s} x2={cx+3.5*s} y2={y0+(jy+5)*s} stroke="#f80" strokeWidth={0.5*s} opacity={0.7}/>,<line key={k+"jf2"} x1={cx+3.9*s} y1={y0+(jy+3)*s} x2={cx+4.2*s} y2={y0+(jy+5.5)*s} stroke="#fa0" strokeWidth={0.3*s} opacity={0.5}/>];
+
+    // Weapons
+    const blaster=(wx,wy,len,col)=>[
+      <line key={k+"w"+wx} x1={cx+wx*s} y1={y0+wy*s} x2={cx+(wx+len)*s} y2={y0+(wy-2)*s} stroke={col||"#445"} strokeWidth={0.7*s} strokeLinecap="round"/>,
+      <circle key={k+"wm"+wx} cx={cx+(wx+len)*s} cy={y0+(wy-2)*s} r={0.35*s} fill={col||"#445"} opacity={0.7}/>
+    ];
+    const longRifle=(wx,wy,len,col)=>[
+      <line key={k+"wr"+wx} x1={cx+wx*s} y1={y0+wy*s} x2={cx+(wx+len)*s} y2={y0+(wy-1.5)*s} stroke={col||"#334"} strokeWidth={0.8*s} strokeLinecap="round"/>,
+      <circle key={k+"wrs"+wx} cx={cx+(wx+len)*s} cy={y0+(wy-1.5)*s} r={0.55*s} fill={col||"#334"} stroke="#222" strokeWidth={0.15*s}/>
+    ];
+    const saberBlade=(wx,wy,len,col,glowId)=>[
+      // glow halo
+      <ellipse key={k+"sbg"} cx={cx+(wx+len/2)*s} cy={y0+(wy-len*0.4)*s} rx={len*0.6*s} ry={len*0.8*s} fill={`url(#${glowId})`} opacity={0.4} filter="url(#glowSaber)"/>,
+      // blade core
+      <line key={k+"sb"} x1={cx+wx*s} y1={y0+wy*s} x2={cx+(wx+len)*s} y2={y0+(wy-len*0.8)*s} stroke={col} strokeWidth={1.2*s} strokeLinecap="round" filter="url(#glowSaber)" opacity={0.9}/>,
+      <line key={k+"sbc"} x1={cx+wx*s} y1={y0+wy*s} x2={cx+(wx+len)*s} y2={y0+(wy-len*0.8)*s} stroke="white" strokeWidth={0.35*s} strokeLinecap="round" opacity={0.85}/>,
+      // hilt
+      <rect key={k+"sh"} x={cx+(wx-0.3)*s} y={y0+(wy+0.2)*s} width={0.6*s} height={1.2*s} rx={0.2*s} fill="#888" stroke="#555" strokeWidth={0.1*s}/>
+    ];
+
+    const jetpack=(jy)=>[
+      <rect key={k+"jp"} x={cx+2.8*s} y={y0+jy*s} width={2*s} height={3.2*s} rx={0.5*s} fill="#556677" stroke="#445566" strokeWidth={0.18*s}/>,
+      <rect key={k+"jpd"} x={cx+3.1*s} y={y0+(jy+0.4)*s} width={1.4*s} height={0.5*s} rx={0.15*s} fill="rgba(100,150,200,0.35)"/>,
+      <line key={k+"jf1"} x1={cx+3.6*s} y1={y0+(jy+3.2)*s} x2={cx+3.3*s} y2={y0+(jy+5.5)*s} stroke="#ff6600" strokeWidth={0.6*s} opacity={0.75}/>,
+      <line key={k+"jf2"} x1={cx+3.9*s} y1={y0+(jy+3.2)*s} x2={cx+4.3*s} y2={y0+(jy+6)*s} stroke="#ffaa00" strokeWidth={0.4*s} opacity={0.55}/>
+    ];
+    const cape=(ty,col)=>[
+      <path key={k+"cp"} d={`M${cx-3.2*s},${y0+ty*s} L${cx-4*s},${y0+(ty+8)*s} L${cx+4*s},${y0+(ty+8)*s} L${cx+3.2*s},${y0+ty*s}`} fill={col||"#1a1a1a"} stroke="#000" strokeWidth={0.15*s} opacity={0.88}/>,
+    ];
 
     // ═══ UNIT-SPECIFIC BUILDS ═══
     switch(bt){
+      // ─── CLONES ───
       case"clone":
-        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#bbb",-0.1),...torso("#e8e8e8","#3366CC",3.2),...arms("#e8e8e8",3.2),...legs("#e8e8e8",null,7.2),blaster(3,5.5,3,"#5588bb"));break;
+        el.push(...stud(-0.3),...cloneHelm("url(#cloneG)","#aabbcc",-0.1));
+        el.push(...torso("cloneG",null,"#3366CC",3.2),...arms("url(#cloneG)",3.2),...legs("#e0e0e0",null,7.2));
+        el.push(...blaster(3,5.5,3,"#5588bb"));break;
       case"clone_geo":
-        el.push(stud(-0.3),...cloneHelm("#d4c89a","#aa9964",-0.1),...torso("#d4c89a","#5a7a3a",3.2),...arms("#d4c89a",3.2),...legs("#7a6a3a",null,7.2),blaster(3,5.5,3,"#5588bb"));break;
+        el.push(...stud(-0.3),...cloneHelm("#d4c89a","#a09050",-0.1));
+        el.push(...torso(null,"#d4c89a","#5a7a3a",3.2),...arms("#d4c89a",3.2),...legs("#7a6a3a",null,7.2));
+        el.push(...blaster(3,5.5,3,"#5588bb"));break;
       case"sniper":
-        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#1a4488",-0.1),...torso("#e8e8e8","#1a4488",3.2),...arms("#e8e8e8",3.2),...legs("#e8e8e8",null,7.2),...longRifle(3,5,5,"#2a5a8a"));
-        el.push(<rect key={k+"sc"} x={cx+2.8*s} y={y0+3.5*s} width={1.5*s} height={2*s} rx={0.3*s} fill="#1a4488" stroke="#333" strokeWidth={0.1*s}/>);break;
+        el.push(...stud(-0.3),...cloneHelm("#e8e8e8","#1a4488",-0.1));
+        el.push(...torso("cloneG",null,"#1a4488",3.2),...arms("#e8e8e8",3.2),...legs("#e0e0e0",null,7.2));
+        el.push(...longRifle(3,5,5,"#2a5a8a"));
+        el.push(<rect key={k+"sc"} x={cx+2.8*s} y={y0+3.5*s} width={1.6*s} height={2.2*s} rx={0.35*s} fill="#1a4488" stroke="#333" strokeWidth={0.12*s}/>);break;
       case"spec":
-        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#2255AA",-0.1),...torso("#e8e8e8","#2255AA",3.2),...arms("#e8e8e8",3.2),...legs("#e8e8e8",null,7.2),blaster(-3.5,5.5,2,"#5588bb"),blaster(3,5.5,2,"#5588bb"));
-        el.push(<rect key={k+"rf"} x={cx+1.8*s} y={y0+0.4*s} width={0.6*s} height={2*s} rx={0.2*s} fill="#aaa" stroke="#888" strokeWidth={0.1*s}/>);break;
+        el.push(...stud(-0.3),...cloneHelm("#e8e8e8","#2255AA",-0.1));
+        el.push(...torso("cloneG",null,"#2255AA",3.2),...arms("#e8e8e8",3.2),...legs("#e0e0e0",null,7.2));
+        el.push(...blaster(-3.5,5.5,2,"#5588bb"),...blaster(3,5.5,2,"#5588bb"));
+        el.push(<rect key={k+"rf"} x={cx+1.8*s} y={y0+0.4*s} width={0.7*s} height={2.2*s} rx={0.25*s} fill="#bbb" stroke="#888" strokeWidth={0.1*s}/>);break;
       case"officer":
-        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#4477DD",-0.1),...torso("#e8e8e8","#4477DD",3.2,"pauldron"),...arms("#e8e8e8",3.2),...legs("#e8e8e8",null,7.2),blaster(3,5.5,2,"#5588bb"));
-        el.push(<rect key={k+"vis"} x={cx-2.5*s} y={y0-0.3*s} width={5*s} height={0.6*s} rx={0.2*s} fill="#4477DD"/>);break;
+        el.push(...stud(-0.3),...cloneHelm("#e8e8e8","#4477DD",-0.1));
+        el.push(...torso("cloneG",null,"#4477DD",3.2,"pauldron"),...arms("#e8e8e8",3.2),...legs("#e0e0e0",null,7.2));
+        el.push(...blaster(3,5.5,2,"#5588bb"));
+        el.push(<rect key={k+"vis"} x={cx-2.6*s} y={y0-0.4*s} width={5.2*s} height={0.7*s} rx={0.2*s} fill="#4477DD"/>);break;
       case"airborne":
-        el.push(stud(-0.3),...cloneHelm("#CC6633","#884422",-0.1),...torso("#CC6633","#884422",3.2),...arms("#CC6633",3.2),...legs("#885533",null,7.2),blaster(3,5.5,3,"#5588bb"),...jetpack(3.5));break;
+        el.push(...stud(-0.3),...cloneHelm("#CC6633","#884422",-0.1));
+        el.push(...torso(null,"#CC6633","#884422",3.2),...arms("#CC6633",3.2),...legs("#885533",null,7.2));
+        el.push(...blaster(3,5.5,3,"#5588bb"),...jetpack(3.5));break;
       case"fives":
-        el.push(stud(-0.3),...cloneHelm("#e8e8e8","#2244aa",-0.1),...torso("#2244aa","#FFD700",3.2,"arc"),...arms("#2244aa",3.2),...legs("#1a3366",null,7.2),blaster(3,5.5,2.5,"#5a8aba"));
-        el.push(<circle key={k+"fst"} cx={cx} cy={y0+5*s} r={0.6*s} fill="#FFD700" stroke="#aa8800" strokeWidth={0.15*s}/>);break;
+        el.push(...stud(-0.3),...cloneHelm("#ddeeff","#2244aa",-0.1));
+        el.push(...torso(null,"#2244aa","#FFD700",3.2,"arc"),...arms("#2244aa",3.2),...legs("#1a3366",null,7.2));
+        el.push(...blaster(3,5.5,2.5,"#5a8aba"),...blaster(-3.5,5.5,2,"#5a8aba"));
+        el.push(<circle key={k+"fst"} cx={cx} cy={y0+5*s} r={0.7*s} fill="#FFD700" stroke="#aa8800" strokeWidth={0.18*s}/>);break;
       case"rex":
-        el.push(stud(-0.3),...cloneHelm("#6699CC","#446688",-0.1),...torso("#2244aa",null,3.2,"rex_mark"),...arms("#2244aa",3.2),...legs("#1a3366",null,7.2),blaster(-3.5,5.5,2,"#5a8aba"),blaster(3,5.5,2,"#5a8aba"));
-        el.push(<rect key={k+"rv"} x={cx-2.5*s} y={y0-0.3*s} width={5*s} height={0.5*s} rx={0.2*s} fill="#DAA520"/>);break;
+        el.push(...stud(-0.3),...cloneHelm("#6699CC","#446688",-0.1));
+        el.push(...torso(null,"#2244aa",null,3.2,"rex_mark"),...arms("#2244aa",3.2),...legs("#1a3366",null,7.2));
+        el.push(...blaster(-3.5,5.5,2,"#5a8aba"),...blaster(3,5.5,2,"#5a8aba"));
+        el.push(<rect key={k+"rv"} x={cx-2.6*s} y={y0-0.4*s} width={5.2*s} height={0.6*s} rx={0.2*s} fill="#DAA520"/>);break;
+
+      // ─── JEDI ───
+      case"obi_wan":
+        el.push(...humanHead("#FFCC88",0,null,null));
+        el.push(...torso(null,"#8B8060","#6B6040",3.5),...arms("#8B8060",3.5),...legs("#6B6040","#5a5030",7.5));
+        el.push(...saberBlade(3.2,6,4,"#4488ff","saberGlowB"),...cape(3.5,"#55442a"));break;
+      case"anakin":
+        el.push(...humanHead("#FFCC88",0,"#552200",null));
+        el.push(...torso(null,"#222222","#3366CC",3.5),...arms("#222222",3.5),...legs("#111111",null,7.5));
+        el.push(...saberBlade(3.2,6,4,"#4488ff","saberGlowB"));break;
+      case"yoda":
+        el.push(
+          <circle key={k+"yh"} cx={cx} cy={y0+2*s} r={2.2*s} fill="#3a6a3a" stroke="#2a5a2a" strokeWidth={0.2*s}/>,
+          <ellipse key={k+"yea"} cx={cx-2.4*s} cy={y0+1.5*s} rx={0.6*s} ry={1.4*s} fill="#3a6a3a" stroke="#2a5a2a" strokeWidth={0.15*s}/>,
+          <ellipse key={k+"yeb"} cx={cx+2.4*s} cy={y0+1.5*s} rx={0.6*s} ry={1.4*s} fill="#3a6a3a" stroke="#2a5a2a" strokeWidth={0.15*s}/>,
+          <circle key={k+"ye1"} cx={cx-0.7*s} cy={y0+2*s} r={0.35*s} fill="#113311"/>,
+          <circle key={k+"ye2"} cx={cx+0.7*s} cy={y0+2*s} r={0.35*s} fill="#113311"/>
+        );
+        el.push(...torso(null,"#8B7040","#665530",4,...[]),...legs("#6B5530","#5a4520",8));
+        el.push(...saberBlade(2.5,6.5,3.5,"#44ff77","saberGlowG"),...cape(4,"#443322"));break;
+      case"luke_jedi":
+        el.push(...humanHead("#FFCC88",0,"#664422",null));
+        el.push(...torso(null,"#111111",null,3.5),...arms("#111111",3.5),...legs("#000000",null,7.5));
+        el.push(...saberBlade(3.2,6,4,"#44ff77","saberGlowG"),...cape(3.5,"#111111"));break;
+
+      // ─── EMPIRE ───
+      case"stormtrooper":
+        el.push(...stud(-0.3),...cloneHelm("#f5f5f5","#cccccc",-0.1));
+        el.push(...torso("cloneG","#f5f5f5",null,3.2),...arms("url(#cloneG)",3.2),...legs("#f5f5f5","#e8e8e8",7.2));
+        el.push(...blaster(3,5.5,3,"#888899"));break;
+      case"vader":
+        el.push(
+          // Vader helmet - iconic dome
+          <path key={k+"vh"} d={`M${cx-2.8*s},${y0+3.5*s} L${cx-2.8*s},${y0+1.5*s} Q${cx-2.8*s},${y0-0.3*s} ${cx},${y0-0.8*s} Q${cx+2.8*s},${y0-0.3*s} ${cx+2.8*s},${y0+1.5*s} L${cx+2.8*s},${y0+3.5*s} Z`} fill="#0a0a0a" stroke="#333" strokeWidth={0.25*s}/>,
+          // mouth grill
+          <rect key={k+"vmg"} x={cx-1.4*s} y={y0+2.5*s} width={2.8*s} height={0.8*s} rx={0.2*s} fill="#1a1a1a" stroke="#444" strokeWidth={0.1*s}/>,
+          // breathing vents
+          <rect key={k+"vv1"} x={cx-1*s} y={y0+2.6*s} width={0.3*s} height={0.6*s} rx={0.1*s} fill="#222"/>,
+          <rect key={k+"vv2"} x={cx-0.45*s} y={y0+2.6*s} width={0.3*s} height={0.6*s} rx={0.1*s} fill="#222"/>,
+          <rect key={k+"vv3"} cx={cx+0.15*s} y={y0+2.6*s} width={0.3*s} height={0.6*s} rx={0.1*s} fill="#222"/>,
+          // eyes / triangular visor
+          <path key={k+"vvi"} d={`M${cx-1.8*s},${y0+1*s} L${cx-0.8*s},${y0+2*s} L${cx+0.8*s},${y0+2*s} L${cx+1.8*s},${y0+1*s}`} fill="#0a0a1a" opacity={0.9}/>
+        );
+        el.push(...torso(null,"#0a0a0a",null,3.2,"vader_chest"),...arms("#0a0a0a",3.2),...legs("#000000",null,7.2),...cape(3.2,"#111111"));
+        el.push(...saberBlade(3.2,6,4,"#ff3333","saberGlowR"));break;
+
+      // ─── SÉPARATISTES ───
       case"b1":
-        el.push(...droidHead("#C4A65A",0));
-        el.push(<rect key={k+"bt"} x={cx-1.6*s} y={y0+3.2*s} width={3.2*s} height={3.5*s} rx={0.3*s} fill="#C4A65A" stroke="#aa8844" strokeWidth={0.15*s}/>);
-        el.push(<rect key={k+"ba1"} x={cx-2.5*s} y={y0+3.4*s} width={1.2*s} height={2.8*s} rx={0.3*s} fill="#B89A50" stroke="#998844" strokeWidth={0.1*s}/>);
-        el.push(<rect key={k+"ba2"} x={cx+1.3*s} y={y0+3.4*s} width={1.2*s} height={2.8*s} rx={0.3*s} fill="#B89A50" stroke="#998844" strokeWidth={0.1*s}/>);
-        el.push(<rect key={k+"bl1"} x={cx-1.8*s} y={y0+6.8*s} width={1.5*s} height={2.8*s} rx={0.2*s} fill="#B89A50" stroke="#887744" strokeWidth={0.1*s}/>);
-        el.push(<rect key={k+"bl2"} x={cx+0.3*s} y={y0+6.8*s} width={1.5*s} height={2.8*s} rx={0.2*s} fill="#B89A50" stroke="#887744" strokeWidth={0.1*s}/>);
-        el.push(blaster(2.5,5,2.5,"#777"));break;
+        el.push(...droidHead("url(#sepG)",0));
+        el.push(<rect key={k+"bt"} x={cx-1.8*s} y={y0+3.2*s} width={3.6*s} height={3.8*s} rx={0.4*s} fill="url(#sepG)" stroke="#aa8844" strokeWidth={0.18*s}/>);
+        el.push(<rect key={k+"ba1"} x={cx-2.8*s} y={y0+3.5*s} width={1.4*s} height={3*s} rx={0.55*s} fill="#B89A50" stroke="#998844" strokeWidth={0.12*s}/>);
+        el.push(<rect key={k+"ba2"} x={cx+1.4*s} y={y0+3.5*s} width={1.4*s} height={3*s} rx={0.55*s} fill="#B89A50" stroke="#998844" strokeWidth={0.12*s}/>);
+        el.push(<rect key={k+"bl1"} x={cx-2*s} y={y0+7*s} width={1.6*s} height={3*s} rx={0.25*s} fill="#B89A50" stroke="#887744" strokeWidth={0.12*s}/>);
+        el.push(<rect key={k+"bl2"} x={cx+0.4*s} y={y0+7*s} width={1.6*s} height={3*s} rx={0.25*s} fill="#B89A50" stroke="#887744" strokeWidth={0.12*s}/>);
+        el.push(...blaster(2.5,5,2.5,"#777"));break;
       case"b2":
-        el.push(<rect key={k+"b2h"} x={cx-2*s} y={y0+0.3*s} width={4*s} height={2.8*s} rx={0.8*s} fill="#6a6a6a" stroke="#555" strokeWidth={0.2*s}/>);
-        el.push(<rect key={k+"b2v"} x={cx-1.2*s} y={y0+1.2*s} width={2.4*s} height={0.8*s} rx={0.2*s} fill="#ff3333" opacity={0.4}/>);
-        el.push(<rect key={k+"b2t"} x={cx-3*s} y={y0+3*s} width={6*s} height={4*s} rx={0.8*s} fill="#6a6a6a" stroke="#555" strokeWidth={0.2*s}/>);
-        el.push(<rect key={k+"b2a1"} x={cx-4.2*s} y={y0+3.3*s} width={1.8*s} height={3.5*s} rx={0.5*s} fill="#555" stroke="#444" strokeWidth={0.15*s}/>);
-        el.push(<rect key={k+"b2a2"} x={cx+2.4*s} y={y0+3.3*s} width={1.8*s} height={3.5*s} rx={0.5*s} fill="#555" stroke="#444" strokeWidth={0.15*s}/>);
-        el.push(<circle key={k+"b2g1"} cx={cx-4.2*s} cy={y0+7*s} r={0.5*s} fill="#f44" opacity={0.5}/>);
-        el.push(<circle key={k+"b2g2"} cx={cx+4.2*s} cy={y0+7*s} r={0.5*s} fill="#f44" opacity={0.5}/>);
-        el.push(...legs("#555","#555",7.2));break;
+        el.push(
+          <rect key={k+"b2h"} x={cx-2.2*s} y={y0+0.2*s} width={4.4*s} height={3*s} rx={0.9*s} fill="url(#metalG)" stroke="#555" strokeWidth={0.22*s}/>,
+          <rect key={k+"b2v"} x={cx-1.3*s} y={y0+1.1*s} width={2.6*s} height={0.9*s} rx={0.25*s} fill="#ff333344"/>,
+          <rect key={k+"b2t"} x={cx-3.2*s} y={y0+3.2*s} width={6.4*s} height={4.2*s} rx={0.9*s} fill="url(#metalG)" stroke="#555" strokeWidth={0.22*s}/>,
+          <rect key={k+"b2a1"} x={cx-4.5*s} y={y0+3.5*s} width={2*s} height={3.8*s} rx={0.55*s} fill="#555" stroke="#444" strokeWidth={0.18*s}/>,
+          <rect key={k+"b2a2"} x={cx+2.5*s} y={y0+3.5*s} width={2*s} height={3.8*s} rx={0.55*s} fill="#555" stroke="#444" strokeWidth={0.18*s}/>,
+          <circle key={k+"b2g1"} cx={cx-4.5*s} cy={y0+7.5*s} r={0.6*s} fill="#f44" opacity={0.55}/>,
+          <circle key={k+"b2g2"} cx={cx+4.5*s} cy={y0+7.5*s} r={0.6*s} fill="#f44" opacity={0.55}/>
+        );
+        el.push(...legs("#4a4a4a","#4a4a4a",7.5));break;
       case"tri_droid":
-        el.push(<polygon key={k+"trh"} points={`${cx},${y0} ${cx-3*s},${y0+3.5*s} ${cx+3*s},${y0+3.5*s}`} fill="#556677" stroke="#445566" strokeWidth={0.3*s}/>);
-        el.push(<circle key={k+"tre"} cx={cx} cy={y0+2*s} r={0.8*s} fill="#f44" stroke="#a22" strokeWidth={0.2*s}/>);
-        el.push(<rect key={k+"trb"} x={cx-2.2*s} y={y0+3.5*s} width={4.4*s} height={2.5*s} rx={0.5*s} fill="#556677" stroke="#445566" strokeWidth={0.2*s}/>);
-        el.push(<line key={k+"tl1"} x1={cx-2*s} y1={y0+6*s} x2={cx-4.5*s} y2={y0+10*s} stroke="#667788" strokeWidth={1*s} strokeLinecap="round"/>);
-        el.push(<line key={k+"tl2"} x1={cx} y1={y0+6*s} x2={cx} y2={y0+10*s} stroke="#667788" strokeWidth={1*s} strokeLinecap="round"/>);
-        el.push(<line key={k+"tl3"} x1={cx+2*s} y1={y0+6*s} x2={cx+4.5*s} y2={y0+10*s} stroke="#667788" strokeWidth={1*s} strokeLinecap="round"/>);
-        el.push(<circle key={k+"tlf1"} cx={cx-4.5*s} cy={y0+10*s} r={0.5*s} fill="#778899"/>);
-        el.push(<circle key={k+"tlf2"} cx={cx} cy={y0+10*s} r={0.5*s} fill="#778899"/>);
-        el.push(<circle key={k+"tlf3"} cx={cx+4.5*s} cy={y0+10*s} r={0.5*s} fill="#778899"/>);
-        el.push(<rect key={k+"trg1"} x={cx-3*s} y={y0+4*s} width={1.2*s} height={0.5*s} rx={0.1*s} fill="#f44" opacity={0.6}/>);
-        el.push(<rect key={k+"trg2"} x={cx+1.8*s} y={y0+4*s} width={1.2*s} height={0.5*s} rx={0.1*s} fill="#f44" opacity={0.6}/>);break;
+        el.push(
+          <polygon key={k+"trh"} points={`${cx},${y0} ${cx-3.5*s},${y0+4*s} ${cx+3.5*s},${y0+4*s}`} fill="#556677" stroke="#445566" strokeWidth={0.35*s}/>,
+          <circle key={k+"tre"} cx={cx} cy={y0+2.2*s} r={0.9*s} fill="#ff3333" stroke="#a22" strokeWidth={0.25*s} filter="url(#glow)"/>,
+          <rect key={k+"trb"} x={cx-2.5*s} y={y0+4*s} width={5*s} height={2.8*s} rx={0.6*s} fill="#556677" stroke="#445566" strokeWidth={0.22*s}/>,
+          <line key={k+"tl1"} x1={cx-2.2*s} y1={y0+6.8*s} x2={cx-5*s} y2={y0+11*s} stroke="#667788" strokeWidth={1.1*s} strokeLinecap="round"/>,
+          <line key={k+"tl2"} x1={cx} y1={y0+6.8*s} x2={cx} y2={y0+11*s} stroke="#667788" strokeWidth={1.1*s} strokeLinecap="round"/>,
+          <line key={k+"tl3"} x1={cx+2.2*s} y1={y0+6.8*s} x2={cx+5*s} y2={y0+11*s} stroke="#667788" strokeWidth={1.1*s} strokeLinecap="round"/>,
+          <circle key={k+"tlf1"} cx={cx-5*s} cy={y0+11*s} r={0.6*s} fill="#778899"/>,
+          <circle key={k+"tlf2"} cx={cx} cy={y0+11*s} r={0.6*s} fill="#778899"/>,
+          <circle key={k+"tlf3"} cx={cx+5*s} cy={y0+11*s} r={0.6*s} fill="#778899"/>
+        );break;
+      case"grievous":
+        el.push(
+          <ellipse key={k+"gh"} cx={cx} cy={y0+2*s} rx={2.5*s} ry={3*s} fill="url(#metalG)" stroke="#778899" strokeWidth={0.2*s}/>,
+          <ellipse key={k+"ge"} cx={cx} cy={y0+1.5*s} rx={1.8*s} ry={1.2*s} fill="#ff330033"/>,
+          <circle key={k+"ge1"} cx={cx-0.7*s} cy={y0+1.5*s} r={0.45*s} fill="#ffaa00" filter="url(#glow)"/>,
+          <circle key={k+"ge2"} cx={cx+0.7*s} cy={y0+1.5*s} r={0.45*s} fill="#ffaa00" filter="url(#glow)"/>
+        );
+        el.push(<rect key={k+"gt"} x={cx-3*s} y={y0+4.5*s} width={6*s} height={4*s} rx={0.6*s} fill="url(#metalG)" stroke="#667788" strokeWidth={0.2*s}/>);
+        el.push(<rect key={k+"ga1"} x={cx-4.5*s} y={y0+4.8*s} width={1.5*s} height={4*s} rx={0.5*s} fill="#6a7a8a" stroke="#556677" strokeWidth={0.15*s}/>);
+        el.push(<rect key={k+"ga2"} x={cx+3*s} y={y0+4.8*s} width={1.5*s} height={4*s} rx={0.5*s} fill="#6a7a8a" stroke="#556677" strokeWidth={0.15*s}/>);
+        el.push(...legs("#4a5a6a","#4a5a6a",8.5));
+        el.push(...saberBlade(-4,5,3,"#4488ff","saberGlowB"),...saberBlade(4.5,5,3,"#ff3333","saberGlowR"));break;
+
+      // ─── REBELLES ───
       case"rebel":case"rebel_f":
-        el.push(...humanHead("#FFCC88",0,"#553322"));
-        el.push(...torso("#8B6C42","#5B3C12",3.5),...arms("#8B6C42",3.5),...legs("#4a4a3a","#4a4a3a",7.5));
-        el.push(blaster(3,6,3,"#777"));
-        el.push(<rect key={k+"rhl"} x={cx-2*s} y={y0+0.2*s} width={4*s} height={1.2*s} rx={0.8*s} fill="#8B6C42" stroke="#6B4C22" strokeWidth={0.15*s}/>);break;
+        el.push(...humanHead("#FFCC88",0,"#553322",null));
+        el.push(...torso("rebelG",null,"#5B3C12",3.5),...arms("url(#rebelG)",3.5),...legs("#4a4030","#4a4030",7.5));
+        el.push(...blaster(3,6,3,"#777"));
+        el.push(<rect key={k+"rhl"} x={cx-2.2*s} y={y0+0.1*s} width={4.4*s} height={1.3*s} rx={0.9*s} fill="#8B6C42" stroke="#6B4C22" strokeWidth={0.18*s}/>);break;
       case"rebel_p":
-        el.push(...humanHead("#FFCC88",0,"#443322"));
-        el.push(...torso("#665544","#443322",3.5),...arms("#665544",3.5),...legs("#3a3a2a","#3a3a2a",7.5));
-        el.push(blaster(3,6,1.5,"#888"));
-        el.push(<rect key={k+"rph"} x={cx-1.8*s} y={y0+0.2*s} width={3.6*s} height={1*s} rx={0.6*s} fill="#554433" stroke="#443322" strokeWidth={0.1*s}/>);break;
+        el.push(...humanHead("#FFCC88",0,"#443322",null));
+        el.push(...torso(null,"#665544","#443322",3.5),...arms("#665544",3.5),...legs("#3a3a2a","#3a3a2a",7.5));
+        el.push(...blaster(3,6,1.5,"#888"));
+        el.push(<rect key={k+"rph"} x={cx-1.9*s} y={y0+0.2*s} width={3.8*s} height={1.1*s} rx={0.7*s} fill="#554433" stroke="#443322" strokeWidth={0.12*s}/>);break;
       case"rebel_jet":
-        el.push(...humanHead("#FFCC88",0,"#442211"));
-        el.push(<rect key={k+"rjh"} x={cx-2.2*s} y={y0-0.1*s} width={4.4*s} height={2.5*s} rx={0.8*s} fill="#aa4444" stroke="#883333" strokeWidth={0.2*s}/>);
-        el.push(<rect key={k+"rjv"} x={cx-1.2*s} y={y0+1*s} width={2.4*s} height={0.7*s} rx={0.2*s} fill="#1a1a2e" opacity={0.6}/>);
-        el.push(...torso("#aa4444","#882222",3.5),...arms("#aa4444",3.5),...legs("#553333","#553333",7.5));
-        el.push(blaster(3,6,2.5,"#777"),...jetpack(3.8));break;
+        el.push(...humanHead("#FFCC88",0,"#442211",null));
+        el.push(<rect key={k+"rjh"} x={cx-2.3*s} y={y0-0.2*s} width={4.6*s} height={2.7*s} rx={0.9*s} fill="#aa4444" stroke="#883333" strokeWidth={0.22*s}/>);
+        el.push(<rect key={k+"rjv"} x={cx-1.3*s} y={y0+1.0*s} width={2.6*s} height={0.8*s} rx={0.25*s} fill="#1a1a2e" opacity={0.65}/>);
+        el.push(...torso(null,"#aa4444","#882222",3.5),...arms("#aa4444",3.5),...legs("#553333","#553333",7.5));
+        el.push(...blaster(3,6,2.5,"#777"),...jetpack(3.8));break;
+      case"han":
+        el.push(...humanHead("#FFCC88",0,"#2a1a0a",null));
+        el.push(...torso(null,"#FFFFFF","#1a1a2e",3.5),...arms("#FFFFFF",3.5),...legs("#1a1a2e",null,7.5));
+        el.push(...blaster(3,6,2,"#888"));break;
       case"guard":
-        el.push(stud(-0.3));
-        el.push(<rect key={k+"gh"} x={cx-2.2*s} y={y0-0.1*s} width={4.4*s} height={3.2*s} rx={1*s} fill="#556644" stroke="#445533" strokeWidth={0.2*s}/>);
-        el.push(<rect key={k+"gv"} x={cx-1.2*s} y={y0+1.2*s} width={2.4*s} height={1*s} rx={0.3*s} fill="#1a1a2e" opacity={0.6}/>);
-        el.push(...torso("#556644","#3a4a2a",3.2),...arms("#556644",3.2),...legs("#3a4a2a","#3a4a2a",7.2));
-        el.push(blaster(3,5.5,3,"#5588bb"));break;
+        el.push(...stud(-0.3));
+        el.push(<rect key={k+"gh"} x={cx-2.4*s} y={y0-0.2*s} width={4.8*s} height={3.4*s} rx={1.1*s} fill="#556644" stroke="#445533" strokeWidth={0.22*s}/>);
+        el.push(<rect key={k+"gv"} x={cx-1.3*s} y={y0+1.1*s} width={2.6*s} height={1.1*s} rx={0.35*s} fill="#1a1a2e" opacity={0.65}/>);
+        el.push(...torso(null,"#556644","#3a4a2a",3.2),...arms("#556644",3.2),...legs("#3a4a2a","#3a4a2a",7.2));
+        el.push(...blaster(3,5.5,3,"#5588bb"));break;
+      case"mando":
+        el.push(...humanHead("#FFCC88",0,null,"#888899"));
+        el.push(...torso(null,"#778899",null,3.2,"mando"),...arms("#778899",3.2),...legs("#667788",null,7.2));
+        el.push(...blaster(3,5.5,2.5,"#aabbcc"),...jetpack(3.2));break;
+      case"kylo":
+        el.push(
+          <rect key={k+"kh"} x={cx-2.6*s} y={y0-0.1*s} width={5.2*s} height={3.8*s} rx={1.2*s} fill="#0a0a0a" stroke="#333" strokeWidth={0.25*s}/>,
+          <path key={k+"kv"} d={`M${cx-1.8*s},${y0+1*s} L${cx-1*s},${y0+2.2*s} L${cx+1*s},${y0+2.2*s} L${cx+1.8*s},${y0+1*s}`} fill="#0a0a1a" opacity={0.85}/>
+        );
+        el.push(...torso(null,"#111111",null,3.5,"vader_chest"),...arms("#111111",3.5),...legs("#000000",null,7.5),...cape(3.5,"#111111"));
+        el.push(...saberBlade(3.2,6,4,"#ff3333","saberGlowR"));break;
+      // ─── BAD BATCH ───
+      case"hunter":
+        el.push(...stud(-0.3),...cloneHelm("#332211","#221100",-0.1));
+        el.push(...torso(null,"#332211","#664422",3.2),...arms("#332211",3.2),...legs("#221100",null,7.2));
+        el.push(...blaster(3,5.5,3.5,"#aa7744"),...blaster(-3.5,5.5,1.5,"#aa7744"));
+        el.push(<rect key={k+"hbd"} x={cx-1.5*s} y={y0+3.5*s} width={3*s} height={0.5*s} rx={0.1*s} fill="#ff8800" opacity={0.7}/>);break;
+      case"crosshair":
+        el.push(...stud(-0.3),...cloneHelm("#e8e8f0","#223344",-0.1));
+        el.push(...torso(null,"#223344",null,3.2),...arms("#223344",3.2),...legs("#112233",null,7.2));
+        el.push(...longRifle(3,5,6,"#335577"));break;
+      case"wrecker":
+        el.push(...stud(-0.3),...cloneHelm("#553322","#442211",-0.1));
+        el.push(<rect key={k+"wrt"} x={cx-3.5*s} y={y0+3.2*s} width={7*s} height={4.5*s} rx={0.6*s} fill="#553322" stroke="#442211" strokeWidth={0.2*s}/>);
+        el.push(...arms("#553322",3.2),...legs("#442211",null,8));
+        el.push(<line key={k+"wrw"} x1={cx-3*s} y1={y0+5*s} x2={cx-5*s} y2={y0+8*s} stroke="#888" strokeWidth={1.2*s} strokeLinecap="round"/>);break;
+      case"echo":
+        el.push(...stud(-0.3),...cloneHelm("#334455","#223344",-0.1));
+        el.push(...torso(null,"#334455","#558888",3.2),...arms("#334455",3.2),...legs("#223344",null,7.2));
+        el.push(...blaster(3,5.5,3,"#558899"));
+        el.push(<rect key={k+"ecy"} x={cx+2.5*s} y={y0+3.2*s} width={0.5*s} height={3*s} rx={0.2*s} fill="#00ff88" opacity={0.5}/>);break;
+      case"tech":
+        el.push(...stud(-0.3),...cloneHelm("#445566","#334455",-0.1));
+        el.push(...torso(null,"#445566","#88aacc",3.2),...arms("#445566",3.2),...legs("#334455",null,7.2));
+        el.push(...blaster(3,5.5,2.5,"#6699aa"));
+        el.push(<rect key={k+"tcd2"} x={cx-2.5*s} y={y0+5*s} width={2*s} height={1.5*s} rx={0.2*s} fill="#001144" stroke="#3388ff" strokeWidth={0.15*s}/>);break;
+
+      // ─── JEDI DU CONSEIL ───
+      case"mace":
+        el.push(...humanHead("#8B6040",0,null,null));
+        el.push(...torso(null,"#6633AA","#441188",3.5),...arms("#6633AA",3.5),...legs("#441188",null,7.5));
+        el.push(...saberBlade(3.2,6,4.5,"#cc44ff","saberGlowB"),...cape(3.5,"#4422aa"));
+        el.push(<ellipse key={k+"mge"} cx={cx+3*s} cy={y0+3*s} rx={1.5*s} ry={1.5*s} fill="#cc44ff" opacity={0.12} filter="url(#glowStrong)"/>);break;
+      case"plo":
+        el.push(
+          <ellipse key={k+"plh"} cx={cx} cy={y0+2*s} rx={2.2*s} ry={2.4*s} fill="#555577" stroke="#445566" strokeWidth={0.2*s}/>,
+          <rect key={k+"plm"} x={cx-1.2*s} y={y0+2.5*s} width={2.4*s} height={0.6*s} rx={0.15*s} fill="#334444"/>,
+          <circle key={k+"ple1"} cx={cx-0.8*s} cy={y0+1.5*s} r={0.5*s} fill="#ff8800" filter="url(#glow)"/>,
+          <circle key={k+"ple2"} cx={cx+0.8*s} cy={y0+1.5*s} r={0.5*s} fill="#ff8800" filter="url(#glow)"/>
+        );
+        el.push(...torso(null,"#334466","#2a3355",3.5),...arms("#334466",3.5),...legs("#2a3355",null,7.5),...cape(3.5,"#1a2244"));
+        el.push(...saberBlade(3.2,6,4,"#4488ff","saberGlowB"));break;
+      case"kit":
+        el.push(
+          <circle key={k+"kth"} cx={cx} cy={y0+2*s} r={2.2*s} fill="#225533" stroke="#1a4422" strokeWidth={0.2*s}/>,
+          <path key={k+"ktdr"} d={`M${cx-0.5*s},${y0+1.5*s} Q${cx-2*s},${y0-1*s} ${cx-3*s},${y0+0*s}`} fill="#1a4422" stroke="none"/>,
+          <path key={k+"ktdl"} d={`M${cx+0.5*s},${y0+1.5*s} Q${cx+2*s},${y0-1*s} ${cx+3*s},${y0+0*s}`} fill="#1a4422" stroke="none"/>,
+          <circle key={k+"kte1"} cx={cx-0.7*s} cy={y0+2*s} r={0.35*s} fill="#113322"/>,
+          <circle key={k+"kte2"} cx={cx+0.7*s} cy={y0+2*s} r={0.35*s} fill="#113322"/>
+        );
+        el.push(...torso(null,"#225533","#1a4422",3.5),...arms("#225533",3.5),...legs("#1a4422",null,7.5));
+        el.push(...saberBlade(3.2,6,4,"#44ff77","saberGlowG"));break;
+      case"ahsoka":
+        el.push(
+          <ellipse key={k+"ahh"} cx={cx} cy={y0+2*s} rx={2.2*s} ry={2.5*s} fill="#CC8855" stroke="#BB7744" strokeWidth={0.2*s}/>,
+          <path key={k+"ahlh"} d={`M${cx-0.5*s},${y0-0.5*s} L${cx-1*s},${y0-3*s}`} stroke="#4455AA" strokeWidth={0.8*s} strokeLinecap="round"/>,
+          <path key={k+"ahlh2"} d={`M${cx+0.5*s},${y0-0.5*s} L${cx+1*s},${y0-3*s}`} stroke="#4455AA" strokeWidth={0.8*s} strokeLinecap="round"/>,
+          <rect key={k+"ahm"} x={cx-1*s} y={y0+1.2*s} width={2*s} height={0.4*s} rx={0.1*s} fill="#4455AA" opacity={0.9}/>,
+          <circle key={k+"ahe1"} cx={cx-0.7*s} cy={y0+1.8*s} r={0.3*s} fill="#112244"/>,
+          <circle key={k+"ahe2"} cx={cx+0.7*s} cy={y0+1.8*s} r={0.3*s} fill="#112244"/>
+        );
+        el.push(...torso(null,"#CC8855","#4455AA",3.5),...arms("#CC8855",3.5),...legs("#4455AA",null,7.5));
+        el.push(...saberBlade(3.2,6,4,"#ffffff","saberGlowB"),...saberBlade(-3.5,6,3,"#ffffff","saberGlowB"));break;
+      case"qui_gon":
+        el.push(...humanHead("#FFCC88",0,"#553300",null));
+        el.push(...torso(null,"#2a3a1a","#3a5a2a",3.5),...arms("#2a3a1a",3.5),...legs("#3a5a2a",null,7.5),...cape(3.5,"#2a3a1a"));
+        el.push(...saberBlade(3.2,6,4.5,"#44ff77","saberGlowG"));break;
+
+      // ─── CÔTÉ OBSCUR ───
+      case"maul":
+        el.push(
+          <circle key={k+"mlh"} cx={cx} cy={y0+2*s} r={2.3*s} fill="#cc2222" stroke="#aa1111" strokeWidth={0.22*s}/>,
+          // Sith tattoos
+          <path key={k+"mlt1"} d={`M${cx-0.5*s},${y0+0.5*s} L${cx-1.5*s},${y0+3*s}`} stroke="#000" strokeWidth={0.3*s}/>,
+          <path key={k+"mlt2"} d={`M${cx+0.5*s},${y0+0.5*s} L${cx+1.5*s},${y0+3*s}`} stroke="#000" strokeWidth={0.3*s}/>,
+          <circle key={k+"mle1"} cx={cx-0.7*s} cy={y0+1.8*s} r={0.4*s} fill="#ff2200" filter="url(#glow)"/>,
+          <circle key={k+"mle2"} cx={cx+0.7*s} cy={y0+1.8*s} r={0.4*s} fill="#ff2200" filter="url(#glow)"/>
+        );
+        el.push(...torso(null,"#111111",null,3.5),...arms("#111111",3.5),...legs("#000000",null,7.5),...cape(3.5,"#000011"));
+        el.push(...saberBlade(3.2,6,4,"#ff3333","saberGlowR"),...saberBlade(-3.5,9,4,"#ff3333","saberGlowR"));break;
+      case"dooku":
+        el.push(...humanHead("#EECCAA",0,"#888888",null));
+        el.push(...torso(null,"#111133",null,3.5),...arms("#111133",3.5),...legs("#0a0a22",null,7.5),...cape(3.5,"#111133"));
+        // Curved saber
+        el.push(
+          <path key={k+"dks"} d={`M${cx+3.2*s},${y0+6.5*s} Q${cx+4*s},${y0+4*s} ${cx+2.5*s},${y0+2*s}`} fill="none" stroke="#ff3333" strokeWidth={1.2*s} strokeLinecap="round" filter="url(#glowSaber)"/>,
+          <path key={k+"dksc"} d={`M${cx+3.2*s},${y0+6.5*s} Q${cx+4*s},${y0+4*s} ${cx+2.5*s},${y0+2*s}`} fill="none" stroke="white" strokeWidth={0.35*s} strokeLinecap="round" opacity={0.8}/>
+        );break;
+      case"palpatine":
+        el.push(
+          <circle key={k+"pp"} cx={cx} cy={y0+2.5*s} r={2*s} fill="#c8a878" stroke="#aa8860" strokeWidth={0.18*s}/>,
+          <path key={k+"pph"} d={`M${cx-2.2*s},${y0+2.5*s} Q${cx},${y0-0.5*s} ${cx+2.2*s},${y0+2.5*s}`} fill="#0a0a11" stroke="#333" strokeWidth={0.2*s}/>,
+          <circle key={k+"ppe1"} cx={cx-0.7*s} cy={y0+2.5*s} r={0.35*s} fill="#ffee00" filter="url(#glow)"/>,
+          <circle key={k+"ppe2"} cx={cx+0.7*s} cy={y0+2.5*s} r={0.35*s} fill="#ffee00" filter="url(#glow)"/>
+        );
+        el.push(...torso(null,"#0a0a11",null,4.5),...arms("#0a0a11",4.5),...legs("#000000",null,8.5),...cape(4.5,"#0a0a11"));
+        el.push(...saberBlade(3.2,7,4,"#ff3333","saberGlowR"));
+        // Force lightning
+        el.push(<path key={k+"pfl"} d={`M${cx-3.5*s},${y0+5*s} L${cx-5*s},${y0+7*s} L${cx-4*s},${y0+8.5*s} L${cx-6*s},${y0+10*s}`} fill="none" stroke="#ffff00" strokeWidth={0.6*s} filter="url(#glow)" opacity={0.8}/>);break;
+      case"ventress":
+        el.push(
+          <ellipse key={k+"vth"} cx={cx} cy={y0+2*s} rx={1.9*s} ry={2.2*s} fill="#c8d8e8" stroke="#aabbcc" strokeWidth={0.18*s}/>,
+          <circle key={k+"vte1"} cx={cx-0.7*s} cy={y0+2*s} r={0.38*s} fill="#ffaa00" filter="url(#glow)"/>,
+          <circle key={k+"vte2"} cx={cx+0.7*s} cy={y0+2*s} r={0.38*s} fill="#ffaa00" filter="url(#glow)"/>
+        );
+        el.push(...torso(null,"#220033","#440066",3.5),...arms("#220033",3.5),...legs("#1a0022",null,7.5),...cape(3.5,"#220033"));
+        el.push(...saberBlade(3.2,6,4,"#ff3333","saberGlowR"),...saberBlade(-3.5,6,4,"#ff3333","saberGlowR"));break;
+
+      // ─── EMPIRE COMPLET ───
+      case"scout_trooper":
+        el.push(...stud(-0.3),...cloneHelm("#ddddcc","#bbbbaa",-0.1));
+        el.push(...torso("cloneG","#ddddcc",null,3.2),...arms("url(#cloneG)",3.2),...legs("#ccccbb",null,7.2));
+        el.push(...longRifle(3,5,5.5,"#888877"));break;
+      case"death_trooper":
+        el.push(...stud(-0.3),...cloneHelm("#0a0a11","#222233",-0.1));
+        el.push(...torso("empireG","#0a0a11",null,3.2),...arms("url(#empireG)",3.2),...legs("#050511",null,7.2));
+        el.push(...longRifle(3,5,5,"#223344"));
+        el.push(<rect key={k+"dtg"} x={cx-1.3*s} y={y0+1*s} width={2.6*s} height={0.7*s} rx={0.2*s} fill="#00ff88" opacity={0.25}/>);break;
+      case"dark_trooper":
+        el.push(
+          <rect key={k+"dtrh"} x={cx-2.5*s} y={y0+0*s} width={5*s} height={3.5*s} rx={1*s} fill="#1a1a2e" stroke="#334466" strokeWidth={0.25*s}/>,
+          <rect key={k+"dtrv"} x={cx-1.4*s} y={y0+1.2*s} width={2.8*s} height={1.2*s} rx={0.25*s} fill="#ff4400" opacity={0.4}/>
+        );
+        el.push(<rect key={k+"dtrt"} x={cx-3*s} y={y0+3.5*s} width={6*s} height={4.5*s} rx={0.6*s} fill="#1a1a2e" stroke="#334466" strokeWidth={0.22*s}/>);
+        el.push(...arms("#1a1a2e",3.5),...legs("#111122","#111122",8));
+        el.push(...blaster(3,5.5,3,"#445577"));break;
+      case"snowtrooper":
+        el.push(
+          <ellipse key={k+"snwh"} cx={cx} cy={y0+1.8*s} rx={2.3*s} ry={2.5*s} fill="#e8e8ee" stroke="#ccccdd" strokeWidth={0.2*s}/>,
+          <rect key={k+"snwv"} x={cx-1.8*s} y={y0+2*s} width={3.6*s} height={0.9*s} rx={0.2*s} fill="#1a1a2e" opacity={0.65}/>
+        );
+        el.push(...torso(null,"#e8e8ee","#ccccdd",4),...arms("#e8e8ee",4),...legs("#ccccdd",null,8));
+        el.push(...blaster(3,6,3,"#888899"));break;
+
+      // ─── REBELLES COMPLET ───
+      case"leia":
+        el.push(...humanHead("#FFCC88",0,"#000000",null));
+        el.push(
+          <ellipse key={k+"leh1"} cx={cx-2.5*s} cy={y0+1.5*s} rx={1.5*s} ry={1.5*s} fill="#000000" stroke="#111" strokeWidth={0.1*s}/>,
+          <ellipse key={k+"leh2"} cx={cx+2.5*s} cy={y0+1.5*s} rx={1.5*s} ry={1.5*s} fill="#000000" stroke="#111" strokeWidth={0.1*s}/>
+        );
+        el.push(...torso(null,"#ffffff",null,3.5),...arms("#ffffff",3.5),...legs("#ffffff",null,7.5));
+        el.push(...blaster(3,6,1.5,"#777"));break;
+      case"chewie":
+        el.push(
+          <ellipse key={k+"cwh"} cx={cx} cy={y0+2*s} rx={2.5*s} ry={2.8*s} fill="#8B6040" stroke="#6B4020" strokeWidth={0.2*s}/>,
+          <circle key={k+"cwe1"} cx={cx-0.8*s} cy={y0+1.5*s} r={0.45*s} fill="#442200"/>,
+          <circle key={k+"cwe2"} cx={cx+0.8*s} cy={y0+1.5*s} r={0.45*s} fill="#442200"/>,
+          <path key={k+"cwm"} d={`M${cx-0.6*s},${y0+2.5*s} Q${cx},${y0+3*s} ${cx+0.6*s},${y0+2.5*s}`} fill="none" stroke="#442200" strokeWidth={0.3*s}/>
+        );
+        el.push(<rect key={k+"cwt"} x={cx-3.2*s} y={y0+4.5*s} width={6.4*s} height={4.5*s} rx={0.6*s} fill="#7a5030" stroke="#6a4020" strokeWidth={0.2*s}/>);
+        el.push(...arms("#8B6040",4.5),...legs("#6a4020","#5a3010",9.5));
+        // Bandolier
+        el.push(<path key={k+"cwbd"} d={`M${cx-2.8*s},${y0+4.5*s} L${cx+2.8*s},${y0+8*s}`} stroke="#553322" strokeWidth={0.5*s}/>);
+        el.push(...longRifle(3,7,4,"#885533"));break;
+      case"lando":
+        el.push(...humanHead("#8B5030",0,"#000000",null));
+        el.push(...torso(null,"#ffffff","#3344aa",3.5),...arms("#ffffff",3.5),...legs("#1a2233",null,7.5));
+        el.push(...blaster(3,6,1.5,"#888"),...cape(3.5,"#3344aa"));break;
+      case"luke_xwing":
+        el.push(...humanHead("#FFCC88",0,"#553322",null));
+        el.push(<rect key={k+"lxh"} x={cx-2.4*s} y={y0-0.2*s} width={4.8*s} height={3*s} rx={1*s} fill="#ff8800" stroke="#cc6600" strokeWidth={0.2*s}/>);
+        el.push(<rect key={k+"lxv"} x={cx-1.2*s} y={y0+1.1*s} width={2.4*s} height={0.8*s} rx={0.2*s} fill="#1a1a2e" opacity={0.7}/>);
+        el.push(...torso(null,"#ff8800","#cc5500",3.2),...arms("#ff8800",3.2),...legs("#cc6600",null,7.2));
+        el.push(...saberBlade(3.2,5.5,4,"#4488ff","saberGlowB"));break;
+      case"cassian":case"jyn":
+        el.push(...humanHead("#FFCC88",0,bt==="jyn"?"#553322":"#331100",null));
+        el.push(...torso("rebelG",null,"#445533",3.5),...arms("url(#rebelG)",3.5),...legs("#3a4428",null,7.5));
+        el.push(...blaster(3,6,3,"#667755"));break;
+
+      // ─── MANDALORIEN COMPLET ───
+      case"boba":
+        el.push(...humanHead("#FFCC88",0,null,"#336644"));
+        el.push(...torso(null,"#336644","#224433",3.2,"mando"),...arms("#336644",3.2),...legs("#224433",null,7.2));
+        el.push(...blaster(3,5.5,3.5,"#88aaaa"),...jetpack(3.2));
+        el.push(<rect key={k+"bbd"} x={cx-0.8*s} y={y0+1*s} width={1.6*s} height={0.5*s} rx={0.1*s} fill="#ff4400" opacity={0.6}/>);break;
+      case"jango":
+        el.push(...humanHead("#FFCC88",0,null,"#778899"));
+        el.push(...torso(null,"#778899","#556677",3.2,"mando"),...arms("#778899",3.2),...legs("#556677",null,7.2));
+        el.push(...blaster(-3.5,5.5,2,"#aabbcc"),...blaster(3,5.5,2,"#aabbcc"),...jetpack(3.2));break;
+      case"bo_katan":
+        el.push(...humanHead("#FFCC88",0,null,"#4455aa"));
+        el.push(...torso(null,"#4455aa","#334499",3.2,"mando"),...arms("#4455aa",3.2),...legs("#334499",null,7.2));
+        el.push(...saberBlade(3.2,6,4,"#220055","saberGlowB"),...blaster(-3.5,5.5,2,"#6688cc"),...jetpack(3.2));break;
+
+      // ─── CHASSEURS DE PRIMES ───
+      case"ig88":
+        el.push(
+          <circle key={k+"igh"} cx={cx} cy={y0+1.5*s} r={2*s} fill="url(#metalG)" stroke="#667766" strokeWidth={0.2*s}/>,
+          <rect key={k+"igv1"} x={cx-0.8*s} y={y0+0.8*s} width={1.6*s} height={0.5*s} rx={0.1*s} fill="#ff4400" opacity={0.5}/>,
+          <rect key={k+"igv2"} x={cx-0.8*s} y={y0+1.5*s} width={1.6*s} height={0.5*s} rx={0.1*s} fill="#ff4400" opacity={0.5}/>,
+          <circle key={k+"ige1"} cx={cx-0.7*s} cy={y0+1.5*s} r={0.5*s} fill="#ff8800" filter="url(#glow)"/>,
+          <circle key={k+"ige2"} cx={cx+0.7*s} cy={y0+1.5*s} r={0.5*s} fill="#ff8800" filter="url(#glow)"/>
+        );
+        el.push(<rect key={k+"igt"} x={cx-2*s} y={y0+3*s} width={4*s} height={4*s} rx={0.5*s} fill="url(#metalG)" stroke="#556655" strokeWidth={0.18*s}/>);
+        el.push(...legs("#4a4a4a","#4a4a4a",7.2));
+        el.push(...longRifle(-3.5,5,6,"#777788"),...longRifle(3,5,5,"#666677"));break;
+      case"bossk":
+        el.push(
+          <ellipse key={k+"bsh"} cx={cx} cy={y0+2*s} rx={2.2*s} ry={2.5*s} fill="#667744" stroke="#556633" strokeWidth={0.2*s}/>,
+          <circle key={k+"bse1"} cx={cx-0.8*s} cy={y0+1.5*s} r={0.45*s} fill="#ffcc00" filter="url(#glow)"/>,
+          <circle key={k+"bse2"} cx={cx+0.8*s} cy={y0+1.5*s} r={0.45*s} fill="#ffcc00" filter="url(#glow)"/>
+        );
+        el.push(...torso(null,"#445533","#334422",3.5),...arms("#667744",3.5),...legs("#445533",null,7.5));
+        el.push(...blaster(3,6,3.5,"#556644"));break;
+      case"cad_bane":
+        el.push(...humanHead("#7788aa",0,null,null));
+        el.push(
+          // wide brim hat
+          <ellipse key={k+"cbh"} cx={cx} cy={y0-0.5*s} rx={3.8*s} ry={0.8*s} fill="#334455" stroke="#223344" strokeWidth={0.2*s}/>,
+          <rect key={k+"cbht"} x={cx-1.2*s} y={y0-2.5*s} width={2.4*s} height={2.5*s} rx={0.4*s} fill="#334455" stroke="#223344" strokeWidth={0.18*s}/>
+        );
+        el.push(...torso(null,"#334455","#223344",3.5),...arms("#334455",3.5),...legs("#223344",null,7.5));
+        el.push(...blaster(-3.5,5.5,2,"#6688aa"),...blaster(3,5.5,2,"#6688aa"));break;
+
+      // ─── RÉSISTANCE / PREMIÈRE ORDRE ───
+      case"rey":
+        el.push(...humanHead("#FFCC88",0,"#887755",null));
+        el.push(...torso(null,"#c4a070","#998860",3.5),...arms("#c4a070",3.5),...legs("#887755",null,7.5));
+        el.push(...saberBlade(3.2,6,4,"#4488ff","saberGlowB"),...cape(3.5,"#c4a070"));break;
+      case"finn":
+        el.push(...humanHead("#8B5030",0,"#000000",null));
+        el.push(...torso("empireG","#111111",null,3.5),...arms("url(#empireG)",3.5),...legs("#000000",null,7.5));
+        el.push(...blaster(3,6,3,"#888"));break;
+      case"phasma":
+        el.push(...stud(-0.3),...cloneHelm("#cccccc","#aaaaaa",-0.1));
+        el.push(...torso(null,"#cccccc",null,3.2),...arms("#cccccc",3.2),...legs("#bbbbbb",null,7.2));
+        el.push(...longRifle(3,5,4,"#aaaaaa"));
+        el.push(<ellipse key={k+"phgl"} cx={cx} cy={y0+2*s} rx={3*s} ry={3*s} fill="rgba(200,210,220,0.1)" filter="url(#glow)"/>);break;
+
       default:
-        el.push(...humanHead("#FFCC88",0,null),...torso("#888","#555",3.5),...arms("#888",3.5),...legs("#555","#555",7.5),blaster(3,5.5,2,"#777"));
+        el.push(...humanHead("#FFCC88",0,null,null),...torso(null,"#888","#555",3.5),...arms("#888",3.5),...legs("#555","#555",7.5),...blaster(3,5.5,2,"#777"));
     }
-    return <g key={k+"g"}>{el}</g>;
+    return <g key={k+"g"} filter="url(#unitSh)">{el}</g>;
   };
 
-  /* ─── Prone figure (flattened, seen from above) ─── */
+    /* ─── Prone figure (flattened, seen from above) ─── */
   const drawProne=(type,cx,y0,s,pl)=>{
     const c=UDEFS[type]?.co||"#888";const fac=UDEFS[type]?.fac||"cl";
     const bodyCol=fac==="cl"?"#e0e0e0":fac==="sep"?"#C4A65A":"#8B6C42";
@@ -2432,7 +2957,7 @@ function CrossBlock(){
             {/* Army builders */}
             <div style={{display:"flex",gap:10,marginBottom:10,flexWrap:"wrap"}}>
               {[1,2].map(pl=>{const sArmy=pl===1?simA1:simA2;const setSArmy=pl===1?sSimA1:sSimA2;
-                const c=pl===1?"#58a6ff":"#f85149";const fac=pl===1?["cl"]:["sep","reb"];const vFac=pl===1?"cl":"sep";
+                const c=pl===1?"#58a6ff":"#f85149";const fac=pl===1?["cl"]:["sep","reb","emp","mando","fo"];const vFac=pl===1?"cl":"sep";
                 const getPts=(t)=>t.startsWith("v_")?VDEFS[t.slice(2)]?.pts||0:UDEFS[t]?.pts||0;
                 const getInfo=(t)=>t.startsWith("v_")?VDEFS[t.slice(2)]:UDEFS[t];
                 const pts=sArmy.reduce((s,t)=>getPts(t)+s,0);
@@ -2451,7 +2976,7 @@ function CrossBlock(){
                     ))}
                   </div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:2,marginBottom:5}}>
-                    {Object.entries(VDEFS).filter(([,v])=>v.fac===vFac).map(([k,v])=>(
+                    {Object.entries(VDEFS).filter(([,v])=>pl===1?v.fac==="cl":v.fac!=="cl").map(([k,v])=>(
                       <button key={k} onClick={()=>setSArmy(p=>[...p,`v_${k}`])} style={{...BS("#2a1f00"),fontSize:8,padding:"2px 5px",border:"1px solid #f0c04055"}}>{v.ic}{v.n}({v.pts})</button>
                     ))}
                   </div>
@@ -2633,6 +3158,10 @@ function CrossBlock(){
           <div style={{marginTop:8,display:"flex",gap:6}}>
             <span style={{color:"#8b949e",fontSize:10}}>Écart: {Math.abs(p1-p2)}pts {Math.abs(p1-p2)>50?"⚠":"✓"}</span>
             <button onClick={()=>{if(!a1.length)preset(1);if(!a2.length)preset(2);setPhase("deploy_choice");setTab("battle");}} style={BS("#238636")}>▶ Déploiement</button>
+            <button onClick={syncFromIndex} style={{...BS("#1f6feb"),fontSize:10,padding:"5px 10px"}}>📥 Sync index.html</button>
+            <button onClick={()=>document.getElementById("custom3d-upload").click()} style={{...BS("#6e40c9"),fontSize:10,padding:"5px 10px"}}>⬆ Upload 3D</button>
+            <input id="custom3d-upload" type="file" accept=".glb,.gltf,.svg,.png" style={{display:"none"}} onChange={handle3DUpload}/>
+            <span id="upload3d-status" style={{fontSize:9,color:"#8b949e"}}></span>
           </div>
         </div>
       )}
@@ -2736,16 +3265,65 @@ function CrossBlock(){
                     <stop offset="50%" stopColor="rgba(0,0,0,0)"/>
                     <stop offset="100%" stopColor="rgba(0,0,0,0.1)"/>
                   </linearGradient>
+                  {/* ─── GRADIENTS FIGURINES ─── */}
+                  <linearGradient id="cloneG" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#f0f0f0"/><stop offset="100%" stopColor="#b8c8e0"/>
+                  </linearGradient>
+                  <linearGradient id="empireG" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#2a2a2a"/><stop offset="100%" stopColor="#0a0a0a"/>
+                  </linearGradient>
+                  <linearGradient id="rebelG" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#9B7040"/><stop offset="100%" stopColor="#6B4020"/>
+                  </linearGradient>
+                  <linearGradient id="sepG" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#D4B06A"/><stop offset="100%" stopColor="#A07838"/>
+                  </linearGradient>
+                  <linearGradient id="metalG" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#888888"/><stop offset="100%" stopColor="#444444"/>
+                  </linearGradient>
+                  {/* ─── FILTRES AMÉLIORÉS ─── */}
                   <filter id="unitSh" x="-50%" y="-50%" width="200%" height="200%">
-                    <feDropShadow dx={1.5} dy={2.5} stdDeviation={1.2} floodColor="#000" floodOpacity={0.5}/>
+                    <feDropShadow dx={1.5} dy={3} stdDeviation={1.5} floodColor="#000" floodOpacity={0.65}/>
                   </filter>
                   <filter id="terrSh" x="-30%" y="-30%" width="170%" height="200%">
                     <feDropShadow dx={3} dy={5} stdDeviation={2.5} floodColor="#000" floodOpacity={0.45}/>
                   </filter>
-                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation={1.5} result="blur"/>
-                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+                    <feGaussianBlur stdDeviation={2.5} result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                   </filter>
+                  <filter id="glowStrong" x="-100%" y="-100%" width="300%" height="300%">
+                    <feGaussianBlur stdDeviation={4} result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <filter id="glowSaber" x="-150%" y="-150%" width="400%" height="400%">
+                    <feGaussianBlur stdDeviation={3} result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <filter id="smoke" x="-50%" y="-150%" width="200%" height="400%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="2" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale={8} xChannelSelector="R" yChannelSelector="G" result="disp"/>
+                    <feGaussianBlur in="disp" stdDeviation={1.5}/>
+                  </filter>
+                  <filter id="hitFlash" x="-30%" y="-30%" width="160%" height="160%">
+                    <feColorMatrix type="matrix" values="3 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+                  </filter>
+                  <radialGradient id="shadowG">
+                    <stop offset="0%" stopColor="rgba(0,0,0,0.5)"/>
+                    <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+                  </radialGradient>
+                  <radialGradient id="saberGlowB">
+                    <stop offset="0%" stopColor="rgba(100,170,255,0.9)"/>
+                    <stop offset="100%" stopColor="rgba(68,136,255,0)"/>
+                  </radialGradient>
+                  <radialGradient id="saberGlowR">
+                    <stop offset="0%" stopColor="rgba(255,100,100,0.9)"/>
+                    <stop offset="100%" stopColor="rgba(255,50,50,0)"/>
+                  </radialGradient>
+                  <radialGradient id="saberGlowG">
+                    <stop offset="0%" stopColor="rgba(80,255,120,0.9)"/>
+                    <stop offset="100%" stopColor="rgba(40,200,80,0)"/>
+                  </radialGradient>
                 </defs>
 
                 {/* Ground layers */}
