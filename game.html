@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CrossBlock — Wargame LEGO Star Wars</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<title>CrossBlock — Wargame LEGO Star Wars</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0d1117; overflow-x: hidden; }
@@ -598,6 +599,91 @@ class ErrorBoundary extends React.Component {
 }
 
 function CrossBlock(){
+  // ── 3D PRE-RENDER ──
+  const [fig3dReady, setFig3dReady] = React.useState(0);
+  React.useEffect(() => {
+    if (typeof THREE === "undefined") return;
+    setTimeout(() => {
+      try {
+        Object.keys(UDEFS).forEach(t => {
+          if (!FIG3D_CACHE[t]) preRenderUnit3D(t);
+        });
+        setFig3dReady(c => c + 1);
+        console.log("3D pre-render done:", Object.keys(FIG3D_CACHE).length, "units");
+      } catch(e) { console.warn("3D pre-render error:", e); }
+    }, 300);
+  }, []);
+
+  // ── SYNC: game.html ↔ index.html via localStorage events ──
+  React.useEffect(() => {
+    // Listen for changes from index.html
+    const onStorageChange = (e) => {
+      if (e.key === "crossblocks_cards_to_game" && e.newValue) {
+        try {
+          const data = JSON.parse(e.newValue);
+          if (data && data.cards && Array.isArray(data.cards)) {
+            // Convert index.html cards to game.html unit format
+            const newUnits = data.cards.slice(0, 12).map((c, i) => {
+              const fac = c.faction === "République" ? "cl" :
+                          c.faction === "Séparatistes" ? "sep" :
+                          c.faction === "Rebelles" ? "reb" :
+                          c.faction === "Empire" ? "emp" :
+                          c.faction === "Mandalorien" ? "mando" : "cl";
+              return {
+                id: uid(), type: "custom_" + Date.now() + "_" + i, pl: 1,
+                name: c.name.replace(/\s*\([^)]+\)/g, "").replace("SW ", ""),
+                pts: c.points || 200, mAct: c.pa || 5, act: c.pa || 5,
+                mm: c.move || 0, arm: c.armor || 15, mHp: c.hp || 2, hp: c.hp || 2,
+                ws: [{key:"fusil_b", ...WEAPS.fusil_b, cur:3}],
+                ic: "🃏", fac: fac, co: "#4488dd",
+                air: false, fly: false, dep: false, done: false, sqId: null, prone: false, alt: 0,
+                x: -999, y: -999,
+              };
+            });
+            sA1(newUnits);
+            sP1(newUnits.reduce((s, u) => s + u.pts, 0));
+            aL("📥 " + newUnits.length + " unités synchronisées depuis index.html");
+          }
+        } catch(err) { console.warn("Sync fail:", err); }
+      }
+    };
+    window.addEventListener("storage", onStorageChange);
+    return () => window.removeEventListener("storage", onStorageChange);
+  }, []);
+
+  // Helper: write current army to localStorage for index.html
+  const syncToIndex = () => {
+    try {
+      const cards = [...a1, ...a2].map(u => ({
+        name: u.name || (UDEFS[u.type] || {}).n || "Unité",
+        faction: u.fac === "cl" ? "République" :
+                 u.fac === "sep" ? "Séparatistes" :
+                 u.fac === "reb" ? "Rebelles" :
+                 u.fac === "emp" ? "Empire" :
+                 u.fac === "mando" ? "Mandalorien" : "Neutre",
+        theme: "metal",
+        points: u.pts,
+        hp: u.mHp || 2,
+        armor: u.arm,
+        move: u.mm,
+        pa: u.mAct,
+        weapons: (u.ws || []).map(w => (WEAPS[w.key] || {}).n || w.key || "Arme"),
+      }));
+      localStorage.setItem("crossblocks_game_to_cards", JSON.stringify({
+        source: "game.html",
+        cards: cards,
+        ts: Date.now(),
+      }));
+      // Trigger storage event manually for same-tab sync
+      window.dispatchEvent(new StorageEvent("storage", {
+        key: "crossblocks_game_to_cards",
+        newValue: JSON.stringify({source:"game.html", cards}),
+      }));
+      aL("📤 " + cards.length + " unités envoyées vers index.html");
+    } catch(err) { aL("❌ Sync error: " + err.message); }
+  };
+
+
   const[phase,setPhase]=useState("setup");
   const[tab,setTab]=useState("army");
   const[a1,sA1]=useState([]);const[a2,sA2]=useState([]);
@@ -1693,363 +1779,361 @@ function CrossBlock(){
   useEffect(()=>{if(!bul.length)return;const iv=setInterval(()=>sBul(p=>p.map(b=>({...b,t:b.t+0.12})).filter(b=>b.t<1)),30);return()=>clearInterval(iv);},[bul.length]);
 
   const BS=(bg)=>({padding:"5px 12px",borderRadius:5,border:"1px solid #30363d",background:bg||"#21262d",color:"#e6edf3",cursor:"pointer",fontWeight:600,fontSize:11});
-  /* ═══ LEGO MINIFIGURE SVG RENDERER v3 ═══ */
-  /* 100% valid JSX/SVG, testé Babel standalone */
-  const SC = {
-    cl:   { h:"#e8e8e8", a:"#3366CC", l:"#c8d8f0", b:"#3366CC", g:"cloneG" },
-    rep:  { h:"#e8e8e8", a:"#3366CC", l:"#c8d8f0", b:"#3366CC", g:"cloneG" },
-    emp:  { h:"#111111", a:"#222222", l:"#444444", b:"#111111", g:"empireG" },
-    sep:  { h:"#C8A86A", a:"#B89A50", l:"#D4B070", b:"#A07838", g:"sepG"   },
-    reb:  { h:"#7a5535", a:"#9B7040", l:"#C8A878", b:"#6B4020", g:"rebelG" },
-    mando:{ h:"#778899", a:"#556677", l:"#99aabb", b:"#445566", g:"metalG" },
-    fo:   { h:"#0a0a0a", a:"#222222", l:"#333333", b:"#0a0a0a", g:"empireG"},
-    hunt: { h:"#665533", a:"#886644", l:"#aa8855", b:"#554422", g:"metalG" },
-    res:  { h:"#c4a070", a:"#998860", l:"#ddc090", b:"#887755", g:"rebelG" },
-    def:  { h:"#888888", a:"#666666", l:"#aaaaaa", b:"#555555", g:"metalG" },
+  /* ═══ TRUE 3D RENDERER (Three.js → SVG image data) ═══ */
+  const FIG3D_CACHE = {}; // Pre-rendered data URIs
+
+  const FAC_COLORS_3D = {
+    cl:   {body:0xffffff, armor:0x3366CC, head:0xffcc88, helmet:0xeeeeee, accent:0x4488dd},
+    rep:  {body:0xffffff, armor:0x3366CC, head:0xffcc88, helmet:0xeeeeee, accent:0x4488dd},
+    sep:  {body:0xC8A86A, armor:0xB89A50, head:0xC8A86A, helmet:0xB89A50, accent:0xff5555},
+    reb:  {body:0x9B7040, armor:0x6B4020, head:0xffcc88, helmet:0x553322, accent:0xff8c42},
+    emp:  {body:0x111111, armor:0x222222, head:0x111111, helmet:0x000000, accent:0xff3333},
+    mando:{body:0x778899, armor:0x556677, head:0x778899, helmet:0x778899, accent:0xf0c040},
+    fo:   {body:0x111111, armor:0x222222, head:0x111111, helmet:0x000000, accent:0xff3333},
+    hunt: {body:0x665533, armor:0x886644, head:0xffcc88, helmet:0x554422, accent:0xf0c040},
+    res:  {body:0xc4a070, armor:0x998860, head:0xffcc88, helmet:0xc4a070, accent:0xff8822},
+    obs:  {body:0x111122, armor:0x333344, head:0x666677, helmet:0x000011, accent:0xff0000},
+    def:  {body:0x888888, armor:0x666666, head:0xffcc88, helmet:0x555555, accent:0xf0c040},
   };
-  const drawFig=(type,cx,y0,s,pl)=>{
-    const bt=type.startsWith("v_")?null:type;
-    if(!bt)return drawVeh(type.slice(2),cx,y0,s,pl,1);
-    const ud=UDEFS[bt]||{};
-    const fk=ud.fac||"def";
-    const c=SC[fk]||SC.def;
-    const k=bt+"_"+cx+"_"+y0;
 
-    /* ─── Primitives ─── */
-    const R=(id,rx,ry,rw,rh,fill,extra)=>
-      <rect key={k+id} x={rx} y={ry} width={rw} height={rh} fill={fill} rx={extra&&extra.rx||0}
-        stroke={extra&&extra.s||"none"} strokeWidth={extra&&extra.sw||0}/>;
-    const C=(id,ccx,ccy,r,fill,extra)=>
-      <circle key={k+id} cx={ccx} cy={ccy} r={r} fill={fill}
-        stroke={extra&&extra.s||"none"} strokeWidth={extra&&extra.sw||0}
-        opacity={extra&&extra.op||1} filter={extra&&extra.f||undefined}/>;
-    const L=(id,x1,y1,x2,y2,stroke,sw,extra)=>
-      <line key={k+id} x1={x1} y1={y1} x2={x2} y2={y2} stroke={stroke}
-        strokeWidth={sw} strokeLinecap={extra&&extra.lc||"round"} opacity={extra&&extra.op||1}/>;
-    const P=(id,pts,fill,extra)=>
-      <polygon key={k+id} points={pts} fill={fill}
-        stroke={extra&&extra.s||"none"} strokeWidth={extra&&extra.sw||0} opacity={extra&&extra.op||1}/>;
-    const PH=(id,d,fill,stroke,sw,extra)=>
-      <path key={k+id} d={d} fill={fill} stroke={stroke||"none"} strokeWidth={sw||0}
-        strokeLinecap="round" opacity={extra&&extra.op||1}/>;
-    const T=(id,tx,ty,txt,fs,fill)=>
-      <text key={k+id} x={tx} y={ty} fontSize={fs} fill={fill}
-        textAnchor="middle" dominantBaseline="middle">{txt}</text>;
-    const E=(id,ecx,ecy,rx,ry,fill,extra)=>
-      <ellipse key={k+id} cx={ecx} cy={ecy} rx={rx} ry={ry} fill={fill}
-        opacity={extra&&extra.op||1} filter={extra&&extra.f||undefined}/>;
+  // Sub-config per unit type for special features
+  const UNIT_3D_FEATURES = {
+    clone:{lightsaber:false,jetpack:false,cape:false,scale:1.0},
+    sniper:{lightsaber:false,scale:1.0,weaponType:"rifle_long"},
+    spec:{scale:1.0},
+    officer:{scale:1.0,pauldron:true},
+    fives:{scale:1.05,weaponType:"twin_pistol"},
+    rex:{scale:1.05,weaponType:"twin_pistol"},
+    airborne:{jetpack:true,scale:1.0},
+    obi_wan:{lightsaber:true,saberColor:0x4488ff,cape:true,scale:1.0},
+    anakin:{lightsaber:true,saberColor:0x4488ff,scale:1.0},
+    yoda:{lightsaber:true,saberColor:0x44ff77,scale:0.7,cape:true},
+    mace:{lightsaber:true,saberColor:0xcc44ff,cape:true,scale:1.0},
+    ahsoka:{lightsaber:true,saberColor:0xffffff,scale:1.0,doubleSaber:true},
+    luke_jedi:{lightsaber:true,saberColor:0x44ff77,cape:true,scale:1.0},
+    han:{scale:1.0},
+    leia:{scale:1.0},
+    chewie:{scale:1.15,weaponType:"bowcaster"},
+    rebel:{scale:1.0},
+    rebel_f:{scale:1.0},
+    rebel_p:{scale:1.0,weaponType:"pistol"},
+    rebel_jet:{jetpack:true,scale:1.0},
+    guard:{scale:1.0},
+    stormtrooper:{scale:1.0},
+    vader:{lightsaber:true,saberColor:0xff3333,cape:true,scale:1.1,helmetType:"vader"},
+    kylo:{lightsaber:true,saberColor:0xff3333,cape:true,scale:1.0,helmetType:"vader"},
+    maul:{lightsaber:true,saberColor:0xff3333,cape:true,scale:1.0,doubleSaber:true},
+    grievous:{lightsaber:true,saberColor:0x4488ff,scale:1.1,doubleSaber:true,heavy:true},
+    mando:{jetpack:true,scale:1.0,helmetType:"mando"},
+    boba:{jetpack:true,scale:1.0,helmetType:"mando"},
+    rey:{lightsaber:true,saberColor:0x4488ff,cape:true,scale:1.0},
+    ig88:{scale:1.05,droidHead:true,weaponType:"rifle_long"},
+    b1:{scale:1.0,droidHead:true,thinBody:true},
+    b2:{scale:1.2,heavy:true,droidHead:true},
+    tri_droid:{scale:1.4,heavy:true,droidHead:true,multiLeg:true},
+  };
 
-    /* ─── Body parts ─── */
-    const legL=[
-      R("ll",cx-2.8*s,y0+5.2*s,2.4*s,3.5*s,c.a,{rx:0.3*s,s:"#111",sw:0.15*s}),
-      R("lf",cx-3*s,y0+8.3*s,2.7*s,0.8*s,c.b,{rx:0.3*s,s:"#111",sw:0.12*s}),
-    ];
-    const legR=[
-      R("lr",cx+0.4*s,y0+5.2*s,2.4*s,3.5*s,c.a,{rx:0.3*s,s:"#111",sw:0.15*s}),
-      R("fr",cx+0.3*s,y0+8.3*s,2.7*s,0.8*s,c.b,{rx:0.3*s,s:"#111",sw:0.12*s}),
-    ];
-    const tors=[
-      R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,c.g?`url(#${c.g})`:c.a,{rx:0.4*s,s:"#111",sw:0.18*s}),
-      R("tb2",cx-2.2*s,y0+2.2*s,4.4*s,2.4*s,c.l,{rx:0.3*s}),
-      // belt
-      R("blt",cx-3.3*s,y0+5*s,6.6*s,0.6*s,"#111111",{rx:0.1*s}),
-    ];
-    const armL=[
-      C("asl",cx-3.5*s,y0+2.4*s,0.9*s,c.a,{s:"#111",sw:0.1*s}),
-      R("alu",cx-4.3*s,y0+2.5*s,1.5*s,2.8*s,c.a,{rx:0.4*s,s:"#111",sw:0.12*s}),
-      R("all",cx-4.2*s,y0+5.1*s,1.4*s,2.2*s,c.b,{rx:0.35*s,s:"#111",sw:0.1*s}),
-    ];
-    const armR=[
-      C("asr",cx+3.5*s,y0+2.4*s,0.9*s,c.a,{s:"#111",sw:0.1*s}),
-      R("aru",cx+2.8*s,y0+2.5*s,1.5*s,2.8*s,c.a,{rx:0.4*s,s:"#111",sw:0.12*s}),
-      R("arl",cx+2.8*s,y0+5.1*s,1.4*s,2.2*s,c.b,{rx:0.35*s,s:"#111",sw:0.1*s}),
-    ];
-    const neck=C("nk",cx,y0+1.3*s,0.9*s,"#333",{});
-    // Shadow removed per user request
+  const FAC_TO_KEY = {cl:"cl",rep:"cl",sep:"sep",reb:"reb",emp:"emp",mando:"mando",fo:"fo",hunt:"hunt",res:"res"};
 
-    /* ─── Heads ─── */
-    const humanHead=(skin,hair)=>[
-      C("hb",cx,y0+0*s,2.1*s,skin,{s:"#aa7744",sw:0.15*s}),
-      C("he1",cx-0.75*s,y0-0.5*s,0.35*s,"#1a1218",{}),
-      C("he2",cx+0.75*s,y0-0.5*s,0.35*s,"#1a1218",{}),
-      C("hg1",cx-0.65*s,y0-0.6*s,0.1*s,"rgba(255,255,255,0.7)",{}),
-      C("hg2",cx+0.65*s,y0-0.6*s,0.1*s,"rgba(255,255,255,0.7)",{}),
-      R("hmo",cx-0.55*s,y0+0.5*s,1.1*s,0.28*s,"#cc7060",{rx:0.1*s}),
-      hair?PH("hhr",`M${cx-2.1*s},${y0-0.3*s} Q${cx},${y0-2.6*s} ${cx+2.1*s},${y0-0.3*s}`,hair,"none",0,{}):null,
-    ].filter(Boolean);
+  function buildMinifig3D(unitType){
+    const ud = UDEFS[unitType] || {};
+    const features = UNIT_3D_FEATURES[unitType] || {scale:1.0};
+    const facKey = FAC_TO_KEY[ud.fac] || "def";
+    const C = FAC_COLORS_3D[facKey] || FAC_COLORS_3D.def;
+    const scale = features.scale || 1.0;
 
-    const cloneHelmet=(col,visorCol)=>[
-      R("ch",cx-2.5*s,y0-2.2*s,5*s,3.8*s,col,{rx:1.2*s,s:"#999",sw:0.22*s}),
-      R("cv",cx-1.5*s,y0-1.1*s,3*s,1.4*s,visorCol||"#0a0a1a",{rx:0.35*s}),
-      R("cvh",cx-1.3*s,y0-0.9*s,2.6*s,0.3*s,"rgba(120,180,255,0.25)",{rx:0.1*s}),
-      R("cg",cx-0.8*s,y0+1.3*s,1.6*s,0.4*s,"rgba(0,0,0,0.5)",{rx:0.1*s}),
-      C("cs",cx,y0-2.1*s,0.45*s,"#bbbbbb",{}),
-    ];
-    const droidHead=(col)=>[
-      C("dh",cx,y0-0.5*s,2*s,col,{s:"#888",sw:0.2*s}),
-      E("dme",cx,y0+0.5*s,1.1*s,0.4*s,"#221100",{op:0.8}),
-      C("de1",cx-0.7*s,y0-0.8*s,0.45*s,"#1a1a2e",{}),
-      C("de2",cx+0.7*s,y0-0.8*s,0.45*s,"#1a1a2e",{}),
-      C("dg1",cx-0.55*s,y0-0.9*s,0.12*s,"rgba(255,200,100,0.7)",{}),
-      C("dg2",cx+0.55*s,y0-0.9*s,0.12*s,"rgba(255,200,100,0.7)",{}),
-    ];
-    const stHelmet=(col)=>[
-      R("sth",cx-2.6*s,y0-2.4*s,5.2*s,4*s,col,{rx:1.4*s,s:"#888",sw:0.22*s}),
-      PH("stv",`M${cx-1.8*s},${y0-0.8*s} L${cx-1.1*s},${y0+0.5*s} L${cx+1.1*s},${y0+0.5*s} L${cx+1.8*s},${y0-0.8*s}`,
-        "#0a0a1a","none",0,{}),
-      R("str",cx-0.5*s,y0-2.2*s,1*s,0.5*s,"#cccccc",{rx:0.2*s}),
-    ];
-    const darkHelmet=(col)=>[
-      PH("dkh",`M${cx-3*s},${y0+1.5*s} L${cx-3*s},${y0-0.5*s} Q${cx-3*s},${y0-3.2*s} ${cx},${y0-3.7*s} Q${cx+3*s},${y0-3.2*s} ${cx+3*s},${y0-0.5*s} L${cx+3*s},${y0+1.5*s} Z`,
-        col||"#0a0a0a","#333",0.25*s,{}),
-      PH("dkv",`M${cx-2*s},${y0-0.8*s} L${cx-1.1*s},${y0+0.8*s} L${cx+1.1*s},${y0+0.8*s} L${cx+2*s},${y0-0.8*s}`,
-        "#0a0a1a","none",0,{}),
-    ];
+    const group = new THREE.Group();
+    const matBody  = new THREE.MeshStandardMaterial({color:C.body, roughness:0.4, metalness:0.15});
+    const matArm   = new THREE.MeshStandardMaterial({color:C.armor, roughness:0.3, metalness:0.25});
+    const matHead  = new THREE.MeshStandardMaterial({color:C.head, roughness:0.5, metalness:0.0});
+    const matHelm  = new THREE.MeshStandardMaterial({color:C.helmet, roughness:0.25, metalness:0.4});
+    const matBlack = new THREE.MeshStandardMaterial({color:0x111111, roughness:0.5});
+    const matAcc   = new THREE.MeshStandardMaterial({color:C.accent, roughness:0.3, metalness:0.6, emissive:C.accent, emissiveIntensity:0.3});
 
-    /* ─── Weapons ─── */
-    const blasterShort=[
-      R("bw",cx+3.5*s,y0+5.8*s,2.2*s,0.85*s,"#445566",{rx:0.2*s}),
-      R("bwb",cx+5.4*s,y0+5.6*s,0.9*s,1.2*s,"#223344",{rx:0.2*s}),
-    ];
-    const blasterLong=[
-      R("blw",cx+3.5*s,y0+5.5*s,3.8*s,0.8*s,"#334455",{rx:0.2*s}),
-      R("blb",cx+6.8*s,y0+5.3*s,0.9*s,1.2*s,"#223344",{rx:0.15*s}),
-      R("bls",cx+5.2*s,y0+5.1*s,1.2*s,0.5*s,"#556677",{rx:0.1*s}),
-    ];
-    const sniper=[
-      R("sw",cx+3.5*s,y0+5.3*s,5*s,0.7*s,"#334455",{rx:0.15*s}),
-      C("sc",cx+5.5*s,y0+5.0*s,0.6*s,"#223344",{}),
-      R("sb",cx+7.5*s,y0+5.1*s,1.2*s,0.5*s,"#112233",{rx:0.1*s}),
-    ];
-    const z6Rotary=[
-      R("z6b",cx+3.5*s,y0+5.2*s,4*s,1*s,"#334455",{rx:0.3*s}),
-      ...[0,1,2,3].map(i=>C("z6c"+i,cx+5.2*s+Math.cos(i*Math.PI/2)*0.6*s,y0+5.7*s+Math.sin(i*Math.PI/2)*0.6*s,0.18*s,"#445566",{})),
-    ];
-    const saberBlade=(col,glowId)=>[
-      E("sbg",cx+3.5*s,y0+2.5*s,0.8*s,3.5*s,`url(#${glowId})`,{op:0.45}),
-      L("sb",cx+3.5*s,y0+5.8*s,cx+4*s,y0-0.2*s,col,1.3*s,{op:0.95}),
-      L("sbc",cx+3.5*s,y0+5.8*s,cx+4*s,y0-0.2*s,"white",0.35*s,{op:0.9}),
-      R("sh",cx+3.0*s,y0+6*s,0.7*s,1.3*s,"#888888",{rx:0.2*s,s:"#555",sw:0.1*s}),
-    ];
-    const doubleSaber=(col,glowId)=>[
-      E("ds1g",cx+3.5*s,y0+2.5*s,0.8*s,3.5*s,`url(#${glowId})`,{op:0.4}),
-      L("ds1",cx+3.5*s,y0+5.8*s,cx+4*s,y0-0.2*s,col,1.3*s,{op:0.95}),
-      L("ds1c",cx+3.5*s,y0+5.8*s,cx+4*s,y0-0.2*s,"white",0.35*s,{op:0.9}),
-      R("dsh",cx+3.0*s,y0+5.8*s,0.7*s,1.8*s,"#888",{rx:0.2*s}),
-      E("ds2g",cx-3.5*s,y0+8*s,0.8*s,3.5*s,`url(#${glowId})`,{op:0.4}),
-      L("ds2",cx-3.5*s,y0+5.8*s,cx-4*s,y0+11.8*s,col,1.3*s,{op:0.95}),
-      L("ds2c",cx-3.5*s,y0+5.8*s,cx-4*s,y0+11.8*s,"white",0.35*s,{op:0.9}),
-    ];
-    const bowcaster=[
-      R("bow",cx+3.5*s,y0+5.2*s,4*s,0.9*s,"#8B6040",{rx:0.3*s}),
-      R("bow2",cx+3.5*s,y0+4.8*s,3*s,0.5*s,"#6B4020",{rx:0.15*s}),
-      C("bowc",cx+7*s,y0+5.7*s,0.55*s,"#ff8800",{}),
-    ];
-    const cape=(col)=>PH("cp",
-      `M${cx-3.5*s},${y0+1.8*s} L${cx-5.5*s},${y0+11*s} L${cx+5.5*s},${y0+11*s} L${cx+3.5*s},${y0+1.8*s}`,
-      col||"#111111","#000",0.15*s,{op:0.88});
-    const jetpack=[
-      R("jp",cx+3.3*s,y0+2*s,2.2*s,3.8*s,"#445566",{rx:0.5*s,s:"#334455",sw:0.18*s}),
-      R("jpd",cx+3.6*s,y0+2.5*s,1.6*s,0.5*s,"rgba(100,150,200,0.35)",{rx:0.15*s}),
-      L("jf1",cx+4*s,y0+5.8*s,cx+3.8*s,y0+8*s,"#ff6600",0.7*s,{op:0.75}),
-      L("jf2",cx+4.8*s,y0+5.8*s,cx+5.1*s,y0+8.5*s,"#ffaa00",0.5*s,{op:0.6}),
-    ];
-    const heavyPlates=[
-      R("hp1",cx-3.5*s,y0+2.2*s,2*s,2.2*s,c.l,{rx:0.3*s,s:"rgba(255,255,255,0.2)",sw:0.2*s}),
-      R("hp2",cx+1.5*s,y0+2.2*s,2*s,2.2*s,c.l,{rx:0.3*s,s:"rgba(255,255,255,0.2)",sw:0.2*s}),
-    ];
-    const forceGlow=(col)=>E("fg",cx,y0+5*s,5*s,8*s,col,{op:0.08});
+    // ── Legs ──
+    const legGeo = new THREE.BoxGeometry(0.28, 0.5, 0.22);
+    const legL = new THREE.Mesh(legGeo, matArm); legL.position.set(-0.15, 0.25, 0); group.add(legL);
+    const legR = new THREE.Mesh(legGeo, matArm); legR.position.set(0.15, 0.25, 0); group.add(legR);
 
-    /* ═══ UNIT BUILDS ═══ */
-    let el=[];
+    // Feet
+    const footGeo = new THREE.BoxGeometry(0.26, 0.10, 0.30);
+    [-0.15, 0.15].forEach(x => { const f = new THREE.Mesh(footGeo, matBlack); f.position.set(x, 0.05, 0.04); group.add(f); });
 
-    // No shadow
+    // ── Torso ──
+    const torsoGeo = new THREE.BoxGeometry(0.56, 0.46, 0.30);
+    const torso = new THREE.Mesh(torsoGeo, matBody); torso.position.set(0, 0.74, 0); group.add(torso);
 
-    switch(bt){
-      /* ─── CLONES ─── */
-      case"clone": case"clone_geo":
-        el.push(...cloneHelmet(bt==="clone_geo"?"#d4c89a":"#e8e8e8", bt==="clone_geo"?"#6a5520":"#0a0a1a"));
-        el.push(neck,...tors,...armL,...armR,...legL,...legR);
-        el.push(...blasterLong);
-        if(bt==="clone_geo")el.push(R("cgp",cx-3.5*s,y0+1.8*s,2.2*s,1.4*s,"#CC6633",{rx:0.35*s}));
-        break;
-      case"sniper":
-        el.push(...cloneHelmet("#e8e8e8","#0a0a1a"),neck,...tors,...armL,...armR,...legL,...legR);
-        el.push(...sniper);
-        el.push(R("scop",cx+4.5*s,y0+4.7*s,1.6*s,0.9*s,"#1a4488",{rx:0.3*s}));
-        break;
-      case"spec":
-        el.push(...cloneHelmet("#e8e8e8","#1a3388"),neck,...tors,...armL,...armR,...legL,...legR);
-        el.push(...blasterShort,R("bw2",cx-5.4*s,y0+5.5*s,2.2*s,0.85*s,"#445566",{rx:0.2*s}));
-        break;
-      case"officer":
-        el.push(...cloneHelmet("#e8e8e8","#2255AA"),neck,...tors,...armL,...armR,...legL,...legR);
-        el.push(...blasterShort);
-        el.push(R("vis",cx-2.8*s,y0-2.5*s,5.6*s,0.7*s,"#4477DD",{rx:0.2*s}));
-        break;
-      case"airborne":
-        el.push(...cloneHelmet("#CC6633","#331100"),neck,...tors,...armL,...armR,...legL,...legR);
-        el.push(...blasterLong,...jetpack);
-        break;
-      case"fives":
-        el.push(...cloneHelmet("#ddeeff","#0a0a1a"),neck);
-        el.push(R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#2244aa",{rx:0.4*s,s:"#111",sw:0.18*s}));
-        el.push(C("arc",cx,y0+3.5*s,1.1*s,"none",{s:"#FFD700",sw:0.55*s}));
-        el.push(...armL,...armR,...legL,...legR,...blasterShort);
-        el.push(R("bw2",cx-5.4*s,y0+5.5*s,2.2*s,0.85*s,"#445566",{rx:0.2*s}));
-        break;
-      case"rex":
-        el.push(...cloneHelmet("#6699CC","#0a0a1a"),neck);
-        el.push(R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#2244aa",{rx:0.4*s,s:"#111",sw:0.18*s}));
-        el.push(L("rx1",cx-1.5*s,y0+2.2*s,cx-0.4*s,y0+4.5*s,"#3366CC",0.65*s,{}));
-        el.push(L("rx2",cx+1.5*s,y0+2.2*s,cx+0.4*s,y0+4.5*s,"#3366CC",0.65*s,{}));
-        el.push(R("rvz",cx-2.8*s,y0-2.6*s,5.6*s,0.7*s,"#DAA520",{rx:0.2*s}));
-        el.push(...armL,...armR,...legL,...legR,...blasterShort);
-        el.push(R("bw2",cx-5.4*s,y0+5.5*s,2.2*s,0.85*s,"#445566",{rx:0.2*s}));
-        break;
-      /* ─── JEDI ─── */
-      case"obi_wan":
-        el.push(...humanHead("#FFCC88","#553300"),neck,...tors,...armL,...armR,...legL,...legR,...saberBlade("#4488ff","saberGlowB"),cape("#55442a"));
-        break;
-      case"anakin":
-        el.push(...humanHead("#FFCC88","#330000"),neck,...tors,...armL,...armR,...legL,...legR,...saberBlade("#4488ff","saberGlowB"));
-        break;
-      case"yoda":
-        el.push(C("yh",cx,y0-0.5*s,2.5*s,"#3a6a3a",{s:"#2a5a2a",sw:0.22*s}));
-        el.push(E("yea",cx-2.8*s,y0-1.2*s,0.7*s,1.6*s,"#3a6a3a",{op:1}));
-        el.push(E("yeb",cx+2.8*s,y0-1.2*s,0.7*s,1.6*s,"#3a6a3a",{op:1}));
-        el.push(C("ye1",cx-0.8*s,y0-0.8*s,0.38*s,"#113311",{}),C("ye2",cx+0.8*s,y0-0.8*s,0.38*s,"#113311",{}));
-        el.push(neck,R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#8B7040",{rx:0.4*s,s:"#111",sw:0.18*s}));
-        el.push(...armL,...armR,...legL,...legR,...saberBlade("#44ff77","saberGlowG"),cape("#443322"));
-        break;
-      case"mace":
-        el.push(...humanHead("#8B5030",null),neck,...tors,...armL,...armR,...legL,...legR,...saberBlade("#cc44ff","saberGlowB"),cape("#4422aa"));
-        el.push(E("mge",cx+4*s,y0+3*s,2*s,2*s,"#cc44ff",{op:0.12}));
-        break;
-      case"ahsoka":
-        el.push(C("ahh",cx,y0-0.5*s,2.2*s,"#CC8855",{s:"#BB7744",sw:0.2*s}));
-        el.push(L("ahlh",cx-0.5*s,y0-2.5*s,cx-1.2*s,y0-5*s,"#4455AA",0.9*s,{}));
-        el.push(L("ahlh2",cx+0.5*s,y0-2.5*s,cx+1.2*s,y0-5*s,"#4455AA",0.9*s,{}));
-        el.push(R("ahm",cx-1.2*s,y0+0.2*s,2.4*s,0.45*s,"#4455AA",{rx:0.1*s}));
-        el.push(C("ahe1",cx-0.8*s,y0-0.6*s,0.32*s,"#112244",{}),C("ahe2",cx+0.8*s,y0-0.6*s,0.32*s,"#112244",{}));
-        el.push(neck,...tors,...armL,...armR,...legL,...legR,...doubleSaber("#ffffff","saberGlowB"));
-        break;
-      case"luke_jedi":
-        el.push(...humanHead("#FFCC88","#664422"),neck,R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#111111",{rx:0.4*s,s:"#111",sw:0.18*s}));
-        el.push(...armL,...armR,...legL,...legR,...saberBlade("#44ff77","saberGlowG"),cape("#111111"));
-        break;
-      /* ─── CÔTÉ OBSCUR ─── */
-      case"vader":
-        el.push(...darkHelmet("#0a0a0a"));
-        el.push(R("vch",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#0a0a0a",{rx:0.4*s,s:"#333",sw:0.22*s}));
-        el.push(R("vc1",cx-1.4*s,y0+2.3*s,0.7*s,0.65*s,"#f44",{rx:0.1*s}),R("vc2",cx-0.5*s,y0+2.3*s,0.7*s,0.65*s,"#44f",{rx:0.1*s}),R("vc3",cx+0.4*s,y0+2.3*s,0.7*s,0.65*s,"#4f4",{rx:0.1*s}));
-        el.push(R("vcb",cx-1.8*s,y0+3.5*s,3.6*s,0.5*s,"#ff4400",{rx:0.1*s}));
-        el.push(...armL,...armR,...legL,...legR,...saberBlade("#ff3333","saberGlowR"),cape("#111111"));
-        el.push(forceGlow("#aa0000"));
-        break;
-      case"maul":
-        el.push(C("mlh",cx,y0-0.5*s,2.3*s,"#cc2222",{s:"#aa1111",sw:0.22*s}));
-        el.push(L("mlt1",cx-0.5*s,y0-1.5*s,cx-1.8*s,y0+1.2*s,"#000",0.4*s,{}));
-        el.push(L("mlt2",cx+0.5*s,y0-1.5*s,cx+1.8*s,y0+1.2*s,"#000",0.4*s,{}));
-        el.push(C("mle1",cx-0.8*s,y0-0.6*s,0.42*s,"#ff2200",{f:"url(#glow)"}));
-        el.push(C("mle2",cx+0.8*s,y0-0.6*s,0.42*s,"#ff2200",{f:"url(#glow)"}));
-        el.push(neck,R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#111111",{rx:0.4*s,s:"#111",sw:0.18*s}));
-        el.push(...armL,...armR,...legL,...legR,...doubleSaber("#ff3333","saberGlowR"),cape("#000011"));
-        break;
-      case"kylo":
-        el.push(...darkHelmet("#0a0a0a"));
-        el.push(PH("klv",`M${cx-2.2*s},${y0-0.5*s} L${cx-1.2*s},${y0+1.1*s} L${cx+1.2*s},${y0+1.1*s} L${cx+2.2*s},${y0-0.5*s}`,"#0a0a1a","none",0,{}));
-        el.push(neck,R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#111111",{rx:0.4*s,s:"#111",sw:0.18*s}));
-        el.push(...armL,...armR,...legL,...legR,...saberBlade("#ff3333","saberGlowR"),cape("#111111"));
-        break;
-      /* ─── SÉPARATISTES ─── */
-      case"b1":
-        el.push(...droidHead("url(#sepG)"),C("dnk",cx,y0+1.1*s,0.55*s,"#b0924a",{}));
-        el.push(R("bt",cx-2.2*s,y0+1.5*s,4.4*s,3.8*s,"url(#sepG)",{rx:0.4*s,s:"#aa8844",sw:0.18*s}));
-        el.push(R("ba1",cx-3.5*s,y0+1.8*s,1.6*s,3.2*s,"#B89A50",{rx:0.45*s,s:"#998844",sw:0.12*s}));
-        el.push(R("ba2",cx+1.9*s,y0+1.8*s,1.6*s,3.2*s,"#B89A50",{rx:0.45*s,s:"#998844",sw:0.12*s}));
-        el.push(R("bl1",cx-2.6*s,y0+5.2*s,1.8*s,3.5*s,"#B89A50",{rx:0.28*s,s:"#887744",sw:0.12*s}));
-        el.push(R("bl2",cx+0.8*s,y0+5.2*s,1.8*s,3.5*s,"#B89A50",{rx:0.28*s,s:"#887744",sw:0.12*s}));
-        el.push(...blasterLong);
-        break;
-      case"b2":
-        el.push(R("b2h",cx-2.5*s,y0-1.8*s,5*s,3.2*s,"url(#metalG)",{rx:1*s,s:"#555",sw:0.22*s}));
-        el.push(R("b2v",cx-1.5*s,y0-0.8*s,3*s,1*s,"#ff333344",{rx:0.25*s}));
-        el.push(R("b2t",cx-3.8*s,y0+1.2*s,7.6*s,4.4*s,"url(#metalG)",{rx:0.9*s,s:"#555",sw:0.22*s}));
-        el.push(R("b2a1",cx-5.2*s,y0+1.5*s,2.2*s,4.2*s,"#555",{rx:0.55*s,s:"#444",sw:0.18*s}));
-        el.push(R("b2a2",cx+3*s,y0+1.5*s,2.2*s,4.2*s,"#555",{rx:0.55*s,s:"#444",sw:0.18*s}));
-        el.push(C("b2g1",cx-4.5*s,y0+5.8*s,0.7*s,"#f44",{op:0.6}),C("b2g2",cx+4.5*s,y0+5.8*s,0.7*s,"#f44",{op:0.6}));
-        el.push(...legL,...legR,...heavyPlates);
-        break;
-      case"tri_droid":
-        el.push(P("trh",`${cx},${y0-5*s} ${cx-5*s},${y0+3*s} ${cx+5*s},${y0+3*s}`,"#556677",{s:"#445566",sw:0.35*s}));
-        el.push(C("tre",cx,y0+0.2*s,1.2*s,"#ff3333",{f:"url(#glow)"}));
-        el.push(R("trb",cx-3.5*s,y0+3*s,7*s,3.5*s,"#556677",{rx:0.6*s,s:"#445566",sw:0.22*s}));
-        el.push(L("tl1",cx-3*s,y0+6.5*s,cx-7*s,y0+13*s,"#667788",1.4*s,{}));
-        el.push(L("tl2",cx,y0+6.5*s,cx,y0+13*s,"#667788",1.4*s,{}));
-        el.push(L("tl3",cx+3*s,y0+6.5*s,cx+7*s,y0+13*s,"#667788",1.4*s,{}));
-        el.push(C("tlf1",cx-7*s,y0+13*s,0.8*s,"#778899",{}),C("tlf2",cx,y0+13*s,0.8*s,"#778899",{}),C("tlf3",cx+7*s,y0+13*s,0.8*s,"#778899",{}));
-        break;
-      /* ─── EMPIRE ─── */
-      case"stormtrooper":
-        el.push(...stHelmet("#f5f5f5"),neck);
-        el.push(R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#f5f5f5",{rx:0.4*s,s:"#aaa",sw:0.18*s}));
-        el.push(R("tb2",cx-2.2*s,y0+2.2*s,4.4*s,2.4*s,"#eeeeee",{rx:0.3*s}));
-        el.push(R("blt",cx-3.3*s,y0+5*s,6.6*s,0.6*s,"#111111",{rx:0.1*s}));
-        el.push(R("all2",cx-4.3*s,y0+2.5*s,1.5*s,2.8*s,"#f5f5f5",{rx:0.4*s,s:"#aaa",sw:0.12*s}));
-        el.push(R("aru2",cx+2.8*s,y0+2.5*s,1.5*s,2.8*s,"#f5f5f5",{rx:0.4*s,s:"#aaa",sw:0.12*s}));
-        el.push(R("ll2",cx-2.8*s,y0+5.2*s,2.4*s,3.5*s,"#eeeeee",{rx:0.3*s,s:"#aaa",sw:0.15*s}));
-        el.push(R("lr2",cx+0.4*s,y0+5.2*s,2.4*s,3.5*s,"#eeeeee",{rx:0.3*s,s:"#aaa",sw:0.15*s}));
-        el.push(...blasterLong);
-        break;
-      /* ─── REBELLES ─── */
-      case"rebel": case"rebel_f": case"guard": case"rebel_jet":
-        el.push(...humanHead("#FFCC88","#553322"),neck,...tors,...armL,...armR,...legL,...legR,...blasterLong);
-        if(bt==="rebel_jet")el.push(...jetpack);
-        break;
-      case"rebel_p":
-        el.push(...humanHead("#FFCC88","#443322"),neck,...tors,...armL,...armR,...legL,...legR,...blasterShort);
-        break;
-      case"han":
-        el.push(...humanHead("#FFCC88","#2a1a0a"),neck,...tors,...armL,...armR,...legL,...legR,...blasterShort);
-        el.push(R("hvst",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#FFFFFF",{rx:0.4*s,s:"#ccc",sw:0.18*s}));
-        break;
-      case"leia":
-        el.push(...humanHead("#FFCC88","#000000"),neck);
-        el.push(C("leh1",cx-3*s,y0-0.8*s,1.7*s,"#000000",{}),C("leh2",cx+3*s,y0-0.8*s,1.7*s,"#000000",{}));
-        el.push(R("tb",cx-3.2*s,y0+1.8*s,6.4*s,3.6*s,"#ffffff",{rx:0.4*s,s:"#ddd",sw:0.18*s}));
-        el.push(...armL,...armR,...legL,...legR,...blasterShort);
-        break;
-      case"chewie":
-        el.push(C("cwh",cx,y0-0.3*s,2.7*s,"#8B6040",{s:"#6B4020",sw:0.2*s}));
-        el.push(C("cwe1",cx-0.9*s,y0-0.8*s,0.5*s,"#442200",{}),C("cwe2",cx+0.9*s,y0-0.8*s,0.5*s,"#442200",{}));
-        el.push(R("cwt",cx-3.8*s,y0+2.5*s,7.6*s,5*s,"#7a5030",{rx:0.6*s,s:"#6a4020",sw:0.2*s}));
-        el.push(R("cwlu",cx-4.8*s,y0+2.8*s,1.8*s,3.2*s,"#8B6040",{rx:0.5*s,s:"#6B4020",sw:0.15*s}));
-        el.push(R("cwru",cx+3*s,y0+2.8*s,1.8*s,3.2*s,"#8B6040",{rx:0.5*s,s:"#6B4020",sw:0.15*s}));
-        el.push(R("cwll",cx-2.8*s,y0+7.5*s,2.4*s,3.5*s,"#7a5030",{rx:0.35*s}),R("cwrl",cx+0.4*s,y0+7.5*s,2.4*s,3.5*s,"#7a5030",{rx:0.35*s}));
-        el.push(L("cwbd",cx-3.8*s,y0+2.5*s,cx+3.8*s,y0+6.5*s,"#553322",0.7*s,{}));
-        el.push(...bowcaster);
-        break;
-      /* ─── MANDALORIEN ─── */
-      case"mando": case"boba":
-        el.push(...cloneHelmet(bt==="boba"?"#336644":"#778899","#0a1628"),neck,...tors,...armL,...armR,...legL,...legR,...blasterShort,...jetpack);
-        el.push(R("mbp",cx-2.2*s,y0+2.2*s,4.4*s,2.4*s,"rgba(160,165,180,0.4)",{rx:0.3*s,s:"rgba(200,205,220,0.4)",sw:0.15*s}));
-        break;
-      /* ─── CHASSEURS ─── */
-      case"ig88":
-        el.push(C("igh",cx,y0-0.5*s,2.2*s,"url(#metalG)",{s:"#667766",sw:0.2*s}));
-        el.push(C("ige1",cx-0.8*s,y0-0.8*s,0.55*s,"#ff8800",{f:"url(#glow)"}),C("ige2",cx+0.8*s,y0-0.8*s,0.55*s,"#ff8800",{f:"url(#glow)"}));
-        el.push(R("igt",cx-2.5*s,y0+1.5*s,5*s,4*s,"url(#metalG)",{rx:0.5*s,s:"#556655",sw:0.18*s}));
-        el.push(R("iga1",cx-4.5*s,y0+1.8*s,1.8*s,3.8*s,"#4a4a4a",{rx:0.45*s}),R("iga2",cx+2.7*s,y0+1.8*s,1.8*s,3.8*s,"#4a4a4a",{rx:0.45*s}));
-        el.push(...legL,...legR,...blasterLong,...sniper);
-        break;
-      case"rey":
-        el.push(...humanHead("#FFCC88","#887755"),neck,...tors,...armL,...armR,...legL,...legR,...saberBlade("#4488ff","saberGlowB"),cape("#c4a070"));
-        break;
-      default:
-        el.push(...humanHead("#FFCC88",null),neck,...tors,...armL,...armR,...legL,...legR,...blasterShort);
+    // Chest plate
+    const chestGeo = new THREE.BoxGeometry(0.46, 0.34, 0.32);
+    const chest = new THREE.Mesh(chestGeo, matArm); chest.position.set(0, 0.74, 0.005); group.add(chest);
+
+    // Belt
+    const beltGeo = new THREE.BoxGeometry(0.58, 0.08, 0.32);
+    const belt = new THREE.Mesh(beltGeo, matBlack); belt.position.set(0, 0.50, 0); group.add(belt);
+
+    // Belt buckle
+    const buckleGeo = new THREE.BoxGeometry(0.1, 0.06, 0.34);
+    const buckle = new THREE.Mesh(buckleGeo, matAcc); buckle.position.set(0, 0.50, 0.002); group.add(buckle);
+
+    // Pauldron (officers)
+    if (features.pauldron) {
+      const paulGeo = new THREE.BoxGeometry(0.16, 0.18, 0.32);
+      const paul = new THREE.Mesh(paulGeo, matAcc); paul.position.set(-0.30, 0.92, 0); group.add(paul);
     }
-    return <g key={k+"g"}>{el}</g>;
+
+    // ── Neck ──
+    const neckGeo = new THREE.CylinderGeometry(0.09, 0.11, 0.08, 10);
+    const neck = new THREE.Mesh(neckGeo, matHead); neck.position.set(0, 0.99, 0); group.add(neck);
+
+    // ── Head ──
+    if (features.droidHead) {
+      const dhGeo = new THREE.SphereGeometry(0.21, 14, 12);
+      const dh = new THREE.Mesh(dhGeo, matArm); dh.position.set(0, 1.22, 0); group.add(dh);
+      // Eyes
+      const eyeGeo = new THREE.CircleGeometry(0.05, 12);
+      const eyeMat = new THREE.MeshBasicMaterial({color:C.accent});
+      [-0.07, 0.07].forEach(x => { const e = new THREE.Mesh(eyeGeo, eyeMat); e.position.set(x, 1.22, 0.21); group.add(e); });
+      // Mouth bar
+      const mb = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.025, 0.005), matBlack);
+      mb.position.set(0, 1.10, 0.215); group.add(mb);
+    } else {
+      const headGeo = new THREE.BoxGeometry(0.46, 0.42, 0.40);
+      const head = new THREE.Mesh(headGeo, matHead); head.position.set(0, 1.27, 0); group.add(head);
+      // Helmet (covers head)
+      if (features.helmetType === "vader") {
+        // Vader dome — use sphere top half
+        const domeGeo = new THREE.SphereGeometry(0.30, 16, 12, 0, Math.PI*2, 0, Math.PI/2);
+        const dome = new THREE.Mesh(domeGeo, matHelm); dome.position.set(0, 1.34, 0); group.add(dome);
+        // Mouth grill
+        const grill = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.08, 0.04), matBlack);
+        grill.position.set(0, 1.20, 0.21); group.add(grill);
+        // Triangular visor
+        const visGeo = new THREE.BoxGeometry(0.36, 0.10, 0.42);
+        const visMat = new THREE.MeshStandardMaterial({color:0x000022, roughness:0.1, metalness:0.95, emissive:0x440000, emissiveIntensity:0.2});
+        const vis = new THREE.Mesh(visGeo, visMat); vis.position.set(0, 1.32, 0.005); group.add(vis);
+      } else if (features.helmetType === "mando") {
+        const helmGeo = new THREE.BoxGeometry(0.50, 0.42, 0.42);
+        const helm = new THREE.Mesh(helmGeo, matHelm); helm.position.set(0, 1.30, 0); group.add(helm);
+        // T-visor
+        const vGeo = new THREE.BoxGeometry(0.36, 0.16, 0.43);
+        const vMat = new THREE.MeshStandardMaterial({color:0x000033, metalness:0.9, roughness:0.15, emissive:0x002244, emissiveIntensity:0.4});
+        const v = new THREE.Mesh(vGeo, vMat); v.position.set(0, 1.32, 0.005); group.add(v);
+      } else {
+        // Standard helmet
+        const helmGeo = new THREE.BoxGeometry(0.52, 0.20, 0.44);
+        const helm = new THREE.Mesh(helmGeo, matHelm); helm.position.set(0, 1.42, 0); group.add(helm);
+        // Visor
+        const visGeo = new THREE.BoxGeometry(0.36, 0.13, 0.42);
+        const visMat = new THREE.MeshStandardMaterial({color:0x000011, metalness:0.9, roughness:0.15, emissive:C.accent, emissiveIntensity:0.4, transparent:true, opacity:0.85});
+        const vis = new THREE.Mesh(visGeo, visMat); vis.position.set(0, 1.28, 0.005); group.add(vis);
+      }
+    }
+
+    // ── Arms ──
+    [-1, 1].forEach(side => {
+      const sx = side * 0.36;
+      // Shoulder
+      const shoulderGeo = new THREE.SphereGeometry(0.13, 10, 8);
+      const sh = new THREE.Mesh(shoulderGeo, matArm); sh.position.set(sx, 0.88, 0); group.add(sh);
+      // Upper arm
+      const upGeo = new THREE.BoxGeometry(0.16, 0.30, 0.16);
+      const up = new THREE.Mesh(upGeo, matBody); up.position.set(sx, 0.70, 0); group.add(up);
+      // Lower arm
+      const loGeo = new THREE.BoxGeometry(0.14, 0.26, 0.14);
+      const lo = new THREE.Mesh(loGeo, matArm); lo.position.set(sx, 0.46, 0); group.add(lo);
+      // Hand
+      const handGeo = new THREE.BoxGeometry(0.14, 0.10, 0.12);
+      const hand = new THREE.Mesh(handGeo, matHead); hand.position.set(sx, 0.30, 0); group.add(hand);
+    });
+
+    // ── Weapon (right hand) ──
+    if (features.lightsaber) {
+      const sCol = features.saberColor || 0x4488ff;
+      // Hilt
+      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.028, 0.20, 12),
+        new THREE.MeshStandardMaterial({color:0x888888, roughness:0.2, metalness:0.9}));
+      hilt.position.set(0.40, 0.30, 0); hilt.rotation.z = Math.PI/14; group.add(hilt);
+      // Blade
+      const bladeGeo = new THREE.CylinderGeometry(0.018, 0.012, 0.78, 10);
+      const bladeMat = new THREE.MeshBasicMaterial({color:sCol, transparent:true, opacity:0.95});
+      const blade = new THREE.Mesh(bladeGeo, bladeMat);
+      blade.position.set(0.42, 0.74, 0); blade.rotation.z = Math.PI/14; group.add(blade);
+      // Glow light
+      const sLight = new THREE.PointLight(sCol, 1.2, 2.5);
+      sLight.position.set(0.45, 0.80, 0); group.add(sLight);
+      // Double saber for Maul/Ahsoka/Grievous
+      if (features.doubleSaber) {
+        const blade2 = new THREE.Mesh(bladeGeo, bladeMat);
+        blade2.position.set(0.40, -0.16, 0); blade2.rotation.z = Math.PI/14 + Math.PI; group.add(blade2);
+      }
+    } else if (features.weaponType === "rifle_long") {
+      const rfGeo = new THREE.BoxGeometry(0.04, 0.04, 0.65);
+      const rfMat = new THREE.MeshStandardMaterial({color:0x334455, roughness:0.4, metalness:0.7});
+      const rf = new THREE.Mesh(rfGeo, rfMat); rf.position.set(0.40, 0.32, 0.20); rf.rotation.x = Math.PI/10; group.add(rf);
+      // Scope
+      const sc = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.16,8), rfMat);
+      sc.position.set(0.40, 0.36, 0.16); sc.rotation.x = Math.PI/10 + Math.PI/2; group.add(sc);
+    } else if (features.weaponType === "twin_pistol") {
+      const pGeo = new THREE.BoxGeometry(0.05, 0.06, 0.20);
+      const pMat = new THREE.MeshStandardMaterial({color:0x334455, roughness:0.5, metalness:0.6});
+      [-0.40, 0.40].forEach(sx => {
+        const p = new THREE.Mesh(pGeo, pMat); p.position.set(sx, 0.32, 0.10); group.add(p);
+      });
+    } else if (features.weaponType === "bowcaster") {
+      const bow = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.02, 6, 12, Math.PI),
+        new THREE.MeshStandardMaterial({color:0x8B6040, roughness:0.5}));
+      bow.position.set(0.40, 0.34, 0.05); bow.rotation.z = Math.PI/2; group.add(bow);
+    } else if (features.weaponType === "pistol") {
+      const pGeo = new THREE.BoxGeometry(0.05, 0.06, 0.18);
+      const p = new THREE.Mesh(pGeo, new THREE.MeshStandardMaterial({color:0x334455, metalness:0.6}));
+      p.position.set(0.40, 0.30, 0.08); group.add(p);
+    } else {
+      // Standard rifle/blaster
+      const bGeo = new THREE.BoxGeometry(0.045, 0.06, 0.36);
+      const bMat = new THREE.MeshStandardMaterial({color:0x334455, roughness:0.5, metalness:0.6});
+      const b = new THREE.Mesh(bGeo, bMat); b.position.set(0.40, 0.32, 0.12); group.add(b);
+      // Muzzle glow
+      const muz = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.06, 0.05),
+        new THREE.MeshStandardMaterial({color:0x222233, emissive:C.accent, emissiveIntensity:0.3, metalness:0.9}));
+      muz.position.set(0.40, 0.32, 0.30); group.add(muz);
+    }
+
+    // ── Jetpack ──
+    if (features.jetpack) {
+      const jpGeo = new THREE.BoxGeometry(0.32, 0.42, 0.20);
+      const jpMat = new THREE.MeshStandardMaterial({color:0x445566, roughness:0.4, metalness:0.6});
+      const jp = new THREE.Mesh(jpGeo, jpMat); jp.position.set(0, 0.78, -0.26); group.add(jp);
+      // Thrusters with flame
+      [-0.10, 0.10].forEach(ox => {
+        const thrGeo = new THREE.CylinderGeometry(0.05, 0.07, 0.10, 8);
+        const thr = new THREE.Mesh(thrGeo, new THREE.MeshBasicMaterial({color:0xff6600}));
+        thr.position.set(ox, 0.56, -0.30); group.add(thr);
+        const fl = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.18, 8),
+          new THREE.MeshBasicMaterial({color:0xffaa00, transparent:true, opacity:0.7}));
+        fl.position.set(ox, 0.42, -0.30); fl.rotation.x = Math.PI; group.add(fl);
+      });
+    }
+
+    // ── Cape ──
+    if (features.cape) {
+      const capeGeo = new THREE.BoxGeometry(0.62, 0.85, 0.05);
+      const capeColor = features.helmetType === "vader" ? 0x080808 : 
+                        ud.fac === "obs" ? 0x111122 :
+                        unitType === "yoda" ? 0x442200 : 0x332200;
+      const capeMat = new THREE.MeshStandardMaterial({color:capeColor, roughness:0.9, side:THREE.DoubleSide});
+      const cape = new THREE.Mesh(capeGeo, capeMat); cape.position.set(0, 0.66, -0.20); group.add(cape);
+    }
+
+    // Heavy unit extras (B2, Wrecker, Grievous)
+    if (features.heavy) {
+      const platGeo = new THREE.BoxGeometry(0.20, 0.22, 0.34);
+      const platMat = new THREE.MeshStandardMaterial({color:C.accent, roughness:0.3, metalness:0.5});
+      [-0.20, 0.20].forEach(ox => {
+        const pl = new THREE.Mesh(platGeo, platMat); pl.position.set(ox, 0.84, 0.005); group.add(pl);
+      });
+    }
+
+    // Multi-leg (Tri-droid)
+    if (features.multiLeg) {
+      [-0.5, 0.5].forEach(side => {
+        const extLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), matArm);
+        extLeg.position.set(side, 0.25, 0.1); extLeg.rotation.z = side * 0.3; group.add(extLeg);
+      });
+    }
+
+    group.scale.setScalar(scale);
+    group.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+
+    return group;
+  }
+
+  function preRenderUnit3D(unitType) {
+    if (FIG3D_CACHE[unitType]) return FIG3D_CACHE[unitType];
+    if (typeof THREE === "undefined") return null;
+
+    const SIZE = 80;
+    const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+    renderer.setSize(SIZE, SIZE);
+    renderer.setPixelRatio(2);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    renderer.shadowMap.enabled = true;
+
+    const scene = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(38, 1, 0.01, 50);
+    cam.position.set(0.7, 1.3, 1.9);
+    cam.lookAt(0, 0.7, 0);
+
+    // Lighting (cinematic)
+    scene.add(new THREE.AmbientLight(0xaabbcc, 0.7));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+    sun.position.set(3, 5, 3); sun.castShadow = true;
+    sun.shadow.mapSize.set(512, 512);
+    scene.add(sun);
+    const rim = new THREE.DirectionalLight(0x4488ff, 0.6);
+    rim.position.set(-2, 2, -3); scene.add(rim);
+    const fill = new THREE.PointLight(0xffaa44, 0.4); fill.position.set(0, 3, -2); scene.add(fill);
+
+    // Build figure
+    const fig = buildMinifig3D(unitType);
+    scene.add(fig);
+
+    // Render
+    renderer.render(scene, cam);
+    const dataURL = renderer.domElement.toDataURL("image/png");
+    renderer.dispose();
+    FIG3D_CACHE[unitType] = dataURL;
+    return dataURL;
+  }
+
+  // Pre-render all unit types on load
+  function preRenderAllUnits() {
+    if (typeof THREE === "undefined") { console.warn("Three.js not loaded yet"); return; }
+    Object.keys(UDEFS).forEach(t => {
+      try { preRenderUnit3D(t); } catch(e) { console.warn("3D render fail", t, e); }
+    });
+    console.log("3D units pre-rendered:", Object.keys(FIG3D_CACHE).length);
+  }
+  // Trigger on load
+  if (typeof window !== "undefined") {
+    if (document.readyState === "complete") setTimeout(preRenderAllUnits, 100);
+    else window.addEventListener("load", () => setTimeout(preRenderAllUnits, 100));
+  }
+
+  /* ═══ DRAW FIGURE — uses 3D pre-rendered PNG ═══ */
+  const drawFig=(type,cx,y0,s,pl)=>{
+    const bt = type.startsWith("v_") ? null : type;
+    if (!bt) return drawVeh(type.slice(2), cx, y0, s, pl, 1);
+
+    // Use 3D pre-rendered image if available
+    const dataURL = FIG3D_CACHE[bt];
+    if (dataURL) {
+      // SVG image dimensions: figure is 1 unit tall in 3D, scale appropriately
+      const W = 12 * s; // visual width
+      const H = 16 * s; // visual height
+      return (
+        <image
+          key={`fig3d_${bt}_${cx}_${y0}`}
+          href={dataURL}
+          x={cx - W/2}
+          y={y0 - 2 * s}
+          width={W}
+          height={H}
+          preserveAspectRatio="xMidYMax meet"
+        />
+      );
+    }
+
+    // Fallback: simple silhouette while 3D loads
+    const ud = UDEFS[bt] || {};
+    const facCol = ud.co || "#888";
+    return (
+      <g key={`fig_${bt}_${cx}_${y0}`}>
+        <ellipse cx={cx} cy={y0+9*s} rx={2*s} ry={3.5*s} fill={facCol} opacity={0.6}/>
+        <circle cx={cx} cy={y0+5*s} r={1.5*s} fill="#ffcc88" opacity={0.7}/>
+        <text x={cx} y={y0+10*s} textAnchor="middle" fontSize={2*s} fill="#fff" opacity={0.5}>...</text>
+      </g>
+    );
   };
 
     /* ─── Prone figure (flattened, seen from above) ─── */
