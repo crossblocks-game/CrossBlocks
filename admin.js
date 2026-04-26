@@ -616,3 +616,51 @@ function applyAllRebalance(sourceKey) {
   renderGallery();
   alert(count + " prix mis à jour.");
 }
+
+
+/* ═══ WEAPON WARNINGS — armes non-standards à vérifier manuellement ═══ */
+window.checkWeaponWarnings = function() {
+  if (typeof CONFIG === "undefined" || !CONFIG.weapons) return [];
+  const warnings = [];
+  for (const [name, w] of Object.entries(CONFIG.weapons)) {
+    const isPistolet = w.melee>0 && w.cat1>0 && w.cat2===0 && w.catP===0;
+    const isFusil = w.melee===0 && w.cat1>0 && w.cat2>0 && w.catP===0;
+    const isSniper = w.melee===0 && w.cat1===0 && w.cat2>0 && w.catP>0;
+    const isSabre = w.melee>0 && w.cat1===0 && w.cat2===0 && w.catP===0;
+    if (!(isPistolet || isFusil || isSniper || isSabre)) {
+      // Determine reason
+      let reason = "";
+      if (w.melee>0 && (w.cat1>0 || w.cat2>0 || w.catP>0)) reason = "Mêlée + portée multiple";
+      else if (w.cat1>0 && w.catP>0 && w.cat2===0) reason = "cat1 + catP sans cat2 (gap de portée)";
+      else if (w.melee===0 && w.cat1>0 && w.cat2===0 && w.catP===0) reason = "cat1 seule (ni pistolet ni fusil)";
+      else reason = "Combinaison de portées atypique";
+      warnings.push({ name, reason, ranges: { melee:w.melee, cat1:w.cat1, cat2:w.cat2, catP:w.catP } });
+    }
+  }
+  return warnings;
+};
+
+// Auto-run check on load and log
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (window.checkWeaponWarnings) {
+      const w = window.checkWeaponWarnings();
+      if (w.length > 0) {
+        console.warn('⚠ ARMES NON-STANDARDS À VÉRIFIER MANUELLEMENT:');
+        w.forEach(x => console.warn('  •', x.name, '—', x.reason));
+        // Add visual badge in admin panel if it exists
+        setTimeout(function() {
+          const adm = document.querySelector('.admin-section, #admin-content, .admin-panel');
+          if (adm && !document.getElementById('weapon-warnings')) {
+            const div = document.createElement('div');
+            div.id = 'weapon-warnings';
+            div.style.cssText = 'background:#3a1a00;border:1px solid #f0c040;color:#f0c040;padding:10px;margin:8px 0;border-radius:6px;font-size:12px';
+            div.innerHTML = '<b>⚠ ' + w.length + ' arme(s) non-standard(s) à vérifier manuellement :</b><br>' +
+              w.map(x => '<div style="margin-top:4px">• <b>' + x.name + '</b> — ' + x.reason + ' <span style="color:#888;font-size:10px">(melee:' + x.ranges.melee + '+, cat1:' + x.ranges.cat1 + '+, cat2:' + x.ranges.cat2 + '+, catP:' + x.ranges.catP + '+)</span></div>').join('');
+            adm.insertBefore(div, adm.firstChild);
+          }
+        }, 1000);
+      }
+    }
+  }, 500);
+});

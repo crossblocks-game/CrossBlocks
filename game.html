@@ -32,69 +32,243 @@ const HALF=BH/2, BASE=Math.round(4*SPX), BR=BASE/2, PAD=6;
 const C1=12, C2=24;
 
 const WEAPS={
-  fusil_b:{n:"Fusil bleu",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:5,dmg:1},
+  // ── PISTOLETS (mêlée + cat1) ──
+  pist_b:{n:"Pistolet DC-17",melee:16,cat1:15,cat2:0,catP:0,mun:4,pen:5,dmg:1},
+  pist_a:{n:"Pistolet auto DC-17",melee:15,cat1:14,cat2:0,catP:0,mun:3,pen:5,dmg:2},
+  pist_r:{n:"Pistolet rebelle",melee:17,cat1:16,cat2:0,catP:0,mun:4,pen:4,dmg:1},
+  pist_e:{n:"Pistolet SE-14r",melee:16,cat1:15,cat2:0,catP:0,mun:4,pen:4,dmg:1},
+  pist_dl44:{n:"DL-44 Han Solo",melee:15,cat1:14,cat2:0,catP:0,mun:4,pen:6,dmg:1},
+  pist_mando:{n:"WESTAR-34 Mando",melee:15,cat1:15,cat2:0,catP:0,mun:4,pen:5,dmg:1},
+  pist_b2:{n:"Pistolet B2",melee:16,cat1:15,cat2:0,catP:0,mun:3,pen:5,dmg:2},
+  pist_sep:{n:"E-5 court (sep)",melee:17,cat1:16,cat2:0,catP:0,mun:3,pen:3,dmg:1},
+  pist_naboo:{n:"Naboo S-5",melee:17,cat1:16,cat2:0,catP:0,mun:3,pen:3,dmg:1},
+  pist_zam:{n:"KYD-21 Zam",melee:16,cat1:15,cat2:0,catP:0,mun:4,pen:4,dmg:1},
+
+  // ── FUSILS (cat1 + cat2) ──
+  fusil_b:{n:"Fusil DC-15a",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:5,dmg:1},
+  fusil_e11:{n:"Fusil E-11",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
+  fusil_f11:{n:"Fusil F-11D",melee:0,cat1:14,cat2:16,catP:0,mun:3,pen:5,dmg:1},
+  fusil_a280:{n:"Fusil A280",melee:0,cat1:15,cat2:17,catP:0,mun:3,pen:4,dmg:1},
+  fusil_ee3:{n:"Fusil EE-3 Boba",melee:0,cat1:14,cat2:16,catP:0,mun:2,pen:6,dmg:2},
+  fusil_westar:{n:"WESTAR-M5",melee:0,cat1:15,cat2:16,catP:0,mun:4,pen:5,dmg:1},
+  fusil_e5:{n:"Fusil E-5 (sep)",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
+  fusil_arc:{n:"DC-17m ARC ⚠",melee:0,cat1:14,cat2:0,catP:15,mun:3,pen:6,dmg:2},
   fusil_r:{n:"Fusil rouge",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
-  blast_b:{n:"Blaster bleu",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:5,dmg:1},
-  blast_r:{n:"Blaster rouge",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:4,dmg:1},
-  pist_b:{n:"Pistolet bleu",melee:17,cat1:17,cat2:0,catP:0,mun:5,pen:4,dmg:1},
-  pist_r:{n:"Pistolet rouge",melee:17,cat1:17,cat2:0,catP:0,mun:5,pen:3,dmg:1},
-  sniper:{n:"Sniper bleu",melee:0,cat1:0,cat2:13,catP:15,mun:1,pen:7,dmg:2},
-  dbl_f:{n:"Dbl fusil",melee:0,cat1:13,cat2:16,catP:0,mun:2,pen:6,dmg:1},
-  pist_a:{n:"Pist.auto",melee:15,cat1:15,cat2:0,catP:0,mun:5,pen:4,dmg:2},
-  f_poing:{n:"Fusil poing",melee:0,cat1:16,cat2:16,catP:0,mun:2,pen:3,dmg:1},
-  f_poing_x2:{n:"×2 Fusils poing",melee:0,cat1:16,cat2:16,catP:0,mun:4,pen:3,dmg:1},
-  tourelle_x3:{n:"×3 Tourelles",melee:0,cat1:14,cat2:14,catP:0,mun:12,pen:3,dmg:1},
-  rocket_x3:{n:"×3 Rockets",melee:0,cat1:0,cat2:11,catP:11,mun:3,pen:10,dmg:0,dMax:4,once:true},
-  fusil_e11:{n:"E-11",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
-  sabre_b:{n:"Sabre bleu",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
-  sabre_r:{n:"Sabre rouge",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
-  sabre_g:{n:"Sabre vert",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
-  sabre_vio:{n:"Sabre violet",melee:11,cat1:0,cat2:0,catP:0,mun:3,pen:8,dmg:2},
-  sabre_w:{n:"Sabre blanc",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
-  double_sabre:{n:"Double sabre",melee:11,cat1:0,cat2:0,catP:0,mun:3,pen:7,dmg:2},
-  pist_dl44:{n:"DL-44",melee:15,cat1:15,cat2:0,catP:0,mun:4,pen:6,dmg:1},
-  blast_mando:{n:"Blaster Mando",melee:15,cat1:15,cat2:16,catP:0,mun:4,pen:5,dmg:1},
-  bowcaster:{n:"Bowcaster",melee:0,cat1:14,cat2:15,catP:0,mun:2,pen:7,dmg:3},
-  z6:{n:"Z-6 Rotatif",melee:0,cat1:14,cat2:16,catP:0,mun:8,pen:4,dmg:1},
-  pist_r:{n:"Pistolet rouge",melee:17,cat1:17,cat2:0,catP:0,mun:4,pen:3,dmg:1},
+
+  // ── DOUBLE FUSIL ──
+  dbl_f:{n:"Double fusil lourd",melee:0,cat1:13,cat2:16,catP:0,mun:3,pen:6,dmg:1},
+
+  // ── SNIPERS (cat2 + catP) ──
+  sniper:{n:"Sniper DC-15LE",melee:0,cat1:0,cat2:13,catP:15,mun:2,pen:7,dmg:2},
+  sniper_imp:{n:"Sniper E-11s",melee:0,cat1:0,cat2:14,catP:15,mun:2,pen:6,dmg:2},
+  sniper_iqa:{n:"Sniper IQA-11",melee:0,cat1:0,cat2:13,catP:14,mun:2,pen:9,dmg:3},
+  sniper_mod:{n:"Sniper Crosshair ⚠",melee:0,cat1:0,cat2:12,catP:13,mun:2,pen:10,dmg:3},
+  sniper_zam:{n:"Sniper KYD-21",melee:0,cat1:0,cat2:14,catP:15,mun:2,pen:6,dmg:2},
+
+  // ── BLASTERS (projectiles physiques, cat1+cat2) ──
+  blast_b:{n:"Blaster DC-15LE",melee:0,cat1:14,cat2:17,catP:0,mun:5,pen:5,dmg:1},
+  blast_r:{n:"Blaster rebelle",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:4,dmg:1},
+  blast_cassian:{n:"Blaster A280 Cassian",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:5,dmg:1},
+  z6_b:{n:"Z-6 répéteur (clone)",melee:0,cat1:14,cat2:16,catP:0,mun:8,pen:4,dmg:1},
+  z6_r:{n:"Z-6 répéteur (rebelle)",melee:0,cat1:14,cat2:16,catP:0,mun:8,pen:4,dmg:1},
+  dlt19:{n:"DLT-19 lourd",melee:0,cat1:14,cat2:16,catP:0,mun:5,pen:5,dmg:1},
+  blast_mando:{n:"Blaster Mando lourd",melee:0,cat1:14,cat2:16,catP:0,mun:6,pen:5,dmg:1},
+  bowcaster:{n:"Bowcaster Wookiee",melee:0,cat1:14,cat2:15,catP:0,mun:2,pen:7,dmg:3},
+
+  // ── SABRES LASER (mêlée seulement) ⚠ ──
+  sabre_b:{n:"Sabre bleu ⚠",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  sabre_g:{n:"Sabre vert ⚠",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  sabre_r:{n:"Sabre rouge ⚠",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  sabre_vio:{n:"Sabre violet Mace ⚠",melee:11,cat1:0,cat2:0,catP:0,mun:3,pen:8,dmg:2},
+  sabre_w:{n:"Sabre blanc Ahsoka ⚠",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+  dbl_sabre:{n:"Double sabre Maul ⚠",melee:11,cat1:0,cat2:0,catP:0,mun:3,pen:7,dmg:2},
+  sabre_curve:{n:"Sabre courbe Dooku ⚠",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:8,dmg:2},
+  darksaber:{n:"Darksaber ⚠",melee:11,cat1:0,cat2:0,catP:0,mun:2,pen:9,dmg:3},
+
+  // ── MÊLÉE NON-LASER ──
+  electro:{n:"Électro-bâton",melee:12,cat1:0,cat2:0,catP:0,mun:3,pen:7,dmg:2},
+  gaderffi:{n:"Gaderffi Tusken",melee:13,cat1:0,cat2:0,catP:0,mun:2,pen:5,dmg:2},
+  baton_rey:{n:"Bâton de Rey",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:5,dmg:2},
+  couteau:{n:"Couteau vibro",melee:13,cat1:0,cat2:0,catP:0,mun:1,pen:6,dmg:2},
+  vibrolame:{n:"Lance Vibrolame",melee:12,cat1:0,cat2:0,catP:0,mun:2,pen:7,dmg:2},
+
+  // ── EXPLOSIFS / SPECIAUX ⚠ ──
+  rocket_b2:{n:"Roquette B2 (1×) ⚠",melee:0,cat1:0,cat2:12,catP:12,mun:1,pen:9,dmg:3,once:true},
+  detonateur:{n:"Détonateur ⚠",melee:0,cat1:13,cat2:0,catP:0,mun:1,pen:8,dmg:3,once:true},
+  flame:{n:"Lance-flamme",melee:13,cat1:15,cat2:0,catP:0,mun:3,pen:5,dmg:2},
+  
+  // ── Aliases retro-compat ──
+  pist_b:{n:"Pistolet DC-17",melee:16,cat1:15,cat2:0,catP:0,mun:4,pen:5,dmg:1},
+  f_poing_x2:{n:"×2 Poing B2",melee:0,cat1:15,cat2:0,catP:0,mun:6,pen:4,dmg:1},
+  tourelle_x3:{n:"×3 Tourelles",melee:0,cat1:14,cat2:14,catP:0,mun:6,pen:5,dmg:1},
+  rocket_x3:{n:"×3 Rockets",melee:0,cat1:0,cat2:11,catP:11,mun:3,pen:10,dmg:0,dMax:4,once:true}
 };
 
 const UDEFS={
-  clone:{n:"Clone Ph.2",pts:200,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#3366CC"},
-  clone_geo:{n:"Clone Geonosis",pts:230,act:5,mm:0,arm:15,hp:2,w:["blast_b"],ic:"🌍",fac:"cl",co:"#558844"},
-  sniper:{n:"Clone Sniper",pts:260,act:5,mm:0,arm:15,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#1a4488"},
-  spec:{n:"Clone Spéc.",pts:250,act:5,mm:0,arm:15,hp:2,w:["dbl_f"],ic:"💪",fac:"cl",co:"#2255AA"},
-  officer:{n:"Clone Officier",pts:270,act:5,mm:0,arm:15,hp:2,w:["pist_b"],ic:"⭐",fac:"cl",co:"#4477DD"},
-  airborne:{n:"Clone Airborne",pts:270,act:5,mm:0,arm:15,hp:2,w:["blast_b"],ic:"🪂",fac:"cl",co:"#CC6633",air:1},
-  fives:{n:"Cmdt Fives",pts:430,act:5,mm:0,arm:13,hp:2,w:["pist_a"],ic:"🎖",fac:"cl",co:"#FFD700"},
-  rex:{n:"Cmdt Rex",pts:400,act:5,mm:0,arm:12,hp:2,w:["pist_a"],ic:"👑",fac:"cl",co:"#DAA520"},
-  b1:{n:"Droïde B1",pts:170,act:4,mm:0,arm:18,hp:2,w:["fusil_r"],ic:"🤖",fac:"sep",co:"#CC9966"},
-  b2:{n:"Droïde B2",pts:300,act:4,mm:-2,arm:11,hp:3,w:["f_poing_x2"],ic:"🦾",fac:"sep",co:"#888"},
-  tri_droid:{n:"Tri-Droïde",pts:1800,act:4,mm:2,arm:6,hp:10,w:["tourelle_x3","rocket_x3"],ic:"🕷",fac:"sep",co:"#556677"},
-  rebel:{n:"Rebelle",pts:180,act:5,mm:0,arm:17,hp:2,w:["blast_r"],ic:"✊",fac:"reb",co:"#CC4444"},
-  rebel_f:{n:"Rebelle Fusil",pts:180,act:5,mm:0,arm:17,hp:2,w:["fusil_r"],ic:"🔫",fac:"reb",co:"#BB3333"},
-  rebel_p:{n:"Rebelle Pistol.",pts:150,act:5,mm:0,arm:17,hp:2,w:["pist_r"],ic:"🫡",fac:"reb",co:"#993333"},
-  rebel_jet:{n:"Rebelle Jetpack",pts:240,act:5,mm:2,arm:17,hp:2,w:["blast_r"],ic:"🚀",fac:"reb",co:"#DD5555",air:1,fly:true},
-  guard:{n:"Garde Reb.",pts:200,act:5,mm:0,arm:16,hp:2,w:["blast_b"],ic:"🛡",fac:"reb",co:"#884422"},
-  stormtrooper:{n:"Stormtrooper",pts:180,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"⬜",fac:"emp",co:"#ffffff"},
-  vader:{n:"Darth Vader",pts:730,act:5,mm:0,arm:11,hp:3,w:["sabre_r"],ic:"🔴",fac:"emp",co:"#111111"},
-  luke_jedi:{n:"Luke Jedi",pts:590,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🟢",fac:"reb",co:"#333333"},
-  han:{n:"Han Solo",pts:330,act:5,mm:0,arm:16,hp:2,w:["pist_dl44"],ic:"🤠",fac:"reb",co:"#8B6C42"},
-  leia:{n:"Princesse Leia",pts:290,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"👑",fac:"reb",co:"#ffffff"},
-  chewie:{n:"Chewbacca",pts:410,act:5,mm:0,arm:15,hp:3,w:["bowcaster"],ic:"🐻",fac:"reb",co:"#8B6040"},
-  obi_wan:{n:"Obi-Wan Kenobi",pts:510,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"🔵",fac:"cl",co:"#3a6fb5"},
-  anakin:{n:"Anakin Skywalker",pts:570,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚡",fac:"cl",co:"#2a5a99"},
-  yoda:{n:"Maître Yoda",pts:630,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"🧙",fac:"cl",co:"#4a7a3a"},
-  mace:{n:"Mace Windu",pts:680,act:5,mm:0,arm:13,hp:2,w:["sabre_vio"],ic:"🟣",fac:"cl",co:"#5a1a8a"},
-  ahsoka:{n:"Ahsoka Tano",pts:540,act:5,mm:0,arm:14,hp:2,w:["sabre_w"],ic:"⬜",fac:"cl",co:"#CC8855"},
-  maul:{n:"Darth Maul",pts:730,act:5,mm:0,arm:12,hp:2,w:["double_sabre"],ic:"🔴",fac:"emp",co:"#440000"},
-  grievous:{n:"Général Grievous",pts:810,act:5,mm:0,arm:10,hp:3,w:["sabre_b","sabre_r"],ic:"🕷",fac:"sep",co:"#778899"},
-  kylo:{n:"Kylo Ren",pts:680,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"🔴",fac:"fo",co:"#111111"},
-  mando:{n:"Mandalorien",pts:500,act:5,mm:2,arm:11,hp:2,w:["blast_mando"],ic:"⬡",fac:"mando",co:"#888899",air:1,fly:true},
-  boba:{n:"Boba Fett",pts:550,act:5,mm:2,arm:11,hp:2,w:["blast_mando"],ic:"🪐",fac:"mando",co:"#336644",air:1,fly:true},
-  ig88:{n:"IG-88",pts:470,act:5,mm:0,arm:13,hp:2,w:["z6","fusil_e11"],ic:"🤖",fac:"hunt",co:"#888877"},
-  rey:{n:"Rey",pts:550,act:5,mm:0,arm:15,hp:2,w:["sabre_b"],ic:"🌅",fac:"res",co:"#c4a070"},
-  phasma:{n:"Capitaine Phasma",pts:400,act:5,mm:0,arm:12,hp:2,w:["fusil_e11"],ic:"⚡",fac:"fo",co:"#cccccc"},
+  clone_phase_1_fusil_dc_15a:{n:"Clone Phase 1 Fusil DC-15a",pts:200,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Phase 1 Fusil DC-15a (7163)"},
+  clone_phase_1_pistolet_dc_17:{n:"Clone Phase 1 Pistolet DC-17",pts:270,act:5,mm:0,arm:15,hp:2,w:["pist_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Phase 1 Pistolet DC-17 (7163)"},
+  clone_phase_2_fusil_dc_15a:{n:"Clone Phase 2 Fusil DC-15a",pts:200,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Phase 2 Fusil DC-15a (75280, 75345)"},
+  clone_phase_2_pistolet_dc_17:{n:"Clone Phase 2 Pistolet DC-17",pts:270,act:5,mm:0,arm:15,hp:2,w:["pist_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Phase 2 Pistolet DC-17 (75280)"},
+  clone_phase_2_blaster_dc_15le:{n:"Clone Phase 2 Blaster DC-15L",pts:250,act:5,mm:0,arm:15,hp:2,w:["blast_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Phase 2 Blaster DC-15LE (75280)"},
+  clone_phase_2_sniper_dc_15le:{n:"Clone Phase 2 Sniper DC-15LE",pts:260,act:5,mm:0,arm:15,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Phase 2 Sniper DC-15LE (75345)"},
+  clone_phase_2_double_fusil:{n:"Clone Phase 2 Double fusil",pts:230,act:5,mm:0,arm:15,hp:2,w:["dbl_f"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Phase 2 Double fusil (75345)"},
+  clone_phase_2_z_6_repeteur:{n:"Clone Phase 2 Z-6 répéteur",pts:310,act:5,mm:0,arm:14,hp:2,w:["z6_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Phase 2 Z-6 répéteur (75280)"},
+  501eme_trooper_fusil:{n:"501ème Trooper Fusil",pts:210,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#3366CC",fullName:"SW 501ème Trooper Fusil (75280)"},
+  501eme_trooper_sniper:{n:"501ème Trooper Sniper",pts:270,act:5,mm:0,arm:15,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#3366CC",fullName:"SW 501ème Trooper Sniper (75280)"},
+  501eme_specialiste_double_fusi:{n:"501ème Spécialiste Double fu",pts:240,act:5,mm:0,arm:15,hp:2,w:["dbl_f"],ic:"🪖",fac:"cl",co:"#3366CC",fullName:"SW 501ème Spécialiste Double fusil (75280)"},
+  501eme_heavy_z_6:{n:"501ème Heavy Z-6",pts:320,act:5,mm:0,arm:14,hp:2,w:["z6_b"],ic:"🪖",fac:"cl",co:"#3366CC",fullName:"SW 501ème Heavy Z-6 (75280)"},
+  501eme_jet_trooper:{n:"501ème Jet Trooper",pts:280,act:5,mm:1,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#3366CC",fullName:"SW 501ème Jet Trooper (75280)",air:1,fly:true},
+  501eme_officier_pistolet:{n:"501ème Officier Pistolet",pts:280,act:5,mm:0,arm:15,hp:2,w:["pist_b"],ic:"🪖",fac:"cl",co:"#3366CC",fullName:"SW 501ème Officier Pistolet (75280)"},
+  212eme_trooper_fusil:{n:"212ème Trooper Fusil",pts:210,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FF8C42",fullName:"SW 212ème Trooper Fusil (75036, 75261, 75350)"},
+  212eme_trooper_blaster:{n:"212ème Trooper Blaster",pts:220,act:5,mm:0,arm:15,hp:2,w:["blast_b"],ic:"🪖",fac:"cl",co:"#FF8C42",fullName:"SW 212ème Trooper Blaster (75036)"},
+  212eme_sniper:{n:"212ème Sniper",pts:270,act:5,mm:0,arm:15,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#FF8C42",fullName:"SW 212ème Sniper (75036)"},
+  327eme_trooper_fusil:{n:"327ème Trooper Fusil",pts:210,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFD700",fullName:"SW 327ème Trooper Fusil"},
+  327eme_sniper:{n:"327ème Sniper",pts:270,act:5,mm:0,arm:15,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#FFD700",fullName:"SW 327ème Sniper"},
+  41eme_trooper_kashyyyk_fusil:{n:"41ème Trooper Kashyyyk Fusil",pts:220,act:5,mm:0,arm:14,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#4A6E3A",fullName:"SW 41ème Trooper Kashyyyk Fusil (75035, 75234)"},
+  41eme_scout_trooper_sniper:{n:"41ème Scout Trooper Sniper",pts:260,act:5,mm:0,arm:14,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#4A6E3A",fullName:"SW 41ème Scout Trooper Sniper (75035)"},
+  91eme_trooper_mototracker_fusi:{n:"91ème Trooper Mototracker Fu",pts:220,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW 91ème Trooper Mototracker Fusil"},
+  104eme_wolfpack_trooper_fusil:{n:"104ème Wolfpack Trooper Fusi",pts:230,act:5,mm:0,arm:14,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#888899",fullName:"SW 104ème Wolfpack Trooper Fusil"},
+  104eme_wolfpack_sniper:{n:"104ème Wolfpack Sniper",pts:280,act:5,mm:0,arm:14,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#888899",fullName:"SW 104ème Wolfpack Sniper"},
+  187eme_trooper_fusil:{n:"187ème Trooper Fusil",pts:230,act:5,mm:0,arm:14,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#5A1A8A",fullName:"SW 187ème Trooper Fusil"},
+  7eme_sky_corps_trooper:{n:"7ème Sky Corps Trooper",pts:220,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW 7ème Sky Corps Trooper"},
+  garde_de_coruscant_fusil:{n:"Garde de Coruscant Fusil",pts:250,act:5,mm:0,arm:14,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#CC2222",fullName:"SW Garde de Coruscant Fusil (75372)"},
+  shock_trooper_double_fusil:{n:"Shock Trooper Double fusil",pts:270,act:5,mm:0,arm:14,hp:2,w:["dbl_f"],ic:"🪖",fac:"cl",co:"#CC2222",fullName:"SW Shock Trooper Double fusil (75372)"},
+  shadow_trooper:{n:"Shadow Trooper",pts:230,act:5,mm:0,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Shadow Trooper (75370)"},
+  arc_trooper_phase_1:{n:"ARC Trooper Phase 1",pts:360,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#3366CC",fullName:"SW ARC Trooper Phase 1 (75012)"},
+  arc_trooper_phase_2:{n:"ARC Trooper Phase 2",pts:380,act:5,mm:0,arm:13,hp:2,w:["fusil_arc","pist_b"],ic:"🪖",fac:"cl",co:"#3366CC",fullName:"SW ARC Trooper Phase 2 (75012)"},
+  arc_trooper_echo:{n:"ARC Trooper Echo",pts:390,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW ARC Trooper Echo (75387)"},
+  arc_trooper_jesse:{n:"ARC Trooper Jesse",pts:400,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW ARC Trooper Jesse (75387)"},
+  arc_trooper_fives:{n:"ARC Trooper Fives",pts:430,act:5,mm:0,arm:13,hp:2,w:["pist_a","fusil_arc"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW ARC Trooper Fives (75387)"},
+  clone_medecin:{n:"Clone Médecin",pts:250,act:5,mm:0,arm:15,hp:2,w:["pist_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Médecin (Kix) (75021)"},
+  clone_pilote_de_gunship:{n:"Clone Pilote de Gunship",pts:190,act:5,mm:0,arm:15,hp:2,w:["pist_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Pilote de Gunship (75021)"},
+  clone_arf_trooper_sniper:{n:"Clone ARF Trooper Sniper",pts:260,act:5,mm:0,arm:14,hp:2,w:["sniper"],ic:"🎯",fac:"cl",co:"#FFFFFF",fullName:"SW Clone ARF Trooper Sniper (75035)"},
+  clone_heavy_gunner_z_6:{n:"Clone Heavy Gunner Z-6",pts:290,act:5,mm:0,arm:14,hp:2,w:["z6_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Heavy Gunner Z-6 (75345)"},
+  clone_flame_trooper:{n:"Clone Flame Trooper",pts:340,act:5,mm:0,arm:14,hp:2,w:["flame"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Flame Trooper (75182)"},
+  clone_commando_rc_1138_boss:{n:"Clone Commando RC-1138 Boss",pts:460,act:5,mm:0,arm:13,hp:3,w:["fusil_arc","couteau"],ic:"💪",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Commando RC-1138 Boss (75035)"},
+  clone_commando_scorch:{n:"Clone Commando Scorch",pts:440,act:5,mm:0,arm:13,hp:3,w:["fusil_arc"],ic:"💪",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Commando Scorch (75035)"},
+  clone_commando_fixer:{n:"Clone Commando Fixer",pts:440,act:5,mm:0,arm:13,hp:3,w:["fusil_arc"],ic:"💪",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Commando Fixer (75035)"},
+  clone_commando_sev:{n:"Clone Commando Sev",pts:440,act:5,mm:0,arm:13,hp:3,w:["sniper"],ic:"🎯",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Commando Sev (75035)"},
+  clone_parachutiste_geonosis:{n:"Clone Parachutiste Geonosis",pts:240,act:5,mm:1,arm:15,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Clone Parachutiste Geonosis (75234)"},
+  commandant_rex_501eme:{n:"Commandant Rex 501ème",pts:400,act:5,mm:0,arm:12,hp:2,w:["pist_a"],ic:"🪖",fac:"cl",co:"#3366CC",fullName:"SW Commandant Rex 501ème (75012, 75157, 75391)"},
+  commandant_cody_212eme:{n:"Commandant Cody 212ème",pts:460,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#FF8C42",fullName:"SW Commandant Cody 212ème (75036, 75261, 75350)"},
+  commandant_bly_327eme:{n:"Commandant Bly 327ème",pts:440,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#FFD700",fullName:"SW Commandant Bly 327ème"},
+  commandant_gree_41eme:{n:"Commandant Gree 41ème",pts:430,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#4A6E3A",fullName:"SW Commandant Gree 41ème"},
+  commandant_wolffe_104eme:{n:"Commandant Wolffe 104ème",pts:440,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#888899",fullName:"SW Commandant Wolffe 104ème"},
+  commandant_fox_garde_coruscant:{n:"Commandant Fox Garde Corusca",pts:430,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#CC2222",fullName:"SW Commandant Fox Garde Coruscant"},
+  commandant_bacara_21eme:{n:"Commandant Bacara 21ème",pts:420,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Commandant Bacara 21ème"},
+  commandant_neyo_91eme:{n:"Commandant Neyo 91ème",pts:420,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Commandant Neyo 91ème"},
+  capitaine_howzer_41eme:{n:"Capitaine Howzer 41ème",pts:380,act:5,mm:0,arm:13,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#4A6E3A",fullName:"SW Capitaine Howzer 41ème"},
+  capitaine_grey:{n:"Capitaine Grey",pts:380,act:5,mm:0,arm:13,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Capitaine Grey"},
+  capitaine_ponds:{n:"Capitaine Ponds",pts:400,act:5,mm:0,arm:13,hp:2,w:["fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Capitaine Ponds"},
+  hunter_bad_batch:{n:"Hunter Bad Batch",pts:430,act:5,mm:0,arm:13,hp:2,w:["couteau","fusil_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Hunter Bad Batch (75314)"},
+  crosshair_bad_batch:{n:"Crosshair Bad Batch",pts:460,act:5,mm:0,arm:12,hp:2,w:["sniper_mod"],ic:"🎯",fac:"cl",co:"#FFFFFF",fullName:"SW Crosshair Bad Batch (75314)"},
+  wrecker_bad_batch:{n:"Wrecker Bad Batch",pts:490,act:5,mm:0,arm:11,hp:3,w:["z6_b"],ic:"💪",fac:"cl",co:"#FFFFFF",fullName:"SW Wrecker Bad Batch (75314)"},
+  echo_bad_batch:{n:"Echo Bad Batch",pts:390,act:5,mm:0,arm:13,hp:2,w:["fusil_arc"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Echo Bad Batch (75314)"},
+  tech_bad_batch:{n:"Tech Bad Batch",pts:330,act:5,mm:0,arm:13,hp:2,w:["pist_b"],ic:"🪖",fac:"cl",co:"#FFFFFF",fullName:"SW Tech Bad Batch (75314)"},
+  obi_wan_kenobi:{n:"Obi-Wan Kenobi",pts:510,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚔",fac:"cl",co:"#FFFFFF",fullName:"SW Obi-Wan Kenobi (75333, 75354)"},
+  anakin_skywalker:{n:"Anakin Skywalker",pts:570,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚔",fac:"cl",co:"#FFFFFF",fullName:"SW Anakin Skywalker (75333)"},
+  maitre_yoda:{n:"Maître Yoda",pts:630,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"⚔",fac:"cl",co:"#FFFFFF",fullName:"SW Maître Yoda (75255, 75360)"},
+  mace_windu:{n:"Mace Windu",pts:680,act:5,mm:0,arm:13,hp:2,w:["sabre_vio"],ic:"⚔",fac:"cl",co:"#3366CC",fullName:"SW Mace Windu (75342, 75019)"},
+  ahsoka_tano:{n:"Ahsoka Tano",pts:540,act:5,mm:0,arm:14,hp:2,w:["sabre_w"],ic:"⚔",fac:"cl",co:"#FFFFFF",fullName:"SW Ahsoka Tano (75283)"},
+  plo_koon:{n:"Plo Koon",pts:460,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚔",fac:"cl",co:"#FFFFFF",fullName:"SW Plo Koon (75233)"},
+  kit_fisto:{n:"Kit Fisto",pts:480,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"⚔",fac:"cl",co:"#3366CC",fullName:"SW Kit Fisto (75019)"},
+  qui_gon_jinn:{n:"Qui-Gon Jinn",pts:490,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"⚔",fac:"cl",co:"#FFFFFF",fullName:"SW Qui-Gon Jinn (75258)"},
+  shaak_ti:{n:"Shaak Ti",pts:470,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚔",fac:"cl",co:"#3366CC",fullName:"SW Shaak Ti (75019)"},
+  aayla_secura:{n:"Aayla Secura",pts:470,act:5,mm:0,arm:13,hp:2,w:["sabre_b"],ic:"⚔",fac:"cl",co:"#FFFFFF",fullName:"SW Aayla Secura"},
+  darth_maul:{n:"Darth Maul",pts:730,act:5,mm:0,arm:12,hp:2,w:["dbl_sabre"],ic:"⚫",fac:"obs",co:"#220033",fullName:"SW Darth Maul (75310, 75169)"},
+  comte_dooku:{n:"Comte Dooku",pts:630,act:5,mm:0,arm:12,hp:2,w:["sabre_curve"],ic:"⚔",fac:"obs",co:"#220033",fullName:"SW Comte Dooku (75310)"},
+  empereur_palpatine:{n:"Empereur Palpatine",pts:830,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"⚔",fac:"obs",co:"#220033",fullName:"SW Empereur Palpatine (75093)"},
+  asajj_ventress:{n:"Asajj Ventress",pts:670,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"⚔",fac:"sep",co:"#C8A86A",fullName:"SW Asajj Ventress"},
+  droide_b1_fusil:{n:"Droïde B1 Fusil",pts:170,act:4,mm:0,arm:18,hp:2,w:["fusil_e5"],ic:"🤖",fac:"sep",co:"#C8A86A",fullName:"SW Droïde B1 Fusil (75372, 75283)"},
+  droide_b1_sniper_geonosis:{n:"Droïde B1 Sniper Geonosis",pts:220,act:4,mm:0,arm:18,hp:2,w:["sniper"],ic:"🎯",fac:"sep",co:"#C8A86A",fullName:"SW Droïde B1 Sniper Geonosis (75234)"},
+  droide_b1_pistolet:{n:"Droïde B1 Pistolet",pts:150,act:4,mm:0,arm:18,hp:2,w:["pist_sep"],ic:"🤖",fac:"sep",co:"#C8A86A",fullName:"SW Droïde B1 Pistolet (75283)"},
+  droide_b1_commandant_orange:{n:"Droïde B1 Commandant orange",pts:200,act:4,mm:0,arm:18,hp:2,w:["fusil_e5"],ic:"🤖",fac:"sep",co:"#C8A86A",fullName:"SW Droïde B1 Commandant orange (75283)"},
+  droide_b1_securite_rouge:{n:"Droïde B1 Sécurité rouge",pts:180,act:4,mm:0,arm:18,hp:2,w:["fusil_e5"],ic:"🤖",fac:"sep",co:"#C8A86A",fullName:"SW Droïde B1 Sécurité rouge"},
+  droide_b1_pilote:{n:"Droïde B1 Pilote",pts:150,act:4,mm:0,arm:18,hp:2,w:["pist_sep"],ic:"🤖",fac:"sep",co:"#C8A86A",fullName:"SW Droïde B1 Pilote"},
+  droide_lourd_b2:{n:"Droïde Lourd B2",pts:300,act:4,mm:-2,arm:11,hp:3,w:["pist_b2"],ic:"💪",fac:"sep",co:"#C8A86A",fullName:"SW Droïde Lourd B2 (75283, 75241)"},
+  droide_b2_ha_roquette:{n:"Droïde B2-HA Roquette",pts:420,act:4,mm:-2,arm:11,hp:3,w:["rocket_b2","pist_b2"],ic:"💪",fac:"sep",co:"#C8A86A",fullName:"SW Droïde B2-HA Roquette (75283)"},
+  droide_destroyer_droideka:{n:"Droïde Destroyer Droideka",pts:530,act:4,mm:1,arm:9,hp:4,w:["blast_r"],ic:"💪",fac:"sep",co:"#C8A86A",fullName:"SW Droïde Destroyer Droideka (75233)"},
+  magnaguard_ig_100:{n:"MagnaGuard IG-100",pts:570,act:5,mm:0,arm:11,hp:3,w:["electro"],ic:"💪",fac:"sep",co:"#C8A86A",fullName:"SW MagnaGuard IG-100 (75233)"},
+  tri_droide_geant:{n:"Tri-Droïde Géant",pts:1800,act:4,mm:2,arm:6,hp:10,w:["rocket_b2"],ic:"💪",fac:"sep",co:"#C8A86A",fullName:"SW Tri-Droïde Géant",air:1,fly:true},
+  general_grievous:{n:"Général Grievous",pts:810,act:5,mm:0,arm:10,hp:3,w:["sabre_b","sabre_r"],ic:"⚔",fac:"sep",co:"#C8A86A",fullName:"SW Général Grievous (75040)"},
+  stormtrooper_fusil_e_11:{n:"Stormtrooper Fusil E-11",pts:180,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Stormtrooper Fusil E-11 (75387)"},
+  stormtrooper_pistolet:{n:"Stormtrooper Pistolet",pts:170,act:5,mm:0,arm:16,hp:2,w:["pist_e"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Stormtrooper Pistolet (75290)"},
+  stormtrooper_lourd_dlt_19:{n:"Stormtrooper Lourd DLT-19",pts:230,act:5,mm:0,arm:16,hp:2,w:["dlt19"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Stormtrooper Lourd DLT-19 (75387)"},
+  snowtrooper:{n:"Snowtrooper",pts:200,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Snowtrooper (75313)"},
+  scout_trooper_sniper:{n:"Scout Trooper Sniper",pts:230,act:5,mm:0,arm:16,hp:2,w:["sniper_imp"],ic:"🎯",fac:"emp",co:"#0a0a0a",fullName:"SW Scout Trooper Sniper (75332, 75311)"},
+  death_trooper_iqa_11:{n:"Death Trooper IQA-11",pts:310,act:5,mm:0,arm:14,hp:2,w:["sniper_iqa"],ic:"🎯",fac:"emp",co:"#0a0a0a",fullName:"SW Death Trooper IQA-11 (75346)"},
+  death_trooper_e_11d_fusil:{n:"Death Trooper E-11D Fusil",pts:300,act:5,mm:0,arm:14,hp:2,w:["fusil_f11"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Death Trooper E-11D Fusil (75346)"},
+  pilote_tie_fighter:{n:"Pilote TIE Fighter",pts:180,act:5,mm:0,arm:16,hp:2,w:["pist_e"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Pilote TIE Fighter (75300)"},
+  at_at_driver:{n:"AT-AT Driver",pts:190,act:4,mm:0,arm:16,hp:2,w:["pist_e"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW AT-AT Driver (4483)"},
+  officier_imperial:{n:"Officier Impérial",pts:200,act:5,mm:0,arm:17,hp:2,w:["pist_e"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Officier Impérial"},
+  garde_royale_sith:{n:"Garde Royale Sith",pts:280,act:5,mm:0,arm:14,hp:2,w:["vibrolame"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Garde Royale Sith (75093)"},
+  inquisiteur_sith:{n:"Inquisiteur Sith",pts:540,act:5,mm:0,arm:13,hp:2,w:["sabre_r"],ic:"⚔",fac:"emp",co:"#0a0a0a",fullName:"SW Inquisiteur Sith"},
+  darth_vader:{n:"Darth Vader",pts:730,act:5,mm:0,arm:11,hp:3,w:["sabre_r"],ic:"⚔",fac:"emp",co:"#0a0a0a",fullName:"SW Darth Vader (75304, 75271, 75093)"},
+  iden_versio_inferno_squad:{n:"Iden Versio Inferno Squad",pts:380,act:5,mm:0,arm:14,hp:2,w:["fusil_e11"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Iden Versio Inferno Squad (BF2)"},
+  moff_jerjerrod:{n:"Moff Jerjerrod",pts:230,act:5,mm:0,arm:16,hp:2,w:["pist_e"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Moff Jerjerrod (6211)"},
+  grand_amiral_thrawn:{n:"Grand Amiral Thrawn",pts:350,act:5,mm:0,arm:16,hp:2,w:["pist_e"],ic:"⬜",fac:"emp",co:"#0a0a0a",fullName:"SW Grand Amiral Thrawn"},
+  soldat_rebelle_blaster:{n:"Soldat Rebelle Blaster",pts:180,act:5,mm:0,arm:17,hp:2,w:["blast_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Soldat Rebelle Blaster (75261, 75387)"},
+  soldat_rebelle_fusil_a280:{n:"Soldat Rebelle Fusil A280",pts:180,act:5,mm:0,arm:17,hp:2,w:["fusil_a280"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Soldat Rebelle Fusil A280 (75267)"},
+  soldat_rebelle_pistolet:{n:"Soldat Rebelle Pistolet",pts:150,act:5,mm:0,arm:17,hp:2,w:["pist_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Soldat Rebelle Pistolet (75164)"},
+  soldat_rebelle_jetpack:{n:"Soldat Rebelle Jetpack",pts:240,act:5,mm:2,arm:17,hp:2,w:["blast_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Soldat Rebelle Jetpack (75164)",air:1,fly:true},
+  garde_rebelle:{n:"Garde Rebelle",pts:200,act:5,mm:0,arm:16,hp:2,w:["blast_b"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Garde Rebelle (75159)"},
+  soldat_de_hoth:{n:"Soldat de Hoth",pts:180,act:5,mm:0,arm:17,hp:2,w:["blast_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Soldat de Hoth (75098, 75259)"},
+  commando_rebelle_endor:{n:"Commando Rebelle Endor",pts:190,act:5,mm:0,arm:17,hp:2,w:["blast_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Commando Rebelle Endor (75094)"},
+  soldat_de_scarif_rogue_one:{n:"Soldat de Scarif Rogue One",pts:190,act:5,mm:0,arm:17,hp:2,w:["fusil_a280"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Soldat de Scarif Rogue One (75171)"},
+  luke_skywalker_jedi:{n:"Luke Skywalker Jedi",pts:590,act:5,mm:0,arm:13,hp:2,w:["sabre_g"],ic:"⚔",fac:"reb",co:"#9B7040",fullName:"SW Luke Skywalker Jedi (75093, 75159)"},
+  luke_skywalker_x_wing_pilote:{n:"Luke Skywalker X-Wing pilote",pts:370,act:5,mm:0,arm:16,hp:2,w:["pist_dl44"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Luke Skywalker X-Wing pilote (75218)"},
+  luke_skywalker_hoth:{n:"Luke Skywalker Hoth",pts:350,act:5,mm:0,arm:17,hp:2,w:["sabre_b","pist_dl44"],ic:"⚔",fac:"reb",co:"#9B7040",fullName:"SW Luke Skywalker Hoth (75098)"},
+  han_solo_contrebandier:{n:"Han Solo Contrebandier",pts:330,act:5,mm:0,arm:16,hp:2,w:["pist_dl44"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Han Solo Contrebandier (75290, 75375)"},
+  han_solo_hoth:{n:"Han Solo Hoth",pts:330,act:5,mm:0,arm:16,hp:2,w:["pist_dl44"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Han Solo Hoth (75098)"},
+  princesse_leia:{n:"Princesse Leia",pts:290,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Princesse Leia (75290, 6210)"},
+  princesse_leia_endor:{n:"Princesse Leia Endor",pts:280,act:5,mm:0,arm:16,hp:2,w:["blast_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Princesse Leia Endor (75094)"},
+  chewbacca_wookiee:{n:"Chewbacca Wookiee",pts:410,act:5,mm:0,arm:15,hp:3,w:["bowcaster"],ic:"💪",fac:"reb",co:"#9B7040",fullName:"SW Chewbacca Wookiee (75375, 75257)"},
+  lando_calrissian:{n:"Lando Calrissian",pts:280,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Lando Calrissian (75290)"},
+  cassian_andor:{n:"Cassian Andor",pts:300,act:5,mm:0,arm:16,hp:2,w:["blast_cassian"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Cassian Andor (75171)"},
+  jyn_erso:{n:"Jyn Erso",pts:280,act:5,mm:0,arm:17,hp:2,w:["blast_cassian"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Jyn Erso (75171)"},
+  k_2so_droide:{n:"K-2SO Droïde",pts:320,act:5,mm:0,arm:14,hp:3,w:["fusil_e11"],ic:"💪",fac:"reb",co:"#9B7040",fullName:"SW K-2SO Droïde (75171)"},
+  wedge_antilles_x_wing_pilote:{n:"Wedge Antilles X-Wing pilote",pts:320,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Wedge Antilles X-Wing pilote (75218)"},
+  biggs_darklighter_x_wing:{n:"Biggs Darklighter X-Wing",pts:290,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Biggs Darklighter X-Wing"},
+  hera_syndulla_twi_lek:{n:"Hera Syndulla Twi'lek",pts:350,act:5,mm:0,arm:16,hp:2,w:["blast_cassian"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Hera Syndulla Twi'lek"},
+  kanan_jarrus_jedi:{n:"Kanan Jarrus Jedi",pts:480,act:5,mm:0,arm:14,hp:2,w:["sabre_b"],ic:"⚔",fac:"reb",co:"#9B7040",fullName:"SW Kanan Jarrus Jedi"},
+  ezra_bridger:{n:"Ezra Bridger",pts:360,act:5,mm:0,arm:15,hp:2,w:["sabre_b","pist_r"],ic:"⚔",fac:"reb",co:"#9B7040",fullName:"SW Ezra Bridger"},
+  sabine_wren_mando:{n:"Sabine Wren Mando",pts:400,act:5,mm:1,arm:13,hp:2,w:["pist_mando"],ic:"🟠",fac:"reb",co:"#9B7040",fullName:"SW Sabine Wren Mando"},
+  le_mandalorien_din_djarin:{n:"Le Mandalorien Din Djarin",pts:500,act:5,mm:2,arm:11,hp:2,w:["pist_mando","fusil_westar"],ic:"⬡",fac:"mando",co:"#778899",fullName:"SW Le Mandalorien Din Djarin (75292)",air:1,fly:true},
+  boba_fett_beskar_vert:{n:"Boba Fett Beskar Vert",pts:550,act:5,mm:2,arm:11,hp:2,w:["fusil_ee3"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW Boba Fett Beskar Vert (75312)",air:1,fly:true},
+  boba_fett_tan_classique:{n:"Boba Fett Tan classique",pts:540,act:5,mm:2,arm:11,hp:2,w:["fusil_ee3"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW Boba Fett Tan classique (75243)",air:1,fly:true},
+  jango_fett:{n:"Jango Fett",pts:560,act:5,mm:2,arm:11,hp:2,w:["pist_mando","pist_mando"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW Jango Fett (75191)",air:1,fly:true},
+  bo_katan_kryze:{n:"Bo-Katan Kryze",pts:640,act:5,mm:2,arm:11,hp:2,w:["darksaber"],ic:"⬡",fac:"mando",co:"#778899",fullName:"SW Bo-Katan Kryze (75373)",air:1,fly:true},
+  paz_vizsla:{n:"Paz Vizsla",pts:480,act:5,mm:1,arm:12,hp:3,w:["blast_mando"],ic:"💪",fac:"mando",co:"#778899",fullName:"SW Paz Vizsla"},
+  armurier_mandalorienne:{n:"Armurier Mandalorienne",pts:420,act:5,mm:1,arm:12,hp:2,w:["blast_mando"],ic:"⬡",fac:"mando",co:"#778899",fullName:"SW Armurier Mandalorienne"},
+  cobb_vanth:{n:"Cobb Vanth",pts:350,act:5,mm:0,arm:13,hp:2,w:["fusil_ee3"],ic:"⬡",fac:"mando",co:"#778899",fullName:"SW Cobb Vanth (75299)"},
+  ig_88_assassin:{n:"IG-88 Assassin",pts:470,act:5,mm:0,arm:13,hp:2,w:["dlt19"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW IG-88 Assassin (6209, 9496)"},
+  ig_11:{n:"IG-11",pts:410,act:5,mm:0,arm:13,hp:2,w:["dlt19"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW IG-11 (75292)"},
+  bossk_trandoshan:{n:"Bossk Trandoshan",pts:320,act:5,mm:0,arm:15,hp:2,w:["fusil_ee3"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW Bossk Trandoshan (75167, 9496)"},
+  cad_bane:{n:"Cad Bane",pts:410,act:5,mm:1,arm:14,hp:2,w:["pist_mando","pist_mando"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW Cad Bane (75323)"},
+  greedo_rodien:{n:"Greedo Rodien",pts:200,act:5,mm:0,arm:17,hp:2,w:["pist_naboo"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW Greedo Rodien (75290, 4501)"},
+  fennec_shand:{n:"Fennec Shand",pts:350,act:5,mm:0,arm:14,hp:2,w:["sniper"],ic:"🎯",fac:"hunt",co:"#665533",fullName:"SW Fennec Shand (75326)"},
+  zam_wesell:{n:"Zam Wesell",pts:320,act:5,mm:0,arm:14,hp:2,w:["sniper_zam"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW Zam Wesell (75233)"},
+  aurra_sing:{n:"Aurra Sing",pts:360,act:5,mm:0,arm:13,hp:2,w:["sniper"],ic:"🎯",fac:"hunt",co:"#665533",fullName:"SW Aurra Sing"},
+  embo:{n:"Embo",pts:350,act:5,mm:0,arm:13,hp:2,w:["sniper"],ic:"🎯",fac:"hunt",co:"#665533",fullName:"SW Embo"},
+  dengar:{n:"Dengar",pts:280,act:5,mm:0,arm:14,hp:2,w:["fusil_ee3"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW Dengar"},
+  4_lom_droide:{n:"4-LOM Droïde",pts:260,act:5,mm:0,arm:15,hp:2,w:["fusil_e11"],ic:"🪐",fac:"hunt",co:"#665533",fullName:"SW 4-LOM Droïde"},
+  rey_jedi:{n:"Rey Jedi",pts:550,act:5,mm:0,arm:15,hp:2,w:["sabre_b"],ic:"⚔",fac:"res",co:"#c4a070",fullName:"SW Rey Jedi (75249)"},
+  rey_jakku:{n:"Rey Jakku",pts:290,act:5,mm:0,arm:16,hp:2,w:["baton_rey"],ic:"🌅",fac:"res",co:"#c4a070",fullName:"SW Rey Jakku (75099)"},
+  finn_fn_2187:{n:"Finn FN-2187",pts:270,act:5,mm:0,arm:16,hp:2,w:["fusil_e11"],ic:"🌅",fac:"res",co:"#c4a070",fullName:"SW Finn FN-2187 (75249)"},
+  poe_dameron_pilote:{n:"Poe Dameron Pilote",pts:320,act:5,mm:0,arm:16,hp:2,w:["pist_r"],ic:"🌅",fac:"res",co:"#c4a070",fullName:"SW Poe Dameron Pilote"},
+  rose_tico:{n:"Rose Tico",pts:250,act:5,mm:0,arm:17,hp:2,w:["pist_r"],ic:"🌅",fac:"res",co:"#c4a070",fullName:"SW Rose Tico"},
+  kylo_ren:{n:"Kylo Ren",pts:680,act:5,mm:0,arm:12,hp:2,w:["sabre_r"],ic:"⚔",fac:"fo",co:"#0a0a0a",fullName:"SW Kylo Ren (75104, 75264)"},
+  capitaine_phasma:{n:"Capitaine Phasma",pts:400,act:5,mm:0,arm:12,hp:2,w:["fusil_f11"],ic:"🔴",fac:"fo",co:"#0a0a0a",fullName:"SW Capitaine Phasma (75104)"},
+  stormtrooper_premiere_ordre:{n:"Stormtrooper Première Ordre",pts:180,act:5,mm:0,arm:16,hp:2,w:["fusil_f11"],ic:"🔴",fac:"fo",co:"#0a0a0a",fullName:"SW Stormtrooper Première Ordre (75104)"},
+  flametrooper_premiere_ordre:{n:"Flametrooper Première Ordre",pts:220,act:5,mm:0,arm:16,hp:2,w:["flame"],ic:"🔴",fac:"fo",co:"#0a0a0a",fullName:"SW Flametrooper Première Ordre (75103)"},
+  tusken_raider:{n:"Tusken Raider",pts:160,act:5,mm:0,arm:17,hp:2,w:["gaderffi"],ic:"⚪",fac:"neu",co:"#888",fullName:"SW Tusken Raider (75265)"},
+  jawa:{n:"Jawa",pts:110,act:4,mm:0,arm:18,hp:1,w:["pist_naboo"],ic:"⚪",fac:"neu",co:"#888",fullName:"SW Jawa (75265)"},
+  ewok_guerrier:{n:"Ewok Guerrier",pts:90,act:4,mm:0,arm:19,hp:1,w:[],ic:"⚪",fac:"neu",co:"#888",fullName:"SW Ewok Guerrier (75320)"},
+  gamorrean_garde_jabba:{n:"Gamorrean Garde Jabba",pts:230,act:4,mm:-1,arm:16,hp:3,w:["couteau"],ic:"💪",fac:"neu",co:"#888",fullName:"SW Gamorrean Garde Jabba (6210)"},
+  bib_fortuna:{n:"Bib Fortuna",pts:140,act:3,mm:0,arm:18,hp:2,w:["pist_r"],ic:"⚪",fac:"neu",co:"#888",fullName:"SW Bib Fortuna (4475, 4480)"},
+  saelt_marae_yak_face:{n:"Saelt-Marae Yak Face",pts:120,act:3,mm:0,arm:19,hp:2,w:[],ic:"⚪",fac:"neu",co:"#888",fullName:"SW Saelt-Marae Yak Face (6210)"},
+  ponda_baba_cantina:{n:"Ponda Baba Cantina",pts:130,act:4,mm:0,arm:18,hp:2,w:["pist_r"],ic:"⚪",fac:"neu",co:"#888",fullName:"SW Ponda Baba Cantina (4501)"},
+  dr_evazan_cantina:{n:"Dr. Evazan Cantina",pts:130,act:4,mm:0,arm:18,hp:2,w:[],ic:"⚪",fac:"neu",co:"#888",fullName:"SW Dr. Evazan Cantina (4501)"}
 };
 
 /* ═══ VEHICLE WEAPONS ═══ */
@@ -606,73 +780,157 @@ function CrossBlock(){
     // 3D pre-render disabled - using clear SVG figures instead
   }, []);
 
-  // ── SYNC: game.html ↔ index.html via localStorage events ──
+  // ── SYNC: game.html ↔ index.html (v2 - BroadcastChannel + storage) ──
   React.useEffect(() => {
-    // Listen for changes from index.html
-    const onStorageChange = (e) => {
-      if (e.key === "crossblocks_cards_to_game" && e.newValue) {
-        try {
-          const data = JSON.parse(e.newValue);
-          if (data && data.cards && Array.isArray(data.cards)) {
-            // Convert index.html cards to game.html unit format
-            const newUnits = data.cards.slice(0, 12).map((c, i) => {
-              const fac = c.faction === "République" ? "cl" :
-                          c.faction === "Séparatistes" ? "sep" :
-                          c.faction === "Rebelles" ? "reb" :
-                          c.faction === "Empire" ? "emp" :
-                          c.faction === "Mandalorien" ? "mando" : "cl";
-              return {
-                id: uid(), type: "custom_" + Date.now() + "_" + i, pl: 1,
-                name: c.name.replace(/\s*\([^)]+\)/g, "").replace("SW ", ""),
-                pts: c.points || 200, mAct: c.pa || 5, act: c.pa || 5,
-                mm: c.move || 0, arm: c.armor || 15, mHp: c.hp || 2, hp: c.hp || 2,
-                ws: [{key:"fusil_b", ...WEAPS.fusil_b, cur:3}],
-                ic: "🃏", fac: fac, co: "#4488dd",
-                air: false, fly: false, dep: false, done: false, sqId: null, prone: false, alt: 0,
-                x: -999, y: -999,
-              };
-            });
-            sA1(newUnits);
-            sP1(newUnits.reduce((s, u) => s + u.pts, 0));
-            aL("📥 " + newUnits.length + " unités synchronisées depuis index.html");
+    var bc = null;
+    try { bc = new BroadcastChannel('crossblocks_sync'); } catch(e) {}
+    
+    function importCardsFromIndex(data) {
+      if (!data || !data.cards || !Array.isArray(data.cards)) return;
+      // Map gallery cards to game.html units, finding matching UDEFS or creating custom
+      var importedUnits = data.cards.slice(0, 12).map(function(c, idx) {
+        // Try to find matching UDEFS entry by name
+        var matchKey = null;
+        var cName = c.name.replace(/\s*\([^)]+\)/g, '').replace(/^SW\s+/, '');
+        for (var k in UDEFS) {
+          var ud = UDEFS[k];
+          var udName = (ud.fullName || ud.n || '').replace(/\s*\([^)]+\)/g, '').replace(/^SW\s+/, '');
+          if (udName === cName || ud.fullName === c.name) {
+            matchKey = k;
+            break;
           }
-        } catch(err) { console.warn("Sync fail:", err); }
+        }
+        var fac = c.faction === 'République' ? 'cl' :
+                  c.faction === 'Séparatistes' ? 'sep' :
+                  c.faction === 'Rebelles' ? 'reb' :
+                  c.faction === 'Empire' ? 'emp' :
+                  c.faction === 'Mandalorien' ? 'mando' :
+                  c.faction === 'Résistance' ? 'res' :
+                  c.faction === 'Première Ordre' ? 'fo' :
+                  c.faction === 'Côté Obscur' ? 'obs' :
+                  c.faction === 'Chasseur de primes' ? 'hunt' : 'cl';
+        // Match weapons to WEAPS keys
+        var weaponKeys = (c.weapons || []).slice(0, 2).map(function(w) {
+          if (/Pistolet.*DC-17.*auto/i.test(w)) return 'pist_a';
+          if (/Pistolet.*DC-17/i.test(w)) return 'pist_b';
+          if (/Pistolet.*DL-44/i.test(w)) return 'pist_dl44';
+          if (/Pistolet.*WESTAR/i.test(w)) return 'pist_mando';
+          if (/Pistolet.*rebelle/i.test(w)) return 'pist_r';
+          if (/Pistolet.*SE-14r/i.test(w)) return 'pist_e';
+          if (/Pistolet/i.test(w)) return 'pist_b';
+          if (/Fusil.*DC-15a/i.test(w)) return 'fusil_b';
+          if (/Fusil.*E-11/i.test(w)) return 'fusil_e11';
+          if (/Fusil.*A280/i.test(w)) return 'fusil_a280';
+          if (/Fusil.*ARC|DC-17m/i.test(w)) return 'fusil_arc';
+          if (/Fusil.*EE-3/i.test(w)) return 'fusil_ee3';
+          if (/Fusil/i.test(w)) return 'fusil_b';
+          if (/Sniper.*Crosshair|modifié/i.test(w)) return 'sniper_mod';
+          if (/Sniper.*IQA/i.test(w)) return 'sniper_iqa';
+          if (/Sniper/i.test(w)) return 'sniper';
+          if (/Z-6/i.test(w)) return 'z6_b';
+          if (/Bowcaster/i.test(w)) return 'bowcaster';
+          if (/Sabre.*violet/i.test(w)) return 'sabre_vio';
+          if (/Sabre.*blanc/i.test(w)) return 'sabre_w';
+          if (/Sabre.*bleu/i.test(w)) return 'sabre_b';
+          if (/Sabre.*vert/i.test(w)) return 'sabre_g';
+          if (/Sabre.*rouge|courbe/i.test(w)) return 'sabre_r';
+          if (/Double sabre/i.test(w)) return 'dbl_sabre';
+          if (/Darksaber/i.test(w)) return 'darksaber';
+          if (/Blaster.*rebelle/i.test(w)) return 'blast_r';
+          if (/Blaster/i.test(w)) return 'blast_b';
+          if (/Bâton de Rey/i.test(w)) return 'baton_rey';
+          return 'fusil_b';
+        });
+        return {
+          id: uid(), 
+          type: matchKey || 'clone',
+          pl: 1,
+          name: cName,
+          pts: c.points || 200,
+          mAct: c.pa || 5, act: c.pa || 5,
+          mm: c.move || 0,
+          arm: c.armor || 15,
+          mHp: c.hp || 2, hp: c.hp || 2,
+          ws: weaponKeys.map(function(k) { return Object.assign({key:k, cur: WEAPS[k]?WEAPS[k].mun:3}, WEAPS[k]||{}); }),
+          ic: '🃏', fac: fac, co: '#4488dd',
+          air: false, fly: false, dep: false, done: false, sqId: null, prone: false, alt: 0,
+          x: -999, y: -999,
+        };
+      });
+      sA1(importedUnits);
+      sP1(importedUnits.reduce(function(s, u) { return s + u.pts; }, 0));
+      aL('📥 ' + importedUnits.length + ' unités synchronisées depuis index.html');
+    }
+    
+    var onStorage = function(e) {
+      if (e.key === 'crossblocks_cards_to_game' && e.newValue) {
+        try { importCardsFromIndex(JSON.parse(e.newValue)); } catch(err) {}
       }
     };
-    window.addEventListener("storage", onStorageChange);
-    return () => window.removeEventListener("storage", onStorageChange);
+    window.addEventListener('storage', onStorage);
+    
+    if (bc) {
+      bc.onmessage = function(e) {
+        if (e.data && e.data.type === 'cards_update' && e.data.data && e.data.data.source === 'index.html') {
+          importCardsFromIndex(e.data.data);
+        }
+      };
+    }
+    
+    // Try initial sync from existing localStorage
+    setTimeout(function() {
+      try {
+        var stored = localStorage.getItem('crossblocks_cards_to_game');
+        if (stored) {
+          var data = JSON.parse(stored);
+          if (data && data.cards && data.cards.length > 0) {
+            console.log('Initial sync: ' + data.cards.length + ' cards from index.html');
+          }
+        }
+      } catch(e) {}
+    }, 500);
+    
+    return function() { 
+      window.removeEventListener('storage', onStorage); 
+      if (bc) bc.close(); 
+    };
   }, []);
 
   // Helper: write current army to localStorage for index.html
   const syncToIndex = () => {
     try {
-      const cards = [...a1, ...a2].map(u => ({
-        name: u.name || (UDEFS[u.type] || {}).n || "Unité",
-        faction: u.fac === "cl" ? "République" :
-                 u.fac === "sep" ? "Séparatistes" :
-                 u.fac === "reb" ? "Rebelles" :
-                 u.fac === "emp" ? "Empire" :
-                 u.fac === "mando" ? "Mandalorien" : "Neutre",
-        theme: "metal",
-        points: u.pts,
-        hp: u.mHp || 2,
-        armor: u.arm,
-        move: u.mm,
-        pa: u.mAct,
-        weapons: (u.ws || []).map(w => (WEAPS[w.key] || {}).n || w.key || "Arme"),
-      }));
-      localStorage.setItem("crossblocks_game_to_cards", JSON.stringify({
-        source: "game.html",
-        cards: cards,
-        ts: Date.now(),
-      }));
-      // Trigger storage event manually for same-tab sync
-      window.dispatchEvent(new StorageEvent("storage", {
-        key: "crossblocks_game_to_cards",
-        newValue: JSON.stringify({source:"game.html", cards}),
-      }));
-      aL("📤 " + cards.length + " unités envoyées vers index.html");
-    } catch(err) { aL("❌ Sync error: " + err.message); }
+      const cards = [...a1, ...a2].map(u => {
+        const ud = UDEFS[u.type] || {};
+        return {
+          name: ud.fullName || u.name || ud.n || 'Unité',
+          faction: u.fac === 'cl' ? 'République' :
+                   u.fac === 'sep' ? 'Séparatistes' :
+                   u.fac === 'reb' ? 'Rebelles' :
+                   u.fac === 'emp' ? 'Empire' :
+                   u.fac === 'mando' ? 'Mandalorien' :
+                   u.fac === 'res' ? 'Résistance' :
+                   u.fac === 'fo' ? 'Première Ordre' :
+                   u.fac === 'obs' ? 'Côté Obscur' :
+                   u.fac === 'hunt' ? 'Chasseur de primes' : 'Neutre',
+          theme: 'metal',
+          points: u.pts,
+          hp: u.mHp || u.hp || 2,
+          armor: u.arm,
+          move: u.mm,
+          pa: u.mAct,
+          weapons: (u.ws || []).map(w => (WEAPS[w.key] || {}).n || w.key || 'Arme'),
+        };
+      });
+      const data = { source: 'game.html', cards: cards, ts: Date.now() };
+      localStorage.setItem('crossblocks_game_to_cards', JSON.stringify(data));
+      // BroadcastChannel for instant sync
+      try {
+        const bc = new BroadcastChannel('crossblocks_sync');
+        bc.postMessage({ type: 'cards_update', data: data });
+        bc.close();
+      } catch(e) {}
+      aL('📤 ' + cards.length + ' unités envoyées vers index.html');
+    } catch(err) { aL('❌ Sync error: ' + err.message); }
   };
 
 
@@ -738,6 +996,8 @@ function CrossBlock(){
       const s=snapState();
       s.learn=learn;s.balArm=balArm;
       localStorage.setItem("crossblock_save",JSON.stringify(s));
+      // Auto-sync to index.html
+      try { syncToIndex(); } catch(e) {}
       aL("Partie sauvegardée !");
     }catch(e){aL("Erreur sauvegarde: "+e.message);}
   };

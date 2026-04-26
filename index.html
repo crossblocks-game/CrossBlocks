@@ -1993,93 +1993,119 @@ window.CB=(function(){
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
-// BIDIRECTIONAL SYNC: index.html ↔ game.html
+// BIDIRECTIONAL SYNC: index.html ↔ game.html (v2 - BroadcastChannel)
 // ═══════════════════════════════════════════════════════════════════════════
 (function() {
-  // Send current cards to game.html when they change
+  // BroadcastChannel for SAME-DOMAIN multi-tab sync (modern browsers)
+  var bc = null;
+  try {
+    bc = new BroadcastChannel('crossblocks_sync');
+  } catch(e) { console.warn('BroadcastChannel unavailable, fallback to storage events'); }
+
   function sendToGame() {
     try {
-      if (typeof cards === "undefined" || !Array.isArray(cards)) return;
-      const data = { source: "index.html", cards: cards, ts: Date.now() };
-      localStorage.setItem("crossblocks_cards_to_game", JSON.stringify(data));
-      // Trigger storage event manually for same-window
-      window.dispatchEvent(new StorageEvent("storage", {
-        key: "crossblocks_cards_to_game",
-        newValue: JSON.stringify(data),
-      }));
-    } catch(e) { console.warn("Sync to game fail:", e); }
+      if (typeof cards === 'undefined' || !Array.isArray(cards)) return;
+      var data = { source: 'index.html', cards: cards, ts: Date.now() };
+      var json = JSON.stringify(data);
+      // Write to localStorage (cross-tab)
+      localStorage.setItem('crossblocks_cards_to_game', json);
+      // BroadcastChannel (same-domain instant)
+      if (bc) bc.postMessage({ type: 'cards_update', data: data });
+      console.log('📤 Sync → game.html:', cards.length, 'cards');
+    } catch(e) { console.warn('Sync to game fail:', e); }
   }
-
-  // Listen for game.html updates
-  window.addEventListener("storage", function(e) {
-    if (e.key === "crossblocks_game_to_cards" && e.newValue) {
-      try {
-        const data = JSON.parse(e.newValue);
-        if (data && data.cards && Array.isArray(data.cards)) {
-          if (typeof cards !== "undefined") {
-            // Confirm before replacing
-            if (cards.length > 0) {
-              if (!confirm("game.html veut envoyer " + data.cards.length + " unités. Remplacer les fiches actuelles ?")) return;
-            }
-            window.cards = data.cards;
-            try { saveCards(); } catch(_) {}
-            try { displayCards(); } catch(_) {}
-            // Notify
-            const notif = document.createElement("div");
-            notif.style.cssText = "position:fixed;bottom:20px;right:20px;background:#0f2a15;border:1px solid #3fb950;border-radius:8px;padding:10px 14px;z-index:99999;font-size:12px;color:#3fb950;box-shadow:0 4px 20px #0008;font-weight:600";
-            notif.textContent = "📥 " + data.cards.length + " unités importées depuis game.html";
-            document.body.appendChild(notif);
-            setTimeout(function() { if (notif.parentElement) notif.remove(); }, 4000);
-          }
-        }
-      } catch(e) { console.warn("Sync from game fail:", e); }
+  
+  function receiveFromGame(data) {
+    if (!data || !data.cards || !Array.isArray(data.cards)) return;
+    if (typeof cards === 'undefined') return;
+    var newCards = data.cards;
+    // Merge mode: add new ones not present
+    var existing = new Set(cards.map(function(c) { return c.name; }));
+    var added = 0;
+    newCards.forEach(function(c) {
+      if (!existing.has(c.name)) {
+        cards.push(c);
+        added++;
+      }
+    });
+    if (added > 0) {
+      try { saveCards(); } catch(_) {}
+      try { displayCards(); } catch(_) {}
+      var notif = document.createElement('div');
+      notif.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#0f2a15;border:1px solid #3fb950;border-radius:8px;padding:10px 14px;z-index:99999;font-size:12px;color:#3fb950;box-shadow:0 4px 20px #0008;font-weight:600';
+      notif.textContent = '📥 ' + added + ' nouvelle(s) unité(s) depuis game.html';
+      document.body.appendChild(notif);
+      setTimeout(function() { if (notif.parentElement) notif.remove(); }, 4000);
+    }
+  }
+  
+  // Listen via BroadcastChannel
+  if (bc) {
+    bc.onmessage = function(e) {
+      if (e.data && e.data.type === 'cards_update' && e.data.data && e.data.data.source === 'game.html') {
+        receiveFromGame(e.data.data);
+      }
+    };
+  }
+  
+  // Listen via storage event (cross-tab fallback)
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'crossblocks_game_to_cards' && e.newValue) {
+      try { receiveFromGame(JSON.parse(e.newValue)); } catch(_) {}
     }
   });
-
-  // Patch addCard / saveCards to auto-sync
-  if (typeof window.saveCards === "function") {
-    const origSave = window.saveCards;
-    window.saveCards = function() {
-      const r = origSave.apply(this, arguments);
-      sendToGame();
-      return r;
-    };
-  } else {
-    // Try later
-    window.addEventListener("load", function() {
-      setTimeout(function() {
-        if (typeof window.saveCards === "function") {
-          const origSave = window.saveCards;
-          window.saveCards = function() {
-            const r = origSave.apply(this, arguments);
-            sendToGame();
-            return r;
-          };
-        }
-      }, 500);
-    });
+  
+  // Patch saveCards to auto-sync after every card change
+  function installSyncWrap() {
+    if (typeof window.saveCards === 'function' && !window.saveCards._wrapped) {
+      var orig = window.saveCards;
+      window.saveCards = function() {
+        var r = orig.apply(this, arguments);
+        sendToGame();
+        return r;
+      };
+      window.saveCards._wrapped = true;
+      console.log('✓ saveCards wrapped for sync');
+      return true;
+    }
+    return false;
   }
-
+  
+  // Try multiple times because saveCards may be defined later
+  if (!installSyncWrap()) {
+    var attempts = 0;
+    var iv = setInterval(function() {
+      if (installSyncWrap() || ++attempts > 20) clearInterval(iv);
+    }, 200);
+  }
+  
   // Add manual sync button
-  window.addEventListener("load", function() {
-    setTimeout(function() {
-      const toolbar = document.querySelector(".cards-actions");
-      if (toolbar && !document.getElementById("btn-game-sync")) {
-        const btn = document.createElement("button");
-        btn.id = "btn-game-sync";
-        btn.className = "btn";
-        btn.style.cssText = "background:none;border:1px solid #3fb950;color:#3fb950";
-        btn.title = "Envoyer cette armée vers game.html";
-        btn.innerHTML = "🎮 → Game";
-        btn.onclick = function() {
-          sendToGame();
-          btn.innerHTML = "✅ Envoyé !";
-          setTimeout(function() { btn.innerHTML = "🎮 → Game"; }, 2000);
-        };
-        toolbar.appendChild(btn);
-      }
-    }, 1000);
+  function addSyncButton() {
+    var toolbar = document.querySelector('.cards-actions, .toolbar, .actions-bar');
+    if (toolbar && !document.getElementById('btn-game-sync')) {
+      var btn = document.createElement('button');
+      btn.id = 'btn-game-sync';
+      btn.className = 'btn';
+      btn.style.cssText = 'background:none;border:1px solid #3fb950;color:#3fb950;cursor:pointer;padding:4px 10px;border-radius:4px;font-size:11px;margin-left:4px';
+      btn.title = 'Envoyer toute l\'armée vers game.html';
+      btn.innerHTML = '🎮 → Game';
+      btn.onclick = function() {
+        sendToGame();
+        btn.innerHTML = '✅ Envoyé !';
+        setTimeout(function() { btn.innerHTML = '🎮 → Game'; }, 2000);
+      };
+      toolbar.appendChild(btn);
+    }
+  }
+  
+  window.addEventListener('load', function() {
+    setTimeout(addSyncButton, 1000);
+    // Initial sync of any existing cards
+    setTimeout(sendToGame, 1500);
   });
+  
+  // Expose for debugging
+  window.__cbSync = { sendToGame: sendToGame, receiveFromGame: receiveFromGame };
 })();
 </script>
 </body>
