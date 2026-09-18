@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SEO: Title -->
+<title>CrossBlocks — Wargame tactique avec des LEGO | Éditeur de fiches d'unités gratuit</title>
+
+<!-- SEO: Meta description -->
+<meta name="description" content="CrossBlocks : le wargame tactique à base de LEGO. Créez vos fiches d'unités, simulez des batailles et exportez en PDF. Règles et communauté sur Discord !">
+
+<!-- SEO: Keywords -->
+<meta name="keywords" content="wargame LEGO, CrossBlocks jeu, créer fiches wargame, jeu stratégie LEGO, fiches unités LEGO, wargame figurines, jeu de guerre LEGO, simulateur bataille, wargame briques, tabletop game LEGO">
+
+<!-- SEO: Auteur et robots -->
+<meta name="author" content="CrossBlocks">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://crossblocks-game.github.io/CrossBlocks/">
+
+<!-- SEO: Open Graph (Facebook, Discord, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="CrossBlocks — Le wargame tactique LEGO">
+<meta property="og:description" content="Créez vos unités, simulez des batailles et affrontez vos amis avec vos LEGO. Règles complètes sur Discord. 100% gratuit.">
+<meta property="og:url" content="https://crossblocks-game.github.io/CrossBlocks/">
+<meta property="og:image" content="https://crossblocks-game.github.io/CrossBlocks/logo.svg">
+<meta property="og:site_name" content="CrossBlocks">
+<meta property="og:locale" content="fr_FR">
+
+<!-- SEO: Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CrossBlocks — Wargame tactique LEGO">
+<meta name="twitter:description" content="Le wargame gratuit à base de LEGO. Créez vos fiches, simulez des batailles, rejoignez la communauté Discord !">
+<meta name="twitter:image" content="https://crossblocks-game.github.io/CrossBlocks/logo.svg">
+
+<!-- SEO: Schema.org JSON-LD -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebApplication",
+ "name": "CrossBlocks",
+ "description": "Wargame tactique à base de LEGO — éditeur de fiches d'unités, simulateur de batailles et communauté en ligne",
+ "url": "https://crossblocks-game.github.io/CrossBlocks/",
+ "applicationCategory": "GameApplication",
+ "operatingSystem": "Web",
+ "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+ "inLanguage": "fr",
+ "genre": ["Wargame", "Strategy", "Tabletop"],
+ "image": "https://crossblocks-game.github.io/CrossBlocks/logo.svg"
+}
+</script>
+
+<!-- Favicon -->
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="themes.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="site-nav">
+ <a href="index.html" class="nav-title">CROSSBLOCKS</a>
+ <span class="nav-sep">|</span>
+ <a href="index.html" class="nav-active" data-i18n="nav.editor"> Éditeur de fiches d'unités</a>
+ <a href="game.html" data-i18n="nav.simulator"> Simulateur</a>
+ <a href="scan-figurine.html" data-i18n="nav.scan">📷 Scanner</a>
+ <a href="#" id="nav-admin-link" onclick="promptAdmin();return false;" style="display:none;color:#f0c040;font-weight:700" data-i18n="nav.admin"> Panneau Admin</a>
+ <div id="auth-box" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap">
+  <select id="lang-switch" onchange="setLang(this.value)" style="padding:2px 4px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px;cursor:pointer">
+   <option value="fr">🇫🇷 FR</option>
+   <option value="en">🇬🇧 EN</option>
+  </select>
+  <span id="sync-indicator" style="font-size:9px;color:#888;padding:2px 6px;border-radius:3px;background:#1a1a2e;border:1px solid #333" data-i18n-title="nav.sync_tooltip" title="Etat synchronisation JSONBin" data-i18n="nav.connecting">Connexion...</span> <button id="cb-manual-refresh" onclick="CB&&CB.refresh&&CB.refresh(function(){renderGallery&&renderGallery();})" title="Rafraîchir depuis le serveur" style="background:none;border:1px solid #30363d;border-radius:3px;padding:0 5px;cursor:pointer;color:#58a6ff;font-size:10px;vertical-align:middle">🔄</button>
+ 
+  <div id="auth-login" style="display:flex;gap:4px;align-items:center">
+   <input id="auth-user" placeholder="Login" data-i18n-placeholder="nav.login_placeholder" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
+   <input id="auth-pass" type="password" placeholder="Mot de passe" data-i18n-placeholder="nav.pass_placeholder" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px">
+   <button onclick="CB.login()" style="padding:2px 8px;border-radius:3px;border:none;background:#238636;color:#fff;cursor:pointer;font-size:10px" data-i18n="nav.login">Connexion</button>
+   <button onclick="CB.register()" style="padding:2px 8px;border-radius:3px;border:none;background:#1f6feb;color:#fff;cursor:pointer;font-size:10px" data-i18n="nav.register">Créer compte</button>
+  </div>
+  <div id="auth-logged" style="display:none;gap:6px;align-items:center">
+   <span id="auth-username" style="color:#f0c040;font-weight:700"></span>
+   <span id="auth-badge" style="font-size:9px;padding:1px 5px;border-radius:3px;display:none">ADMIN</span>
+   <button onclick="CB.logout()" style="padding:2px 8px;border-radius:3px;border:none;background:#6e1010;color:#fff;cursor:pointer;font-size:10px" data-i18n="nav.logout">Déconnexion</button>
+  </div>
+ </div>
+</nav>
+
+<!-- Bannière d'accueil (visiteurs non connectés) -->
+<div id="welcome-banner" style="display:none;background:linear-gradient(90deg,#1a3a5a,#2a5080);color:#fff;padding:10px 16px;border-bottom:2px solid #f0c040;position:relative">
+ <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  <span style="font-size:22px">👋</span>
+  <div style="flex:1;min-width:200px">
+   <strong style="color:#f0c040;font-size:14px" data-i18n="banner.welcome">Bienvenue sur CrossBlocks !</strong>
+   <div style="font-size:11px;opacity:0.9;margin-top:2px" data-i18n="banner.message">Créez un compte pour sauvegarder vos fiches d'unités, vos armes et partager vos créations avec la communauté.</div>
+  </div>
+  <button onclick="document.getElementById('auth-user').focus();document.getElementById('welcome-banner').style.display='none'" style="padding:6px 14px;border:none;border-radius:4px;background:#f0c040;color:#000;cursor:pointer;font-weight:700;font-size:12px" data-i18n="banner.cta">Créer un compte</button>
+  <button onclick="document.getElementById('welcome-banner').style.display='none';localStorage.setItem('cb_banner_dismissed','1')" title="Fermer" style="padding:4px 8px;border:none;border-radius:3px;background:transparent;color:#aaa;cursor:pointer;font-size:16px">×</button>
+ </div>
+</div>
+
+<!-- Responsive & Banner CSS -->
+<style>
+#welcome-banner button:hover{opacity:0.9}
+@media (max-width:900px){
+ .site-nav{flex-wrap:wrap;padding:6px 8px!important;gap:4px!important}
+ .site-nav a{font-size:11px!important;padding:3px 6px!important}
+ #auth-box{width:100%;justify-content:flex-start;margin-top:4px!important;order:10}
+ #auth-login,#auth-logged{flex-wrap:wrap}
+ #auth-user,#auth-pass{width:70px!important}
+ .site-title{font-size:28px!important}
+ .site-desc{font-size:13px!important}
+ .hero-features{grid-template-columns:1fr!important;gap:8px!important}
+ .hero-feature{padding:10px!important}
+ .editor-layout{grid-template-columns:1fr!important;gap:12px!important}
+ .form-row,.form-row-4{grid-template-columns:1fr 1fr!important;gap:6px!important}
+ .gallery-grid{grid-template-columns:repeat(2,1fr)!important;gap:6px!important}
+ .gallery-card{padding:6px!important;font-size:10px!important}
+ .cards-grid{grid-template-columns:repeat(2,1fr)!important}
+ .section-title{font-size:16px!important}
+ .admin-panel{width:95vw!important;max-width:95vw!important;max-height:92vh!important}
+ .admin-tabs{flex-wrap:wrap;gap:3px!important}
+ .btn-admtab{font-size:10px!important;padding:4px 6px!important}
+ .weapon-grid{grid-template-columns:1fr!important}
+ .card-preview,#card-preview{transform:scale(0.85);transform-origin:top center}
+ .cards-toolbar{flex-direction:column;align-items:flex-start!important;gap:6px!important}
+ .footer-links{flex-wrap:wrap;font-size:10px!important}
+}
+@media (max-width:500px){
+ .gallery-grid{grid-template-columns:1fr!important}
+ .form-row,.form-row-4{grid-template-columns:1fr!important}
+ .site-title{font-size:22px!important}
+ .hero-box{padding:10px!important}
+ .hero-text{font-size:12px!important}
+ #lang-switch{font-size:9px!important}
+ .form-actions{flex-direction:column;gap:4px!important}
+ .form-actions button{width:100%}
+}
+/* ── RÈGLES SPÉCIALES ADMIN ── */
+.sp-preset{display:inline-block;background:#21262d;border:1px solid #30363d;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;color:#f0c040;transition:.15s;user-select:none}
+.sp-preset:hover{background:#30363d;border-color:#f0c040}
+.sp-row{background:#161b22;border:1px solid #21262d;border-radius:5px;padding:6px 8px}
+.sp-row:hover{border-color:#30363d}
+.sp-row-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sp-name{color:#e6edf3;font-size:10px;font-weight:600;flex:1;min-width:120px}
+.sp-faction-tag{font-size:8px;border-radius:3px;padding:1px 5px;white-space:nowrap}
+.sp-current{color:#58a6ff;font-size:9px;font-style:italic;margin-top:3px;padding-left:2px}
+.sp-none{color:#8b949e;font-size:9px;font-style:italic;padding-left:2px}
+.sp-edit-btn{background:#21262d;border:1px solid #30363d;border-radius:3px;color:#8b949e;cursor:pointer;font-size:10px;padding:2px 8px;white-space:nowrap;transition:.15s}
+.sp-edit-btn:hover{color:#f0c040;border-color:#f0c040}
+.sp-edit-btn.active{color:#f0c040;border-color:#f0c040;background:#2d2a1a}
+.sp-edit-area{display:none;margin-top:6px;padding-top:6px;border-top:1px solid #21262d}
+.sp-edit-area textarea{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:4px;color:#e6edf3;padding:5px;font-size:10px;resize:vertical;min-height:40px;font-family:inherit;box-sizing:border-box}
+.sp-edit-area textarea:focus{border-color:#f0c040;outline:none}
+.sp-save-btn{background:#238636;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;padding:5px 10px}
+.sp-save-btn:hover{background:#2ea043}
+.sp-del-btn{background:#6e1010;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;padding:5px 8px}
+.cards-grid{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:8px!important}
+.card-wrapper{width:100%!important}
+
+/* Galerie d'ajout rapide en 1 seule colonne */
+.gallery-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 6px !important;
+}
+.gallery-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 10px !important;
+}
+.gallery-card .gc-name {
+  flex: 1;
+  text-align: left !important;
+}
+
+</style>
+
+<!-- Fond fixe -->
+<div class="fixed-bg"></div>
+<div class="overlay-dark"></div>
+
+<div class="main-content">
+
+ <!-- HEADER -->
+ <header class="site-header" itemscope itemtype="https://schema.org/WebApplication">
+ <img src="logo.svg" class="logo" alt="CrossBlocks — Wargame tactique LEGO" itemprop="image">
+ <h1 class="site-title" itemprop="name">CROSSBLOCKS</h1>
+ <p class="site-desc" itemprop="description" data-i18n="hero.tagline">Le <strong>wargame tactique à base de LEGO</strong> — 100% gratuit, 100% personnalisable.</p>
+
+ <div class="hero-box">
+ <p class="hero-text" data-i18n="hero.intro"><strong>CrossBlocks</strong> est un jeu de guerre sur table qui transforme vos LEGO en véritable champ de bataille. Construisez vos armées avec n'importe quelles minifigurines — inventez vos factions, créez vos propres unités avec des stats uniques (PV, armure, armes, actions) et imprimez vos fiches. Déployez vos troupes, lancez les dés au D20, et affrontez vos amis dans des combats tactiques intenses. Tout ce qu'il vous faut, c'est vos LEGO et un peu de stratégie.</p>
+
+ <div class="hero-features">
+ <div class="hero-feature">
+ <span class="hf-icon">🃏</span>
+ <div data-i18n="hero.feat1"><strong>Éditeur de fiches d'unités</strong><br>Créez et personnalisez vos fiches d'unités avec l'éditeur en ligne, puis exportez-les en PDF au format A4 prêt à imprimer.</div>
+ </div>
+ <div class="hero-feature">
+ <span class="hf-icon"></span>
+ <div data-i18n="hero.feat2"><strong>Système au D20</strong><br>Touche, sauvegarde, dégâts — tout se joue aux dés. Simple à apprendre, profond à maîtriser.</div>
+ </div>
+ <div class="hero-feature">
+ <span class="hf-icon"></span>
+ <div data-i18n="hero.feat3"><strong>Simulateur intégré</strong><br>Testez l'équilibre de vos armées avec le simulateur de batailles IA vs IA avant de jouer pour de vrai.</div>
+ </div>
+ </div>
+
+ <div class="hero-discord">
+ <svg class="discord-icon" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53.05s5-12.68 11.45-12.68S53.98 46.1 53.9 53.05c0 6.95-5.11 12.64-11.45 12.64Zm42.24 0C78.41 65.69 73.25 60 73.25 53.05s5-12.68 11.44-12.68S96.23 46.1 96.14 53.05c0 6.95-5.09 12.64-11.45 12.64Z"/></svg>
+ <div data-i18n="hero.discord_text">
+ <strong>Les règles complètes du jeu sont sur le Discord !</strong><br>
+ <span>Retrouvez le livret de règles, les guides pour débutants, les FAQ, les tournois et toute la communauté CrossBlocks. C'est là que tout se passe — venez proposer vos unités, discuter stratégie et organiser des parties.</span>
+ </div>
+ <a href="https://discord.gg/CMntzhndfs" target="_blank" class="btn btn-discord-big" rel="noopener" onclick="window.open(this.href,'_blank');return false;">
+ <svg width="20" height="16" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53.05s5-12.68 11.45-12.68S53.98 46.1 53.9 53.05c0 6.95-5.11 12.64-11.45 12.64Zm42.24 0C78.41 65.69 73.25 60 73.25 53.05s5-12.68 11.44-12.68S96.23 46.1 96.14 53.05c0 6.95-5.09 12.64-11.45 12.64Z"/></svg>
+ <span data-i18n="hero.discord_btn">Rejoindre le Discord</span>
+ </a>
+ </div>
+ </div>
+ </header>
+
+ <!-- ═══ ÉDITEUR ═══ -->
+ <section class="editor-section">
+ <h2 class="section-title" data-i18n="editor.title"> Éditeur de fiches d'unités</h2>
+
+ <div class="editor-layout">
+
+ <!-- FORMULAIRE -->
+ <div class="editor-form">
+
+ <div class="form-group">
+ <label for="ed-name" data-i18n="editor.name">Nom de l'unité</label>
+ <input id="ed-name" placeholder="Ex: Clone Phase 2" oninput="updatePreview()">
+ </div>
+
+ <div class="form-row">
+ <div class="form-group">
+ <label for="ed-faction" data-i18n="editor.faction">Faction</label>
+ <select id="ed-faction" onchange="updatePreview()"></select>
+ </div>
+ <div class="form-group">
+ <label for="ed-theme" data-i18n="editor.theme">Thème visuel</label>
+ <select id="ed-theme" onchange="updatePreview()"></select>
+ </div>
+ </div>
+
+ <div class="form-row form-row-4">
+ <div class="form-group">
+ <label data-i18n="editor.points"> Points</label>
+ <input id="ed-points" type="number" value="200" oninput="updatePreview()">
+ </div>
+ <div class="form-group">
+ <label data-i18n="editor.hp"> PV</label>
+ <input id="ed-hp" type="number" value="2" oninput="updatePreview()">
+ </div>
+ <div class="form-group">
+ <label data-i18n="editor.armor"> Armure</label>
+ <input id="ed-armor" type="number" value="15" oninput="updatePreview()">
+ </div>
+ <div class="form-group">
+ <label data-i18n="editor.move"> Mouvement</label>
+ <input id="ed-move" type="number" value="0" oninput="updatePreview()">
+ </div>
+ </div>
+
+ <div class="form-group">
+ <label data-i18n="editor.pa"> Points d'Action</label>
+ <input id="ed-pa" type="number" value="5" min="1" max="8" oninput="updatePreview()">
+ </div>
+
+ <!-- Sélecteur d'armes -->
+ <div class="form-group">
+ <label data-i18n="editor.weapons"> Armes (cochez pour ajouter)</label>
+ <div id="weapon-selector" class="weapon-grid"></div>
+ </div>
+
+ <div class="form-group">
+ <label data-i18n="editor.image"> Image / Icône de l'unité (optionnel)</label>
+ <div style="display:flex;gap:4px;margin-bottom:4px">
+   <button type="button" onclick="CB_switchImgTab('upload')" id="img-tab-upload" class="btn-imgtab active" style="padding:3px 10px;border:1px solid #555;background:#238636;color:#fff;font-size:10px;border-radius:3px;cursor:pointer">📁 Upload</button>
+   <button type="button" onclick="CB_switchImgTab('icons')" id="img-tab-icons" class="btn-imgtab" style="padding:3px 10px;border:1px solid #555;background:#222;color:#aaa;font-size:10px;border-radius:3px;cursor:pointer">🎨 Icônes</button>
+   <button type="button" onclick="CB_switchImgTab('crop')" id="img-tab-crop" style="padding:3px 10px;border:1px solid #555;background:#222;color:#aaa;font-size:10px;border-radius:3px;cursor:pointer;display:none">✂️ Recadrer</button>
+ </div>
+ <div id="img-panel-upload">
+   <input type="file" id="ed-image" accept="image/*" onchange="handleUnitImage(this)" style="font-size:10px">
+   <div id="ed-image-preview" style="margin-top:4px;max-width:120px"></div>
+ </div>
+ <div id="img-panel-icons" style="display:none;background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:6px;max-height:200px;overflow-y:auto">
+   <div style="font-size:10px;color:#8b949e;margin-bottom:4px">Cliquez une icône pour l'utiliser comme image</div>
+   <div id="icon-library-grid" style="display:flex;flex-wrap:wrap;gap:3px"></div>
+ </div>
+ <div id="img-panel-crop" style="display:none;background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:8px">
+   <div id="crop-container" style="position:relative;width:100%;max-width:280px;margin:0 auto;user-select:none">
+     <canvas id="crop-canvas" style="display:block;width:100%;border:1px solid #444;cursor:crosshair"></canvas>
+     <div id="crop-overlay" style="position:absolute;border:2px dashed #f0c040;box-sizing:border-box;cursor:move;pointer-events:none"></div>
+   </div>
+   <div style="display:flex;gap:4px;margin-top:6px;justify-content:center">
+     <button type="button" onclick="CB_applyCrop()" style="padding:4px 10px;background:#238636;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">✓ Appliquer</button>
+     <button type="button" onclick="CB_resetCrop()" style="padding:4px 10px;background:#6e1010;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">↺ Reset</button>
+   </div>
+ </div>
+ </div>
+
+ <div class="form-actions">
+ <button class="btn btn-add" onclick="addCard()" data-i18n="editor.add"> Ajouter fiche d'unité</button>
+ <button class="btn btn-suggest" onclick="submitUnitForValidation()" data-i18n="editor.submit"> Soumettre pour validation admin</button>
+ <button class="btn btn-calc" onclick="calcPrice()" data-i18n="editor.calc"> Calculer le prix</button>
+ <button type="button" onclick="CB_showPreviewBig()" style="padding:6px 14px;background:#1f6feb;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px">🔍 Voir en grand</button>
+ <button class="btn btn-secondary" onclick="clearForm()" data-i18n="editor.clear"> Vider le formulaire</button>
+ </div>
+ <div id="price-breakdown" class="price-breakdown" style="display:none"></div>
+ </div>
+
+ <!-- APERÇU EN DIRECT -->
+ <div class="preview-area">
+ <div class="preview-label" data-i18n="editor.preview">Aperçu en direct</div>
+ <div id="card-preview" class="card theme-metal">
+ <div class="card-header">
+ <span class="card-faction-badge">République</span>
+ <span class="card-points"> 200</span>
+ </div>
+ <h2 class="card-name">Nom de l'unité</h2>
+ <div class="card-stats">
+ <div class="card-stat"><span class="stat-icon"></span><span class="stat-val" id="pv-hp">2</span><span class="stat-label">PV</span></div>
+ <div class="card-stat"><span class="stat-icon"></span><span class="stat-val" id="pv-arm">15</span><span class="stat-label">Armure</span></div>
+ <div class="card-stat"><span class="stat-icon"></span><span class="stat-val" id="pv-move">+0</span><span class="stat-label">Mouv.</span></div>
+ <div class="card-stat"><span class="stat-icon"></span><span class="stat-val" id="pv-pa">5</span><span class="stat-label">PA</span></div>
+ </div>
+ <div id="pv-image" style="text-align:center;margin:4px 0"></div>
+ <div class="card-weapons" id="pv-weapons">
+ <div class="card-no-weapon" data-i18n="editor.no_weapon">Aucune arme sélectionnée</div>
+ </div>
+ <div class="card-footer">CROSSBLOCKS</div>
+ </div>
+ </div>
+
+ </div>
+ </section>
+
+ <!-- ═══ GALERIE D'UNITÉS ═══ -->
+ <section class="gallery-section">
+ <h2 class="section-title" data-i18n="gallery.title"> Galerie — Ajout rapide</h2>
+ <div class="gallery-tabs">
+ <button class="btn btn-tab active" onclick="switchGalleryTab('units',this)" data-i18n="gallery.tab_units"> Unités</button>
+ <button class="btn btn-tab" onclick="switchGalleryTab('vehicles',this)" data-i18n="gallery.tab_vehicles"> Véhicules</button>
+ </div>
+ <div class="gallery-filters" style="flex-wrap:wrap;gap:4px">
+ <button class="btn btn-filter active" onclick="filterGallery('all',this)" data-i18n="gallery.filter_all">Toutes</button>
+ <button class="btn btn-filter" onclick="filterGallery('République',this)">🔵 République</button>
+ <button class="btn btn-filter" onclick="filterGallery('Séparatistes',this)">🟤 Séparatistes</button>
+ <button class="btn btn-filter" onclick="filterGallery('Rebelles',this)">🔴 Rebelles</button>
+ <button class="btn btn-filter" onclick="filterGallery('Empire',this)">⚫ Empire</button>
+ <button class="btn btn-filter" onclick="filterGallery('Côté Obscur',this)">🟣 Côté Obscur</button>
+ <button class="btn btn-filter" onclick="filterGallery('Mandalorien',this)">🟡 Mandalorien</button>
+ <button class="btn btn-filter" onclick="filterGallery('Première Ordre',this)">🔴 1ère Ordre</button>
+ <button class="btn btn-filter" onclick="filterGallery('Résistance',this)">🔵 Résistance</button>
+ <button class="btn btn-filter" onclick="filterGallery('Chasseur de primes',this)">🟠 Chasseurs</button>
+ <button class="btn btn-filter" onclick="filterGallery('Neutre',this)">⬜ Neutre</button>
+ </div>
+ <!-- ── BARRE DE RECHERCHE ── -->
+ <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
+   <span style="color:var(--accent);font-size:13px">🔍</span>
+   <input id="gallery-search" type="text"
+     placeholder="Chercher par nom ou n° de set (ex: 75280, Rex, Kashyyyk…)"
+     oninput="gallerySearch(this.value)"
+     style="flex:1;background:var(--card);color:var(--text1);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;outline:none"/>
+   <button onclick="document.getElementById('gallery-search').value='';gallerySearch('');"
+     style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px" title="Effacer">✕</button>
+ </div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0;font-size:11px">
+  <label style="color:#8b949e" data-i18n="gallery.filter_creator">Créateur :</label>
+  <select id="gallery-creator-filter" onchange="CB_filterByCreator(this.value)" style="background:#1a1a2e;color:#e6edf3;border:1px solid #30363d;border-radius:3px;padding:2px 6px;font-size:10px">
+    <option value="all" data-i18n="gallery.all_creators">Tous les créateurs</option>
+    <option value="builtin" data-i18n="gallery.builtin">Intégrées</option>
+    <option value="mine" data-i18n="gallery.mine">Les miennes</option>
+  </select>
+  <label style="color:#8b949e;margin-left:8px" data-i18n="gallery.sort">Trier :</label>
+  <select id="gallery-sort" onchange="CB_sortGallery(this.value)" style="background:#1a1a2e;color:#e6edf3;border:1px solid #30363d;border-radius:3px;padding:2px 6px;font-size:10px">
+    <option value="default" data-i18n="gallery.sort_default">Par défaut</option>
+    <option value="likes" data-i18n="gallery.sort_likes">⭐ Popularité</option>
+    <option value="recent" data-i18n="gallery.sort_recent">Récents</option>
+    <option value="name" data-i18n="gallery.sort_name">Nom (A-Z)</option>
+    <option value="points" data-i18n="gallery.sort_points">Points</option>
+  </select>
+ </div>
+ <div id="gallery-grid" class="gallery-grid"></div>
+ </section>
+
+ <!-- ═══ FICHES D'UNITÉS GÉNÉRÉES ═══ -->
+ <section class="cards-section">
+ <div class="cards-toolbar">
+ <h2 class="section-title" data-i18n="cards.title">🃏 Fiches d'unités générées</h2>
+ <div class="cards-actions">
+ <span id="card-count" class="card-counter">0 fiche(s)</span>
+ <span id="army-total" class="army-total"></span>
+ <!-- F3: Budget limite -->
+ <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)">
+   🎯
+   <input id="army-budget" type="number" min="0" step="50" placeholder="Budget max" title="Budget maximum de l'armée"
+     oninput="checkBudget()"
+     style="width:90px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--text1);font-size:11px">
+   pts
+ </label>
+ <!-- F1: Mode escouade toggle -->
+ <button id="btn-squad" class="btn btn-squad" onclick="toggleSquad(this)" title="Regrouper les unités identiques">
+   ⊞ Escouade
+ </button>
+ <!-- F7: Impression -->
+ <button class="btn" onclick="printArmy()" title="Imprimer uniquement les fiches" style="background:none;border:1px solid var(--border)">
+   🖨 Imprimer
+ </button>
+ <button class="btn btn-export" onclick="exportPDF()" id="btn-export" disabled data-i18n="cards.export"> PDF</button>
+ <button class="btn btn-danger" onclick="clearAllCards()" id="btn-clear-all" style="display:none" data-i18n="cards.clear_all"> Tout supprimer</button>
+ <button class="btn" onclick="toggleArmiesPanel()" title="Historique des armées sauvegardées" style="background:none;border:1px solid var(--border)">📚</button>
+ <button class="btn" onclick="toggleCompare()" title="Comparer avec une autre armée" style="background:none;border:1px solid var(--border)">⚔</button>
+ <button class="btn" onclick="shareQR()" title="Partager via QR code" style="background:none;border:1px solid var(--border)">📱</button>
+ </div>
+ </div>
+ <div id="save-indicator" class="save-indicator" data-i18n="cards.autosave"> Sauvegarde auto activée</div>
+ <div id="cards-container" class="cards-grid">
+ <div class="cards-empty" data-i18n="cards.empty">Aucune fiche pour l'instant. Utilisez l'éditeur ou la galerie ci-dessus !</div>
+ </div>
+ </section>
+
+ <!-- ═══ F4: COMPARATEUR D'ARMÉES ═══ -->
+<div id="compare-panel" class="compare-panel" style="margin:0 0 16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <h3 style="color:var(--accent);font-size:13px;margin:0">⚔ Comparaison d'armées</h3>
+    <button onclick="document.getElementById('compare-panel').classList.remove('open')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">×</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+    <div style="flex:1;min-width:120px">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Armée 1 (fiches actuelles)</div>
+      <div id="cmp-a1-name" style="font-size:12px;color:var(--accent);font-weight:700">Armée en cours</div>
+    </div>
+    <div style="flex:1;min-width:120px">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Armée 2 (depuis l'historique)</div>
+      <select id="cmp-a2-select" onchange="loadCompareArmy(this.value)" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text1);padding:4px;border-radius:4px;font-size:11px">
+        <option value="">— Sélectionner une armée sauvegardée —</option>
+      </select>
+    </div>
+  </div>
+  <div id="compare-grid" class="compare-grid"></div>
+</div>
+
+<!-- ═══ F10: HISTORIQUE DES ARMÉES ═══ -->
+<div id="armies-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <h3 style="color:var(--accent);font-size:13px;margin:0">📚 Historique des armées</h3>
+    <button onclick="document.getElementById('armies-panel').style.display='none'" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">×</button>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+    <input id="army-save-name" type="text" placeholder="Nom de cette armée…" style="flex:1;min-width:120px;background:var(--card);border:1px solid var(--border);color:var(--text1);padding:5px 8px;border-radius:4px;font-size:11px">
+    <button class="btn" onclick="saveArmy()" style="background:var(--accent);color:#000;font-weight:700;border:none">💾 Sauver</button>
+  </div>
+  <div id="armies-list" class="armies-list"><p style="color:var(--text2);font-size:11px;text-align:center">Aucune armée sauvegardée</p></div>
+</div>
+
+<!-- ═══ F9: QR CODE MODAL ═══ -->
+<div id="qr-modal" class="qr-modal" style="display:none">
+  <div class="qr-box">
+    <h3>📱 QR Code — Partage armée</h3>
+    <div id="qr-canvas-wrap"></div>
+    <p id="qr-summary">Scannez pour importer cette liste d'armée</p>
+    <button onclick="document.getElementById('qr-modal').style.display='none'" style="margin-top:10px;padding:6px 18px;border:1px solid var(--border);background:none;color:var(--text1);border-radius:4px;cursor:pointer">Fermer</button>
+  </div>
+</div>
+
+<!-- ═══ ÉDITEUR DE FACTIONS ═══ -->
+ <section class="suggest-section" style="margin-top:16px">
+ <h2 class="section-title" data-i18n="faction.title"> Éditeur de factions</h2>
+ <p class="suggest-desc" data-i18n="faction.desc">Créez de nouvelles factions pour vos unités. Soumettez-les à l'admin pour les rendre disponibles à tous.</p>
+ <div class="suggest-form">
+ <div class="form-row">
+ <div class="form-group"><label data-i18n="faction.name">Nom de la faction</label><input id="fac-name" placeholder="Ex: Empire Galactique" data-i18n-placeholder="faction.name_ph"></div>
+ <div class="form-group"><label data-i18n="faction.color">Couleur</label><input id="fac-color" type="color" value="#888888" style="width:50px;height:30px;border:none;cursor:pointer"></div>
+ <div class="form-group"><label data-i18n="faction.abbr">Abréviation (2-4 car.)</label><input id="fac-abbr" placeholder="emp" maxlength="4" style="width:60px"></div>
+ </div>
+ <div class="form-actions" style="gap:8px">
+ <button class="btn btn-add" onclick="CB_createFaction()" data-i18n="faction.create"> Créer la faction</button>
+ <button class="btn btn-suggest" onclick="CB_submitFaction()" data-i18n="faction.submit"> Soumettre à l'admin</button>
+ </div>
+ </div>
+ <div id="custom-factions-list" style="margin-top:10px"></div>
+ </section>
+
+ <!-- ═══ ÉDITEUR D'ARMES ═══ -->
+ <section class="suggest-section">
+ <h2 class="section-title" data-i18n="weapon.title"> Éditeur d'armes</h2>
+ <p class="suggest-desc" data-i18n="weapon.desc">Créez vos armes personnalisées. Elles seront disponibles dans l'éditeur de fiches d'unités. Soumettez-les pour validation par l'admin.</p>
+
+ <div id="weapon-editor-form" class="suggest-form">
+ <div class="form-row"><div class="form-group"><label data-i18n="weapon.name">Nom complet</label><input id="sgw-name" placeholder="Ex: SW Canon laser (bleu)"></div>
+ <div class="form-group"><label data-i18n="weapon.diff"> Difficulté (d20)</label><input id="sgw-diff" type="number" value="15"></div></div>
+ <div class="form-row form-row-4">
+ <div class="form-group"><label data-i18n="weapon.mun"> Mun</label><input id="sgw-mun" type="number" value="3"></div>
+ <div class="form-group"><label data-i18n="weapon.pen"> Pén</label><input id="sgw-pen" type="number" value="5"></div>
+ <div class="form-group"><label data-i18n="weapon.dmg"> Dégâts</label><input id="sgw-dmg" type="number" value="1"></div>
+ <div class="form-group"><label data-i18n="weapon.once"> Usage unique</label><select id="sgw-once"><option value="0" data-i18n="common.no">Non</option><option value="1" data-i18n="common.yes">Oui</option></select></div>
+ </div>
+ <div class="form-row form-row-4">
+ <div class="form-group"><label data-i18n="weapon.melee">Mêlée (0=non)</label><input id="sgw-mel" type="number" value="0"></div>
+ <div class="form-group"><label data-i18n="weapon.cat1">Cat.1 (0=non)</label><input id="sgw-cat1" type="number" value="15"></div>
+ <div class="form-group"><label data-i18n="weapon.cat2">Cat.2 (0=non)</label><input id="sgw-cat2" type="number" value="0"></div>
+ <div class="form-group"><label data-i18n="weapon.catp">Cat.P (0=non)</label><input id="sgw-catp" type="number" value="0"></div>
+ </div>
+ <div class="form-group"><label data-i18n="weapon.notes"> Notes</label><input id="sgw-notes" placeholder="Ex: Monté sur véhicule, anti-blindage..."></div>
+ <div class="form-actions" style="gap:8px">
+ <button class="btn btn-add" onclick="createCustomWeapon()" data-i18n="weapon.create"> Créer l'arme</button>
+ <button class="btn btn-suggest" onclick="submitWeaponForValidation()" data-i18n="weapon.submit"> Soumettre arme à l'admin</button>
+ </div>
+ </div>
+
+ <!-- Liste des armes créées -->
+ <div id="custom-weapons-list" style="margin-top:12px"></div>
+ <div id="suggest-count" class="suggest-count"></div>
+ <div id="suggest-remote-status" style="font-size:10px;margin-top:4px"></div>
+ </section>
+
+ <!-- SEO: Contenu texte riche pour Google -->
+ <section class="seo-section">
+ <h2 class="section-title" data-i18n="seo.title"> Qu'est-ce que CrossBlocks ?</h2>
+ <p data-i18n="seo.p1">CrossBlocks est un <strong>wargame tactique à base de LEGO</strong>. 
+ Créez vos propres <strong>fiches d'unités</strong> avec des statistiques personnalisées 
+ (points de vie, armure, armes, points d'action), simulez des <strong>batailles stratégiques</strong> 
+ et imprimez vos fiches au format A4. Utilisez vos minifigurines LEGO comme unités de combat !</p>
+ <p data-i18n="seo.p2">L'éditeur en ligne est <strong>100% gratuit</strong> — pas d'inscription, pas de téléchargement. 
+ Que vous jouiez avec des <strong>minifigures LEGO</strong>, des figurines peintes ou du papier, 
+ CrossBlocks s'adapte à votre style de jeu. Les <strong>règles complètes du jeu</strong> sont disponibles 
+ sur notre <a href="https://discord.gg/CMntzhndfs" target="_blank" rel="noopener" style="color:#5865F2;font-weight:700">serveur Discord</a>.</p>
+ <details class="seo-details">
+ <summary data-i18n="seo.howto_title"> Comment jouer ?</summary>
+ <ol data-i18n="seo.howto_list">
+ <li><strong>Rejoignez le Discord</strong> — lisez les règles complètes et posez vos questions à la communauté</li>
+ <li><strong>Créez vos unités</strong> — utilisez l'éditeur ci-dessus pour définir les caractéristiques de chaque figurine</li>
+ <li><strong>Imprimez vos fiches</strong> — exportez en PDF A4 pour avoir vos fiches pendant la partie</li>
+ <li><strong>Composez votre armée</strong> — choisissez vos unités avec un budget en points</li>
+ <li><strong>Jouez !</strong> — déployez vos LEGO sur un plateau et affrontez vos amis</li>
+ </ol>
+ </details>
+ <details class="seo-details">
+ <summary data-i18n="seo.factions_title"> Factions disponibles</summary>
+ <p data-i18n="seo.factions_text"><strong>République</strong> (Clones Phase 2, Snipers, Commandants, Airborne, véhicules), 
+ <strong>Séparatistes</strong> (Droïdes B1, B2, Tri-Droïde, STAP), 
+ <strong>Rebelles</strong> (Rebelles, Gardes, Jetpacks), 
+ <strong>Empire</strong>, et plus encore ! Proposez vos propres unités via la communauté.</p>
+ </details>
+ </section>
+
+ <!-- FOOTER -->
+ <footer class="site-footer">
+ <nav class="footer-links">
+ <a href="index.html" data-i18n="footer.editor">Éditeur de fiches d'unités</a> ·
+ <a href="game.html" data-i18n="footer.sim">Simulateur de batailles</a> ·
+ <a href="https://discord.gg/CMntzhndfs" target="_blank" rel="noopener" style="color:#5865F2;display:inline-flex;align-items:center;gap:4px"><svg width="14" height="11" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53.05s5-12.68 11.45-12.68S53.98 46.1 53.9 53.05c0 6.95-5.11 12.64-11.45 12.64Zm42.24 0C78.41 65.69 73.25 60 73.25 53.05s5-12.68 11.44-12.68S96.23 46.1 96.14 53.05c0 6.95-5.09 12.64-11.45 12.64Z"/></svg> Discord</a>
+ </nav>
+ <span data-i18n="footer.copyright">CrossBlocks © 2025 — Wargame tactique LEGO gratuit</span>
+ </footer>
+
+ <!-- ═══ Preview en grand (modal) ═══ -->
+ <div id="bigPreviewModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box">
+  <div style="position:relative;max-width:600px;width:100%;max-height:90vh;overflow:auto">
+   <button onclick="document.getElementById('bigPreviewModal').style.display='none'" style="position:absolute;top:-8px;right:-8px;background:#6e1010;color:#fff;border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;z-index:2">×</button>
+   <div id="bigPreviewContent" style="background:#fff;padding:20px;border-radius:8px;transform-origin:top center"></div>
+  </div>
+ </div>
+
+ <!-- ═══ Panneau Admin ═══ -->
+ <div id="adminPanel" class="admin-overlay" style="display:none">
+ <div class="admin-panel">
+ <div class="admin-header">
+ <h2 data-i18n="admin.title"> Panneau Admin</h2>
+ <button class="btn-close" onclick="closeAdmin()"></button>
+ </div>
+ <div class="admin-tabs">
+ <button class="btn btn-admtab active" onclick="switchAdminTab('config',this)" data-i18n="admin.config"> Config</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('pending',this)" data-i18n="admin.proposals"> Propositions</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('creations',this)" data-i18n="admin.creations"> Créations</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('users',this)" data-i18n="admin.users"> Utilisateurs</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('sync',this)" data-i18n="admin.sync"> Import/Export</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('history',this)" data-i18n="admin.history">📜 Historique</button>
+<button class="btn btn-admtab" onclick="switchAdminTab('specials',this)">⚡ Règles spéciales</button>
+ <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)" data-i18n="admin.balance"> Balance</button>
+ </div>
+ <div class="admin-body" id="admin-config">
+ <h3 data-i18n="admin.themes_title">Thèmes disponibles</h3>
+ <div id="adminThemes"></div>
+ <h3 data-i18n="admin.weapons_title">Armes et statistiques</h3>
+ <div id="adminWeapons"></div>
+ </div>
+ <div class="admin-body" id="admin-pending" style="display:none">
+ <h3> Propositions en attente</h3>
+ <div id="remote-sync-box" style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:10px;margin-bottom:12px">
+ <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+ <span style="font-size:12px;font-weight:700;color:var(--accent)"> Synchronisation distante</span>
+ <span id="sync-status" style="font-size:10px"></span>
+ </div>
+ <p style="font-size:10px;color:var(--text2);margin-bottom:8px">Permet de recevoir et valider les propositions faites depuis n'importe quel appareil.</p>
+ <div id="sync-controls"></div>
+ </div>
+ <p class="admin-desc">Les joueurs peuvent proposer de nouvelles unités et armes. Approuvez-les pour les ajouter à la galerie.</p>
+ <div id="pending-list-area"></div>
+ </div>
+ <div class="admin-body" id="admin-creations" style="display:none">
+ <h3> Créations par utilisateur</h3>
+ <p class="admin-desc">Vue des unités et armes créées localement par chaque utilisateur. Ces créations sont visibles uniquement par leur auteur et l'admin.</p>
+ <div style="margin-bottom:12px">
+ <h4 style="color:var(--accent);font-size:12px;margin:8px 0 4px">Unités créées (galerie personnalisée)</h4>
+ <div id="admin-custom-units"></div>
+ </div>
+ <div>
+ <h4 style="color:var(--accent);font-size:12px;margin:8px 0 4px">Armes créées</h4>
+ <div id="admin-custom-weapons"></div>
+ </div>
+ </div>
+ <div class="admin-body" id="admin-users" style="display:none">
+ <h3> Gestion des utilisateurs</h3>
+ <div id="admin-users-list"></div>
+ </div>
+ <div class="admin-body" id="admin-sync" style="display:none">
+ <h3> Transfert de données entre ordinateurs</h3>
+ <p class="admin-desc" style="background:#1a0a0a;border:1px solid #6e1010;border-radius:4px;padding:8px;margin-bottom:8px;font-size:10px"><strong style="color:#f85149">Pourquoi pas de sauvegarde directe sur GitHub ?</strong> GitHub Pages est un hébergement <b>statique en lecture seule</b> — les visiteurs ne peuvent pas écrire de fichiers sur le serveur. Pour un stockage en ligne partagé, il faudrait un serveur backend (Firebase, Supabase, etc.). En attendant, utilisez <b>Export/Import JSON</b> pour transférer les données entre ordinateurs.</p>
+ <p class="admin-desc"><b>Workflow :</b> Sur le PC où les utilisateurs créent → l'admin exporte le JSON. Sur un autre PC → l'admin importe le JSON. Les données sont fusionnées automatiquement (pas d'écrasement).</p>
+ <div style="display:flex;gap:8px;margin:10px 0">
+ <button class="btn btn-add" onclick="CB_exportAll()"> Exporter tout (JSON)</button>
+ <button class="btn btn-suggest" onclick="document.getElementById('import-file').click()"> Importer (JSON)</button>
+ <input type="file" id="import-file" accept=".json" style="display:none" onchange="CB_importAll(this)">
+ </div>
+ <div id="sync-status-msg" style="font-size:10px;color:var(--text2)"></div>
+ </div>
+ <div class="admin-body" id="admin-history" style="display:none">
+ <h3 data-i18n="admin.history_title">📜 Historique des actions</h3>
+ <p class="admin-desc" style="font-size:10px">Les 500 dernières actions effectuées sur le site (création, soumission, validation, rejet, like, commentaire, suppression).</p>
+ <div style="display:flex;gap:6px;margin:8px 0">
+  <select id="history-filter-type" onchange="renderAH()" style="background:#1a1a2e;color:#e6edf3;border:1px solid #30363d;border-radius:3px;padding:2px 6px;font-size:10px">
+    <option value="all">Toutes actions</option>
+    <option value="create">Créations</option>
+    <option value="submit">Soumissions</option>
+    <option value="validate">Validations</option>
+    <option value="reject">Rejets</option>
+    <option value="delete">Suppressions</option>
+    <option value="like">Likes</option>
+    <option value="comment">Commentaires</option>
+  </select>
+  <button onclick="CB_clearHistory()" style="padding:3px 10px;background:#6e1010;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">Vider l'historique</button>
+ </div>
+ <div id="admin-history-list" style="max-height:400px;overflow-y:auto"></div>
+ </div>
+ <div class="admin-body" id="admin-specials" style="display:none">
+  <h3 style="color:var(--accent);font-size:13px;margin:0 0 8px">⚡ Règles Spéciales — Attribution par figurine</h3>
+  <p style="color:var(--text2);font-size:10px;margin:0 0 10px">
+    Assignez ou modifiez les règles spéciales de chaque unité. Elles s'afficheront sur les cartes galerie.<br>
+    Les règles officielles sont celles du livre de règles Crossblocks.
+  </p>
+  <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px;margin-bottom:10px">
+    <div style="color:#f0c040;font-size:11px;font-weight:700;margin-bottom:6px">📖 Règles officielles Crossblocks — clic = copier dans le champ édité</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">
+      <span class="sp-preset" onclick="CB_insertPreset('Jet-pack','Au premier tour, vous pouvez placer cette unité n\'importe où sur le plateau à plus de 2 M.M. d\'une unité ennemie.')">🚀 Jet-pack</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Largage','Déploiement : vous pouvez placer cette unité n\'importe où sur le plateau à plus de 2 segments d\'une unité ennemie.')">✈ Largage</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Vol','En vol, vous ignorez tous les décors sur votre route. Les règles de déplacement normales s\'appliquent.')">🦅 Vol</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Kit de soin','Dépensez 3 actions pour soigner 1 PV au porteur ou à une figurine à moins d\'un segment (1×/tour).')">💉 Kit de soin</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Poste de canonnier','Peut utiliser deux armes appartenant à un ou plusieurs passagers du véhicule.')">🎯 Canonnier</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Arme non récupérable','Cette arme ne peut pas être ramassée si elle tombe au sol — trop lourde ou intégrée à la figurine.')">🔒 Non récup.</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Corps à corps spécialisé','Cette figurine peut attaquer en corps-à-corps avec cette arme sans malus. Ignoré au tir.')">⚔ Mêlée spé.</span>
+      <span class="sp-preset" onclick="CB_insertPreset('Immunisé peur','Cette unité est immunisée aux effets de peur et de moral.')">🛡 Immunisé peur</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+    <input id="sp-search" type="text" placeholder="Filtrer par nom ou n° de set…"
+      oninput="renderSP()"
+      style="flex:1;min-width:150px;background:#161b22;border:1px solid #30363d;border-radius:5px;color:#e6edf3;padding:5px 8px;font-size:11px"/>
+    <select id="sp-faction" onchange="renderSP()"
+      style="background:#161b22;border:1px solid #30363d;border-radius:5px;color:#e6edf3;padding:5px;font-size:10px">
+      <option value="">Toutes factions</option>
+      <option>République</option><option>Séparatistes</option><option>Rebelles</option>
+      <option>Empire</option><option>Côté Obscur</option><option>Mandalorien</option>
+      <option>Première Ordre</option><option>Résistance</option><option>Chasseur de primes</option><option>Neutre</option>
+    </select>
+    <span style="color:#8b949e;font-size:10px;align-self:center" id="sp-count"></span>
+  </div>
+  <div id="sp-list" style="max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:3px"></div>
+</div>
+
+<div class="admin-body" id="admin-balance" style="display:none">
+ <h3>Rééquilibrage — Simulation Monte Carlo</h3>
+ <p class="admin-desc">Système intelligent : chaque unité est testée en combat simulé (150 batailles) contre des Clones Phase 2 à budget égal. Le prix est ajusté pour que le taux de victoire soit ~50%. Max ±30% de changement par unité.</p>
+ <h4 style="margin-top:12px;color:var(--accent);font-size:12px">Unités</h4>
+ <div id="balance-table"></div>
+ <h4 style="margin-top:14px;color:var(--accent);font-size:12px">Véhicules</h4>
+ <div id="balance-table-vehicles"></div>
+ <div class="balance-legend">
+ <span class="bl-good">= Équilibré</span>
+ <span class="bl-op">▼ Sur-coté (réduire)</span>
+ <span class="bl-weak">▲ Sous-coté (augmenter)</span>
+ </div>
+ </div>
+ </div>
+ </div>
+
+</div>
+
+
+
+<script>
+// ═══ I18N SYSTEM (FR/EN) ═══
+window.I18N=(function(){
+  var translations={};
+  var currentLang=localStorage.getItem('cb_lang')||'fr';
+  var originalTexts={}; // cache original FR texts as fallback
+
+  function loadTranslations(cb){
+    fetch('translations.json')
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(function(data){translations=data;applyLang(currentLang);if(cb)cb();})
+      .catch(function(err){console.warn('translations.json not loaded:',err.message);if(cb)cb();});
+  }
+
+  function t(key){
+    if(translations[currentLang]&&translations[currentLang][key])return translations[currentLang][key];
+    if(translations.fr&&translations.fr[key])return translations.fr[key];
+    return key;
+  }
+
+  function applyLang(lang){
+    currentLang=lang;
+    localStorage.setItem('cb_lang',lang);
+    document.documentElement.lang=lang;
+    var sel=document.getElementById('lang-switch');if(sel)sel.value=lang;
+    if(!translations[lang])return;
+    // Apply to elements with data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var key=el.getAttribute('data-i18n');
+      var val=t(key);
+      if(val&&val!==key){
+        if(val.indexOf('<')>=0)el.innerHTML=val;
+        else el.textContent=val;
+      }
+    });
+    // Placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+      var key=el.getAttribute('data-i18n-placeholder');var val=t(key);
+      if(val&&val!==key)el.setAttribute('placeholder',val);
+    });
+    // Titles (tooltips)
+    document.querySelectorAll('[data-i18n-title]').forEach(function(el){
+      var key=el.getAttribute('data-i18n-title');var val=t(key);
+      if(val&&val!==key)el.setAttribute('title',val);
+    });
+  }
+
+  window.setLang=function(lang){applyLang(lang);};
+  window.t=t;
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){loadTranslations();});
+  else loadTranslations();
+
+  return{t:t,setLang:applyLang,getLang:function(){return currentLang;},load:loadTranslations};
+})();
+</script>
+
+
+<script>
+// ═══ AUTH SYSTEM WITH JSONBIN.IO SYNC + SHA-256 + VERSIONING ═══
+window.CB=(function(){
+  function _t(k,f){return(typeof t==='function'?t(k):null)||f;}
+  // ─── JSONBin config (Access Key restricted to this bin only) ───
+  var BIN_ID='69d5251036566621a889f31c';
+  var ACCESS_KEY='$2a$10$74Cd9Zz3V7836e.FaYcJK.ngSI/o6TQ87C8EzBy6mtrxCF0nZOeQC';
+  var BIN_URL='https://api.jsonbin.io/v3/b/'+BIN_ID;
+
+  // ─── SHA-256 password hashing ───
+  async function hashPassword(pwd){
+    try{
+      var enc=new TextEncoder().encode(pwd);
+      var hash=await crypto.subtle.digest('SHA-256',enc);
+      return Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+    }catch(e){console.error('hash error',e);return 'plain:'+pwd;}
+  }
+  function isHashed(p){return typeof p==='string'&&p.length===64&&/^[a-f0-9]+$/.test(p);}
+
+  // ─── Local cache (updated from remote) ───
+  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{},likes:{},comments:{},history:[],specialRules:{},version:0};
+  var remoteReady=false;
+  var syncStatus='En attente...';
+  var pushPending=false;
+
+  function setStatus(msg){
+    syncStatus=msg;
+    var el=document.getElementById('sync-indicator');
+    if(el)el.textContent=msg;
+  }
+
+  // Fetch from JSONBin
+  function fetchRemote(cb){
+    setStatus('Chargement distant...');
+    fetch(BIN_URL+'/latest',{headers:{'X-Access-Key':ACCESS_KEY,'X-Bin-Meta':'false'}})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(function(data){
+        cache=data||cache;
+        if(!cache.accounts)cache.accounts={};
+        if(!cache.allusers)cache.allusers=[];
+        if(!cache.validated)cache.validated={units:[],weapons:[],factions:[]};
+        if(!cache.submissions)cache.submissions=[];
+        if(!cache.userData)cache.userData={};
+        if(!cache.likes)cache.likes={};
+        if(!cache.comments)cache.comments={};
+        if(!cache.specialRules)cache.specialRules={};
+        if(!cache.history)cache.history=[];
+        if(typeof cache.version!=='number')cache.version=0;
+        remoteReady=true;
+        setStatus('Sync OK v'+cache.version+' ('+new Date().toLocaleTimeString()+')');
+        _lastSyncVersion = cache.version || 0;
+        startPolling(); // démarre le polling auto toutes les 45s
+        if(cb)cb();
+      })
+      .catch(function(err){
+        console.error('JSONBin fetch error:',err);
+        setStatus('ERREUR: '+err.message+' (mode local)');
+        remoteReady=false;
+        try{var local=localStorage.getItem('cb_cache');if(local)cache=JSON.parse(local);}catch(e){}
+        if(cb)cb();
+      });
+  }
+
+  // Merge two cache objects (for conflict resolution)
+  function mergeData(local,remote){
+    var merged={
+      accounts:{},
+      allusers:[],
+      validated:{units:[],weapons:[],factions:[]},
+      submissions:[],
+      userData:{},
+      version:Math.max(local.version||0,remote.version||0)
+    };
+    // Accounts: union (remote wins on conflict)
+    for(var k in local.accounts)merged.accounts[k]=local.accounts[k];
+    for(var k2 in remote.accounts)merged.accounts[k2]=remote.accounts[k2];
+    // Users list: union
+    var us={};(local.allusers||[]).forEach(function(u){us[u]=1;});(remote.allusers||[]).forEach(function(u){us[u]=1;});
+    merged.allusers=Object.keys(us);
+    // Validated: union by name
+    ['units','weapons','factions'].forEach(function(t){
+      var seen={};
+      ((local.validated||{})[t]||[]).forEach(function(it){var k=it.name||it.n;if(!seen[k]){seen[k]=1;merged.validated[t].push(it);}});
+      ((remote.validated||{})[t]||[]).forEach(function(it){var k=it.name||it.n;if(!seen[k]){seen[k]=1;merged.validated[t].push(it);}});
+    });
+    // Submissions: concat (append all from both)
+    var subSeen={};
+    (local.submissions||[]).forEach(function(s){var k=s.user+'|'+s.type+'|'+(s.data.name||s.data.n)+'|'+s.date;if(!subSeen[k]){subSeen[k]=1;merged.submissions.push(s);}});
+    (remote.submissions||[]).forEach(function(s){var k=s.user+'|'+s.type+'|'+(s.data.name||s.data.n)+'|'+s.date;if(!subSeen[k]){subSeen[k]=1;merged.submissions.push(s);}});
+    // UserData: union by login, inner union by name
+    var allLogins={};for(var l in(local.userData||{}))allLogins[l]=1;for(var l2 in(remote.userData||{}))allLogins[l2]=1;
+    for(var login in allLogins){
+      var lu=(local.userData||{})[login]||{};
+      var ru=(remote.userData||{})[login]||{};
+      var ud={units:[],weapons:[],factions:[],submitted:lu.submitted||ru.submitted||{units:[],weapons:[],factions:[]}};
+      ['units','weapons','factions'].forEach(function(t){
+        var s={};
+        (lu[t]||[]).forEach(function(it){var k=it.name||it.n;if(!s[k]){s[k]=1;ud[t].push(it);}});
+        (ru[t]||[]).forEach(function(it){var k=it.name||it.n;if(!s[k]){s[k]=1;ud[t].push(it);}});
+      });
+      merged.userData[login]=ud;
+    }
+    return merged;
+  }
+
+  // Push to JSONBin with version check (anti-overwrite)
+  var pushTimer=null;
+  function pushRemote(){
+    if(pushTimer)clearTimeout(pushTimer);
+    pushTimer=setTimeout(function(){
+      if(pushPending)return;
+      pushPending=true;
+      setStatus('Verification...');
+      try{localStorage.setItem('cb_cache',JSON.stringify(cache));}catch(e){}
+      // Fetch latest first to detect concurrent changes
+      fetch(BIN_URL+'/latest',{headers:{'X-Access-Key':ACCESS_KEY,'X-Bin-Meta':'false'}})
+        .then(function(r){return r.json();})
+        .then(function(remote){
+          var remoteVer=(remote&&typeof remote.version==='number')?remote.version:0;
+          var localVer=cache.version||0;
+          if(remoteVer>localVer){
+            setStatus('Conflit, fusion...');
+            cache=mergeData(cache,remote);
+          }
+          cache.version=Math.max(remoteVer,localVer)+1;
+          return fetch(BIN_URL,{
+            method:'PUT',
+            headers:{'Content-Type':'application/json','X-Access-Key':ACCESS_KEY},
+            body:JSON.stringify(cache)
+          });
+        })
+        .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+        .then(function(){
+          setStatus('Sauvegarde OK v'+cache.version+' ('+new Date().toLocaleTimeString()+')');
+          pushPending=false;
+        })
+        .catch(function(err){
+          console.error('Push error:',err);
+          setStatus('Erreur: '+err.message);
+          pushPending=false;
+        });
+    },500);
+  }
+
+  // ─── Auto-polling : sync commentaires/likes depuis le serveur ──────────────
+  var _pollTimer = null;
+  var _lastSyncVersion = 0;
+  var _newNotifShown = false;
+
+  function startPolling() {
+    if (_pollTimer) clearInterval(_pollTimer);
+    _pollTimer = setInterval(function() {
+      // Ne pas polluer si un push est en cours
+      if (pushPending) return;
+      fetch(BIN_URL + '/latest', {headers: {'X-Access-Key': ACCESS_KEY, 'X-Bin-Meta': 'false'}})
+        .then(function(r) { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(remote) {
+          if (!remote || typeof remote.version !== 'number') return;
+          var remoteVer = remote.version;
+          if (remoteVer > (cache.version || 0)) {
+            // Merge only likes and comments to avoid overwriting local edits
+            var prevLikes = JSON.stringify(cache.likes || {});
+            var prevComments = JSON.stringify(cache.comments || {});
+            cache = mergeData(cache, remote);
+            try { localStorage.setItem('cb_cache', JSON.stringify(cache)); } catch(e) {}
+            setStatus('Sync v' + cache.version + ' (' + new Date().toLocaleTimeString() + ')');
+            // Detect new likes/comments
+            var newLikes = JSON.stringify(cache.likes || {});
+            var newComments = JSON.stringify(cache.comments || {});
+            var changed = (prevLikes !== newLikes || prevComments !== newComments);
+            if (changed) {
+              _showSyncBadge();
+              // Refresh gallery cards counters live
+              _refreshCounters();
+            }
+          }
+        })
+        .catch(function(err) {
+          // Silently ignore poll errors (network may be offline)
+          console.warn('Poll error:', err.message);
+        });
+    }, 45000); // toutes les 45 secondes
+  }
+
+  function _refreshCounters() {
+    // Met à jour les compteurs ⭐ et 💬 sur toutes les cartes visibles sans rerender
+    var cards = document.querySelectorAll('#gallery-grid .gallery-card');
+    var likes = cache.likes || {};
+    var comments = cache.comments || {};
+    var curUser = cur ? cur.login : null;
+    cards.forEach(function(card) {
+      var uname = card.dataset.uname;
+      if (!uname) return;
+      var likeArr = likes[uname] || [];
+      var commentArr = comments[uname] || [];
+      // Update like count
+      var likeSpan = card.querySelector('.like-count');
+      if (likeSpan) likeSpan.textContent = likeArr.length;
+      // Update like button color
+      var likeBtn = card.querySelector('.like-count') ? card.querySelector('.like-count').parentNode : null;
+      if (likeBtn) {
+        var myLike = curUser && likeArr.indexOf(curUser) >= 0;
+        likeBtn.style.borderColor = myLike ? '#f0c040' : '#555';
+        likeBtn.style.color = myLike ? '#f0c040' : '#8b949e';
+      }
+      // Update comment count
+      var commentSpan = card.querySelector('.comment-count');
+      if (commentSpan) commentSpan.textContent = commentArr.length;
+    });
+  }
+
+  function _showSyncBadge() {
+    var badge = document.getElementById('sync-new-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = 'sync-new-badge';
+      badge.textContent = '● Nouveau';
+      badge.style.cssText = 'background:#238636;color:#fff;font-size:9px;border-radius:4px;padding:1px 5px;margin-left:6px;animation:syncPulse 1s ease-in-out 3';
+      var indicator = document.getElementById('sync-indicator');
+      if (indicator && indicator.parentNode) indicator.parentNode.appendChild(badge);
+    }
+    badge.style.display = 'inline';
+    // Auto-hide after 8s
+    clearTimeout(badge._hideTimer);
+    badge._hideTimer = setTimeout(function() { badge.style.display = 'none'; }, 8000);
+  }
+
+  // ─── Data accessors (cache-based, auto-push) ───
+  function getAccounts(){var a={};for(var k in cache.accounts)a[k]=cache.accounts[k];a['admin']={pass:'crossblocks123',isAdmin:true,plain:true};return a;}
+  function saveAccounts(a){var c={};for(var k in a)if(k!=='admin')c[k]=a[k];cache.accounts=c;pushRemote();}
+  function getUserData(login){return cache.userData[login]||{units:[],weapons:[],factions:[],submitted:{units:[],weapons:[],factions:[]}};}
+  function saveUserData(login,d){cache.userData[login]=d;pushRemote();}
+  function getValidated(){return cache.validated||{units:[],weapons:[],factions:[]};}
+  function saveValidated(v){cache.validated=v;pushRemote();}
+  function getSubmissions(){return cache.submissions||[];}
+  function saveSubmissions(s){cache.submissions=s;pushRemote();}
+  function getAllUsers(){return cache.allusers||[];}
+  function addToAllUsers(l){var u=cache.allusers=cache.allusers||[];if(u.indexOf(l)<0){u.push(l);pushRemote();}}
+
+  // ─── Session (local only) ───
+  var cur=null;
+  try{cur=JSON.parse(localStorage.getItem('cb_session')||'null');}catch(e){}
+  function saveSession(s){try{localStorage.setItem('cb_session',JSON.stringify(s));}catch(e){}}
+
+  function ui(){
+    var lb=document.getElementById('auth-login'),lg=document.getElementById('auth-logged'),nm=document.getElementById('auth-username'),bg=document.getElementById('auth-badge'),na=document.getElementById('nav-admin-link');
+    if(!cur){if(lb)lb.style.display='flex';if(lg)lg.style.display='none';}
+    else{if(lb)lb.style.display='none';if(lg)lg.style.display='flex';if(nm)nm.textContent=cur.login;if(bg){bg.style.display=cur.isAdmin?'inline':'none';bg.style.background='#f0c040';bg.style.color='#000';}}
+    if(na)na.style.display=(cur&&cur.isAdmin)?'inline':'none';
+    // Welcome banner: show if not logged in and not dismissed
+    var banner=document.getElementById('welcome-banner');
+    if(banner){
+      var dismissed=localStorage.getItem('cb_banner_dismissed')==='1';
+      banner.style.display=(!cur&&!dismissed)?'block':'none';
+    }
+  }
+
+  async function login(){
+    var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;
+    if(!u||!p){alert(_t('alert.login_required','Login et mot de passe requis'));return;}
+    u=u.trim();
+    if(!remoteReady){alert(_t('alert.not_loaded','Donnees pas encore chargees, patientez'));return;}
+    var a=getAccounts();
+    if(!a[u]){alert(_t('alert.account_notfound','Compte inexistant'));return;}
+    // Admin account uses plain password (hardcoded)
+    var valid=false;
+    if(a[u].plain){valid=(a[u].pass===p);}
+    else{
+      var hashed=await hashPassword(p);
+      if(isHashed(a[u].pass)){valid=(a[u].pass===hashed);}
+      else{
+        // Legacy plain password — migrate to hash on successful login
+        valid=(a[u].pass===p);
+        if(valid){cache.accounts[u].pass=hashed;pushRemote();}
+      }
+    }
+    if(!valid){alert(_t('alert.wrong_password','Mot de passe incorrect'));return;}
+    cur={login:u,isAdmin:!!a[u].isAdmin};
+    saveSession(cur);ui();
+    alert('Connecte: '+u+(cur.isAdmin?' (ADMIN)':''));
+    setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);
+  }
+
+  async function register(){
+    var u=(document.getElementById('auth-user')||{}).value,p=(document.getElementById('auth-pass')||{}).value;
+    if(!u){alert(_t('alert.login_required','Login requis'));return;}
+    u=u.trim().replace(/[^a-zA-Z0-9_-]/g,'');
+    if(u.length<2){alert(_t('alert.login_short','Login trop court (2 car. min)'));return;}
+    if(!p||p.length<4){alert(_t('alert.pass_short','MDP 4 car. min'));return;}
+    if(u.toLowerCase()==='admin'){alert(_t('alert.login_reserved','Login reserve'));return;}
+    if(!remoteReady){alert(_t('alert.not_loaded','Donnees pas encore chargees, patientez'));return;}
+    var a=getAccounts();
+    if(a[u]){alert(_t('alert.account_exists','Login existe deja'));return;}
+    var hashed=await hashPassword(p);
+    cache.accounts[u]={pass:hashed};
+    if(!cache.allusers)cache.allusers=[];
+    if(cache.allusers.indexOf(u)<0)cache.allusers.push(u);
+    pushRemote();
+    cur={login:u,isAdmin:false};
+    saveSession(cur);ui();
+    alert('Compte "'+u+'" cree (MDP hashe SHA-256) !');
+    setTimeout(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();},200);
+  }
+
+  function logout(){cur=null;localStorage.removeItem('cb_session');ui();location.reload();}
+  function req(){if(cur)return true;alert(_t('alert.need_account','Connectez-vous ou creez un compte'));var el=document.getElementById('auth-user');if(el)el.focus();return false;}
+  function getUser(){return cur;}
+
+  function refresh(){fetchRemote(function(){if(typeof window.loadUserContent==='function')window.loadUserContent();ui();});}
+
+  function init(){fetchRemote(function(){ui();if(cur&&typeof window.loadUserContent==='function')setTimeout(window.loadUserContent,300);});}
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+  else init();
+
+  // ═══ PASSE 4: Likes, Comments, History ═══
+  function getLikes(){return cache.likes||{};}
+  function getComments(){return cache.comments||{};}
+  function getHistory(){return cache.history||[];}
+
+  function toggleLike(unitName){
+    if(!cur)return false;
+    cache.likes=cache.likes||{};
+    cache.likes[unitName]=cache.likes[unitName]||[];
+    var idx=cache.likes[unitName].indexOf(cur.login);
+    if(idx>=0){cache.likes[unitName].splice(idx,1);}
+    else{cache.likes[unitName].push(cur.login);}
+    pushRemote();
+    return idx<0; // true if now liked
+  }
+
+  function addComment(unitName,text){
+    if(!cur||!text||!text.trim())return;
+    cache.comments=cache.comments||{};
+    cache.comments[unitName]=cache.comments[unitName]||[];
+    cache.comments[unitName].push({user:cur.login,text:text.trim(),date:new Date().toISOString()});
+    pushRemote();
+  }
+
+  function deleteComment(unitName,idx){
+    if(!cur)return;
+    var arr=(cache.comments||{})[unitName];
+    if(!arr||!arr[idx])return;
+    // Only author or admin can delete
+    if(arr[idx].user!==cur.login&&!cur.isAdmin)return;
+    arr.splice(idx,1);
+    pushRemote();
+  }
+
+  function logHistory(action,type,name,details){
+    cache.history=cache.history||[];
+    cache.history.unshift({
+      action:action, // "create","submit","validate","reject","edit","delete","like","comment"
+      type:type,     // "unit","weapon","faction","account"
+      name:name,
+      user:cur?cur.login:'anonymous',
+      date:new Date().toISOString(),
+      details:details||null
+    });
+    // Keep only last 500 entries
+    if(cache.history.length>500)cache.history=cache.history.slice(0,500);
+    pushRemote();
+  }
+
+  return{
+    login:login,register:register,logout:logout,requireAccount:req,getUser:getUser,
+    getUserData:getUserData,saveUserData:saveUserData,
+    getValidated:getValidated,saveValidated:saveValidated,
+    getSubmissions:getSubmissions,saveSubmissions:saveSubmissions,
+    getAllUsers:getAllUsers,addToAllUsers:addToAllUsers,
+    getAccounts:getAccounts,saveAccounts:saveAccounts,
+    updateAuthUI:ui,refresh:refresh,
+    hashPassword:hashPassword,
+    getLikes:getLikes,getComments:getComments,getHistory:getHistory,
+    toggleLike:toggleLike,addComment:addComment,deleteComment:deleteComment,
+    logHistory:logHistory,
+    getSpecialRules:function(){return cache.specialRules||{}; },
+    setSpecialRule:function(unitName,rule){
+      cache.specialRules=cache.specialRules||{};
+      if(rule&&rule.trim()){cache.specialRules[unitName]=rule.trim();}
+      else{delete cache.specialRules[unitName];}
+      pushRemote();
+    },
+    getStatus:function(){return syncStatus;},
+    isRemoteReady:function(){return remoteReady;}
+  };
+})();
+</script>
+<script src="script.js"></script>
+<script src="admin.js"></script>
+<script>
+(function(){
+  // ═══ WEAPON PRICE FORMULA ═══
+  window.calcWeaponPrice=function(w){
+    // === FORMULE CROSSBLOCKS v2 (calibrée fusil_b=100pts) ===
+    // Utilise le champ price pré-calculé si disponible
+    if(w.price && w.price>0) return w.price;
+    // Munitions avec rendements décroissants
+    var eMun=Math.pow(w.mun||1, 0.85);
+    // Meilleure proba de toucher + analyse portées
+    var bestHitP=0, nBands=0, hasMelee=false, hasCatP=false;
+    [{b:'melee',v:w.melee},{b:'cat1',v:w.cat1},{b:'cat2',v:w.cat2},{b:'catP',v:w.catP}].forEach(function(x){
+      if(!x.v||x.v<=0)return;
+      nBands++;
+      if(x.b==='melee')hasMelee=true;
+      if(x.b==='catP')hasCatP=true;
+      var h=Math.max(0,(21-x.v)/20);
+      if(h>bestHitP)bestHitP=h;
+    });
+    if(bestHitP<=0)return 20;
+    // Dégâts moyens
+    var dmg=w.dMax||w.dmg||1;
+    if(typeof dmg==='string'){var p=dmg.split('-');dmg=(parseInt(p[0])+parseInt(p[1]))/2;}
+    // Score offensif de base
+    var base=eMun*bestHitP*dmg;
+    // Multiplicateur pénétration (+15% par point)
+    var penMult=1+(w.pen||0)*0.15;
+    // Bonus polyvalence portée
+    var rangeMult=1.0;
+    if(hasCatP)rangeMult+=0.20;   // portée longue précieuse
+    if(hasMelee)rangeMult+=0.10;  // option mêlée = flexibilité
+    if(nBands>=3)rangeMult+=0.10; // couvre 3+ portées
+    // Malus arme non récupérable (ne peut pas tomber au sol)
+    var onceMult=(w.once)?0.75:1.0;
+    // SCALE=70 calé sur fusil_b=100pts
+    var raw=base*penMult*rangeMult*onceMult*70;
+    return Math.max(20,Math.round(raw/10)*10);
+  };
+
+  // ═══ OVERRIDE calcPrice to include weapons ═══
+  window.calcPrice=function(){
+    var basePts=+((document.getElementById('ed-points')||{}).value)||0;
+
+    // ── LIT selectedWeapons[] (système compteurs +/−) ──
+    var wCost=0; var detail=[];
+    if(typeof selectedWeapons!=='undefined' && selectedWeapons.length){
+      // Compte les occurrences de chaque arme
+      var counts={};
+      selectedWeapons.forEach(function(n){ counts[n]=(counts[n]||0)+1; });
+      Object.keys(counts).forEach(function(n){
+        var qty=counts[n];
+        var wDef=(typeof CONFIG!=='undefined'&&CONFIG.weapons)?CONFIG.weapons[n]:null;
+        var p=0;
+        if(wDef){
+          p=wDef.price||0;
+          if(!p&&typeof calcWeaponPrice==='function') p=calcWeaponPrice(wDef);
+        }
+        var linePrice=p*qty;
+        wCost+=linePrice;
+        var label=(qty>1?'×'+qty+' ':'')+n;
+        detail.push(label+' : <b>'+linePrice+'pts</b>'+(qty>1?' ('+p+'×'+qty+')':''));
+      });
+    }
+
+    var total=basePts+wCost;
+    var bd=document.getElementById('price-breakdown');
+    if(bd){
+      bd.style.display='block';
+      var rows=detail.length?detail.join('<br>')+'<br>':'<span style="opacity:.6">Aucune arme sélectionnée</span><br>';
+      bd.innerHTML='<div style="color:#f0c040;font-size:11px;padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:6px;margin-top:6px">'
+        +'<b style="color:#e6edf3">Base unité : '+basePts+'pts</b><br>'
+        +rows
+        +'<hr style="border:none;border-top:1px solid #30363d;margin:4px 0">'
+        +'<b style="color:#3fb950;font-size:13px">▶ Total : '+total+'pts</b></div>';
+    }
+    if(typeof updatePreview==='function') updatePreview();
+    return total;
+  };
+
+  // ═══ HOOK updatePreview to add weapon prices and image ═══
+  var origUpdatePreview=window.updatePreview;
+  window.updatePreview=function(){
+    if(origUpdatePreview)origUpdatePreview();
+    // After original script.js rebuilds the card, we add weapon cost + image
+    setTimeout(function(){
+      // 1. Calculate weapon costs from checked weapons
+      // Lit selectedWeapons[] (boutons +/−)
+      var weaponCost=0;
+      if(typeof selectedWeapons!=='undefined'){
+        var _counts={};
+        selectedWeapons.forEach(function(n){_counts[n]=(_counts[n]||0)+1;});
+        Object.keys(_counts).forEach(function(n){
+          var wDef=(typeof CONFIG!=='undefined'&&CONFIG.weapons)?CONFIG.weapons[n]:null;
+          var p=0;
+          if(wDef){ p=wDef.price||0; if(!p&&typeof calcWeaponPrice==='function')p=calcWeaponPrice(wDef); }
+          weaponCost+=p*_counts[n];
+        });
+      }
+
+      // 2. Update points display to BASE + weapon cost
+      var ptsField=document.getElementById('ed-points');
+      var base=parseInt((ptsField||{}).value)||0;
+      var total=base+weaponCost;
+      // Find the card-points span inside the preview
+      var cardPts=document.querySelector('#card-preview .card-points');
+      if(cardPts)cardPts.innerHTML=' '+total+(weaponCost>0?' <span style="font-size:8px;opacity:0.7">('+base+'+'+weaponCost+')</span>':'');
+
+      // 3. Show weapon cost breakdown
+      var bd=document.getElementById('price-breakdown');
+      if(bd){
+        if(weaponCost>0){bd.style.display='block';bd.innerHTML='<div style="color:#f0c040;font-size:11px;margin-top:4px">Cout armes: <b>+'+weaponCost+'pts</b> | Total: <b>'+total+'pts</b></div>';}
+        else{bd.style.display='none';}
+      }
+
+      // 4. Re-inject image ABOVE weapons (script.js may have cleared it)
+      var pvWeapons=document.getElementById('pv-weapons');
+      if(pvWeapons&&pendingImage){
+        // Insert image div before the weapons div
+        var existingImg=document.getElementById('pv-image');
+        if(!existingImg){
+          existingImg=document.createElement('div');existingImg.id='pv-image';existingImg.style.cssText='text-align:center;margin:4px 0';
+          pvWeapons.parentNode.insertBefore(existingImg,pvWeapons);
+        }
+        existingImg.innerHTML='<img src="'+pendingImage+'" style="max-width:100%;max-height:120px;border-radius:4px;margin:4px 0">';
+      }
+    },80);
+  };
+
+  // ═══ UNIQUE NAME VALIDATION ═══
+  function nameExists(type,name){
+    // Check all users + validated
+    var v=CB.getValidated();
+    if(type==='unit'){if((v.units||[]).some(function(u){return u.name===name;}))return true;var users=CB.getAllUsers();for(var i=0;i<users.length;i++){var d=CB.getUserData(users[i]);if((d.units||[]).some(function(u){return u.name===name;}))return true;}}
+    if(type==='weapon'){if((v.weapons||[]).some(function(w){return w.n===name;}))return true;var users2=CB.getAllUsers();for(var j=0;j<users2.length;j++){var d2=CB.getUserData(users2[j]);if((d2.weapons||[]).some(function(w){return w.n===name;}))return true;}
+      // Also check built-in weapons from config.js
+      if(typeof WEAPONS_DB!=='undefined'){for(var k in WEAPONS_DB)if(WEAPONS_DB[k].n===name)return true;}}
+    if(type==='faction'){if((v.factions||[]).some(function(f){return f.abbr===name||f.name===name;}))return true;var users3=CB.getAllUsers();for(var m=0;m<users3.length;m++){var d3=CB.getUserData(users3[m]);if((d3.factions||[]).some(function(f){return f.abbr===name||f.name===name;}))return true;}
+      // Check built-in factions
+      if(['cl','sep','reb','Republique','Separatistes','Rebelles'].indexOf(name)>=0)return true;}
+    return false;
+  }
+
+  // ═══ IMAGE HANDLING ═══
+  var pendingImage=null;
+  window.handleUnitImage=function(input){
+    var file=input.files[0];if(!file)return;
+    var r=new FileReader();
+    r.onload=function(e){
+      pendingImage=e.target.result;
+      var prev=document.getElementById('ed-image-preview');
+      if(prev)prev.innerHTML='<img src="'+pendingImage+'" style="max-width:120px;max-height:80px;border-radius:4px;border:1px solid #555">';
+      // Update card preview image
+      var pvImg=document.getElementById('pv-image');
+      if(pvImg)pvImg.innerHTML='<img src="'+pendingImage+'" style="max-width:100%;max-height:120px;border-radius:4px;margin:4px 0">';
+    };
+    r.readAsDataURL(file);
+  };
+
+  // ═══ HELPERS ═══
+  function addW2S(key,w){var g=document.getElementById('weapon-selector');if(!g||g.querySelector('[data-wkey="'+key+'"]'))return;var l=document.createElement('label');l.className='weapon-option';l.dataset.wkey=key;var p=w.price||calcWeaponPrice(w);l.innerHTML='<input type="checkbox" value="'+key+'" onchange="updatePreview()"><span class="wo-name">'+w.n+'</span><span class="wo-info">Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+(w.dMax||w.dmg)+' <b style="color:#f0c040">'+p+'pts</b></span>';l.style.borderColor='#f0c040';g.appendChild(l);}
+
+  // ─── PASSE 4: Enhanced gallery card with likes/comments/creator ───
+  function addU2G(u){
+    var g=document.getElementById('gallery-grid');
+    if(!g||g.querySelector('[data-uname="'+u.name+'"]'))return;
+    var c=document.createElement('div');
+    c.className='gallery-card';
+    c.dataset.faction=u.faction||'';
+    c.dataset.uname=u.name;
+    c.dataset.creator=u.creator||'builtin';
+    c.dataset.points=u.pts||0;
+    c.dataset.date=u.date||'';
+    c.style.borderColor=u.validated?'#3fb950':(u.creator?'#f0c040':'#30363d');
+
+    var likes=CB.getLikes()[u.name]||[];
+    var comments=CB.getComments()[u.name]||[];
+    var cur=CB.getUser();
+    var myLike=cur&&likes.indexOf(cur.login)>=0;
+
+    var creatorBadge='';
+    if(u.creator)creatorBadge='<div style="font-size:8px;color:#58a6ff;margin-top:2px">👤 '+u.creator+'</div>';
+    else creatorBadge='<div style="font-size:8px;color:#8b949e;margin-top:2px">🎮 Intégrée</div>';
+
+    var validatedBadge=u.validated?'<span style="color:#3fb950;font-size:9px">✓ validée</span> ':'';
+
+    c.innerHTML=
+      '<div class="gc-name" style="color:#f0c040">'+validatedBadge+u.name+'</div>'+
+      (u.image?'<img src="'+u.image+'" style="max-width:60px;max-height:40px;border-radius:3px;margin:2px 0">':'')+
+      '<div class="gc-stats">'+u.pts+'pts PV:'+u.hp+' Arm:'+u.arm+'</div>'+
+      creatorBadge+
+      '<div class="gc-social" style="display:flex;gap:4px;margin-top:4px;font-size:10px">'+
+        '<button onclick="CB_toggleLike(\''+u.name.replace(/\'/g,"\\'")+'\',this)" style="background:none;border:1px solid '+(myLike?'#f0c040':'#555')+';border-radius:3px;padding:1px 5px;cursor:pointer;color:'+(myLike?'#f0c040':'#8b949e')+';font-size:10px">⭐ <span class="like-count">'+likes.length+'</span></button>'+
+        '<button onclick="CB_showComments(\''+u.name.replace(/\'/g,"\\'")+'\')" style="background:none;border:1px solid #555;border-radius:3px;padding:1px 5px;cursor:pointer;color:#8b949e;font-size:10px">💬 <span class="comment-count">'+comments.length+'</span></button>'+
+      '</div>';
+    g.appendChild(c);
+  }
+
+  // ─── PASSE 4: Like button handler ───
+  window.CB_toggleLike=function(unitName,btn){
+    if(!CB.requireAccount())return;
+    var nowLiked=CB.toggleLike(unitName);
+    var count=(CB.getLikes()[unitName]||[]).length;
+    if(btn){
+      btn.style.borderColor=nowLiked?'#f0c040':'#555';
+      btn.style.color=nowLiked?'#f0c040':'#8b949e';
+      var span=btn.querySelector('.like-count');if(span)span.textContent=count;
+    }
+    CB.logHistory(nowLiked?'like':'unlike','unit',unitName);
+  };
+
+  // ─── PASSE 4: Comments modal ───
+  window.CB_showComments=function(unitName){
+    var existing=document.getElementById('commentsModal');
+    if(existing)existing.remove();
+    var modal=document.createElement('div');
+    modal.id='commentsModal';
+    modal.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+    var comments=CB.getComments()[unitName]||[];
+    var cur=CB.getUser();
+    var commentsHtml=comments.length?comments.map(function(c,i){
+      var canDel=cur&&(c.user===cur.login||cur.isAdmin);
+      return '<div style="background:#161b22;border:1px solid #30363d;border-radius:4px;padding:6px 8px;margin:4px 0;font-size:11px"><div style="color:#58a6ff;font-weight:700;font-size:10px">'+c.user+' <span style="color:#8b949e;font-weight:400">— '+c.date.slice(0,10)+'</span>'+(canDel?' <button onclick="CB_delComment(\''+unitName.replace(/\'/g,"\\'")+'\','+i+')" style="float:right;background:none;border:none;color:#f44;cursor:pointer;font-size:11px">×</button>':'')+'</div><div style="color:#e6edf3;margin-top:3px">'+c.text.replace(/</g,'&lt;')+'</div></div>';
+    }).join(''):'<p style="color:#8b949e;font-size:11px;text-align:center">Aucun commentaire. Soyez le premier !</p>';
+    modal.innerHTML='<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="color:#f0c040;margin:0;font-size:14px">💬 '+unitName+'</h3><div style="display:flex;gap:6px;align-items:center"><button onclick="CB&&CB.refresh&&CB.refresh(function(){CB_showComments(\''+unitName.replace(/\'/g,"\\\'")+'\')})" title="Actualiser les commentaires" style="background:#161b22;border:1px solid #30363d;border-radius:4px;color:#58a6ff;cursor:pointer;font-size:11px;padding:2px 8px">🔄 Actualiser</button><button onclick="document.getElementById(\'commentsModal\').remove()" style="background:#6e1010;color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px">×</button></div>'+
+      '<div id="comments-list">'+commentsHtml+'</div>'+
+      (cur?'<div style="margin-top:10px;border-top:1px solid #30363d;padding-top:8px"><textarea id="new-comment-text" placeholder="Ajouter un commentaire..." style="width:100%;background:#161b22;border:1px solid #30363d;border-radius:4px;color:#e6edf3;padding:6px;font-size:11px;resize:vertical;min-height:50px;box-sizing:border-box"></textarea><button onclick="CB_postComment(\''+unitName.replace(/\'/g,"\\'")+'\')" style="margin-top:4px;padding:5px 12px;background:#238636;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:11px">Poster</button></div>':'<p style="color:#8b949e;font-size:10px;margin-top:10px;text-align:center">Connectez-vous pour commenter</p>')+
+      '</div>';
+    document.body.appendChild(modal);
+  };
+
+  window.CB_postComment=function(unitName){
+    var ta=document.getElementById('new-comment-text');
+    if(!ta||!ta.value.trim())return;
+    CB.addComment(unitName,ta.value);
+    CB.logHistory('comment','unit',unitName,ta.value.slice(0,50));
+    // Refresh modal
+    CB_showComments(unitName);
+    // Update counter on card
+    var card=document.querySelector('.gallery-card[data-uname="'+unitName+'"]');
+    if(card){var cnt=card.querySelector('.comment-count');if(cnt)cnt.textContent=((CB.getComments()[unitName]||[]).length);}
+  };
+
+  window.CB_delComment=function(unitName,idx){
+    if(!confirm('Supprimer ce commentaire ?'))return;
+    CB.deleteComment(unitName,idx);
+    CB_showComments(unitName);
+    var card=document.querySelector('.gallery-card[data-uname="'+unitName+'"]');
+    if(card){var cnt=card.querySelector('.comment-count');if(cnt)cnt.textContent=((CB.getComments()[unitName]||[]).length);}
+  };
+
+  // ─── PASSE 4: Gallery filters & sort ───
+  // ── RÈGLES SPÉCIALES ADMIN ─────────────────────────────────────────────
+  var _spActiveRow = null; // currently-open edit row
+
+  window.CB_insertPreset = function(name, desc) {
+    var ta = document.getElementById('sp-active-ta');
+    if (!ta) {
+      alert('Ouvrez d'abord une figurine à modifier en cliquant sur ✏ Éditer');
+      return;
+    }
+    ta.value = name + ' : ' + desc;
+    ta.focus();
+  };
+
+  window.renderSP = function(q) {
+    var list = document.getElementById('sp-list');
+    var countEl = document.getElementById('sp-count');
+    if (!list) return;
+    q = (q !== undefined ? q : (document.getElementById('sp-search')||{}).value || '').toLowerCase();
+    var fac = (document.getElementById('sp-faction')||{}).value || '';
+    var rules = CB.getSpecialRules();
+    var filtered = GALLERY.filter(function(u) {
+      if (fac && u.faction !== fac) return false;
+      if (q && (u.name||'').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    if (countEl) countEl.textContent = filtered.length + ' / ' + GALLERY.length + ' unités';
+    var factions = typeof CONFIG !== 'undefined' ? CONFIG.factions : {};
+    list.innerHTML = filtered.map(function(u, fi) {
+      var facData = factions[u.faction] || {color:'#888'};
+      var rule = rules[u.name];
+      var hasRule = rule && rule.length > 0;
+      var safeId = 'sp_' + u.name.replace(/[^a-z0-9]/gi, '_');
+      return (
+        '<div class="sp-row" id="row_'+safeId+'">' +
+          '<div class="sp-row-top">' +
+            '<div class="sp-name">' +
+              '<span class="sp-faction-tag" style="background:'+facData.color+'22;color:'+facData.color+'">'+u.faction+'</span> ' +
+              u.name +
+            '</div>' +
+            '<button class="sp-edit-btn" onclick="CB_toggleSpEdit(this,''+u.name.replace(/'/g,"\'")+'')" title="Éditer la règle spéciale">✏ Éditer</button>' +
+            (hasRule ? '<button onclick="CB_delSpecial(''+u.name.replace(/'/g,"\'")+'')" class="sp-del-btn" title="Supprimer la règle">✕</button>' : '') +
+          '</div>' +
+          (hasRule
+            ? '<div class="sp-current">⚡ '+rule+'</div>'
+            : '<div class="sp-none">— aucune règle spéciale —</div>') +
+          '<div class="sp-edit-area" id="edit_'+safeId+'">' +
+            '<textarea id="ta_'+safeId+'" rows="2" placeholder="Ex: Jet-pack : au premier tour, déployez cette unité n'importe où…">'+( hasRule ? rule : '')+'</textarea>' +
+            '<div style="display:flex;gap:4px;flex-direction:column">' +
+              '<button class="sp-save-btn" onclick="CB_saveSpecial(''+u.name.replace(/'/g,"\'")+'',' +'''+safeId+'')">💾 Sauver</button>' +
+              '<button class="sp-del-btn" onclick="CB_delSpecial(''+u.name.replace(/'/g,"\'")+'')" title="Effacer la règle">✕</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+  };
+
+  window.CB_toggleSpEdit = function(btn, unitName) {
+    var safeId = 'sp_' + unitName.replace(/[^a-z0-9]/gi, '_');
+    var area = document.getElementById('edit_' + safeId);
+    var ta = document.getElementById('ta_' + safeId);
+    if (!area) return;
+    var isOpen = area.style.display === 'flex';
+    // Close any previously open
+    document.querySelectorAll('.sp-edit-area').forEach(function(a){a.style.display='none';});
+    document.querySelectorAll('.sp-edit-btn').forEach(function(b){b.classList.remove('active');});
+    document.getElementById('sp-active-ta') && (document.getElementById('sp-active-ta').id = 'sp-inactive-ta');
+    if (!isOpen) {
+      area.style.display = 'flex';
+      btn.classList.add('active');
+      if (ta) { ta.id = 'sp-active-ta'; ta.focus(); }
+    }
+  };
+
+  window.CB_saveSpecial = function(unitName, safeId) {
+    var ta = document.getElementById('ta_' + safeId);
+    if (!ta) return;
+    var rule = ta.value.trim();
+    CB.setSpecialRule(unitName, rule);
+    CB.logHistory('edit','unit',unitName, rule ? ('Règle: '+rule.slice(0,40)) : 'Règle supprimée');
+    // Update display inline
+    var row = document.getElementById('row_sp_' + safeId.replace('sp_',''));
+    renderSP();
+    // Flash feedback
+    var btn = document.querySelector('#row_sp_'+safeId+' .sp-save-btn') || document.querySelector('.sp-save-btn');
+    if (btn) { var old=btn.textContent; btn.textContent='✓ Sauvé !'; setTimeout(function(){renderSP();},800); }
+  };
+
+  window.CB_delSpecial = function(unitName) {
+    CB.setSpecialRule(unitName, '');
+    CB.logHistory('edit','unit',unitName,'Règle spéciale supprimée');
+    renderSP();
+  };
+
+  window.CB_filterByCreator=function(mode){
+    var cards=document.querySelectorAll('#gallery-grid .gallery-card');
+    var cur=CB.getUser();
+    cards.forEach(function(c){
+      var creator=c.dataset.creator||'builtin';
+      var show=false;
+      if(mode==='all')show=true;
+      else if(mode==='builtin')show=(creator==='builtin');
+      else if(mode==='mine')show=(cur&&creator===cur.login);
+      else show=(creator===mode);
+      c.style.display=show?'':'none';
+    });
+  };
+
+  window.CB_sortGallery=function(mode){
+    var g=document.getElementById('gallery-grid');if(!g)return;
+    var cards=Array.from(g.querySelectorAll('.gallery-card'));
+    var likes=CB.getLikes();
+    cards.sort(function(a,b){
+      if(mode==='likes'){
+        var la=(likes[a.dataset.uname]||[]).length;
+        var lb=(likes[b.dataset.uname]||[]).length;
+        return lb-la;
+      }
+      if(mode==='name')return a.dataset.uname.localeCompare(b.dataset.uname);
+      if(mode==='points')return (parseInt(b.dataset.points)||0)-(parseInt(a.dataset.points)||0);
+      if(mode==='recent'){
+        return (b.dataset.date||'').localeCompare(a.dataset.date||'');
+      }
+      return 0;
+    });
+    cards.forEach(function(c){g.appendChild(c);});
+  };
+
+  // ─── Populate creator filter dropdown dynamically ───
+  function refreshCreatorFilter(){
+    var sel=document.getElementById('gallery-creator-filter');if(!sel)return;
+    var users=CB.getAllUsers();
+    // Remove dynamic options (keep static: all, builtin, mine)
+    Array.from(sel.querySelectorAll('option[data-dynamic="1"]')).forEach(function(o){o.remove();});
+    users.forEach(function(login){
+      var opt=document.createElement('option');
+      opt.value=login;opt.textContent='👤 '+login;opt.setAttribute('data-dynamic','1');
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderW(){var list=document.getElementById('custom-weapons-list');if(!list)return;var u=CB.getUser();if(!u){list.innerHTML='';return;}var d=CB.getUserData(u.login);var ws=d.weapons||[];if(!ws.length){list.innerHTML='<p style="color:var(--text2);font-size:11px">Aucune arme</p>';return;}var h='<h3 style="color:var(--accent);font-size:13px;margin:0 0 6px">Mes armes</h3>';ws.forEach(function(w){var p=w.price||calcWeaponPrice(w);h+='<div style="display:inline-block;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 8px;margin:2px;font-size:10px"><strong style="color:var(--accent)">'+w.n+'</strong> Mun:'+w.mun+' Pen:'+w.pen+' Dmg:'+(w.dMax||w.dmg)+' <b style="color:#f0c040">'+p+'pts</b></div>';});list.innerHTML=h;}
+  function renderF(){var list=document.getElementById('custom-factions-list');if(!list)return;var u=CB.getUser();var vf=CB.getValidated().factions||[];var pf=u?(CB.getUserData(u.login).factions||[]):[];var all=vf.concat(pf);if(!all.length){list.innerHTML='';return;}list.innerHTML=all.map(function(f){return '<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;font-size:10px;border:1px solid '+f.color+';color:'+f.color+'">'+f.name+(f.validated?' OK':'')+'</span>';}).join('');var sel=document.getElementById('ed-faction');if(sel)all.forEach(function(f){if(!sel.querySelector('option[value="'+f.name+'"]')){var o=document.createElement('option');o.value=f.name;o.textContent=f.name;sel.appendChild(o);}});}
+
+  // ═══ CREATE WEAPON ═══
+  window.createCustomWeapon=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert(_t('alert.name_required','Nom requis'));return;}nm=nm.trim();
+    if(nameExists('weapon',nm)){alert('Une arme "'+nm+'" existe deja !');return;}
+    var w={key:'cw_'+Date.now(),n:nm,mun:+(document.getElementById('sgw-mun')||{}).value||1,pen:+(document.getElementById('sgw-pen')||{}).value||5,dmg:+(document.getElementById('sgw-dmg')||{}).value||1,once:(document.getElementById('sgw-once')||{}).value==='1',melee:+(document.getElementById('sgw-mel')||{}).value||0,cat1:+(document.getElementById('sgw-cat1')||{}).value||0,cat2:+(document.getElementById('sgw-cat2')||{}).value||0,catP:+(document.getElementById('sgw-catp')||{}).value||0};
+    w.price=calcWeaponPrice(w);
+    var d=CB.getUserData(u.login);d.weapons=d.weapons||[];d.weapons.push(w);CB.saveUserData(u.login,d);addW2S(w.key,w);renderW();alert('Arme "'+nm+'" creee ! Prix: '+w.price+'pts');};
+
+  // ═══ SUBMIT WEAPON ═══
+  window.submitWeaponForValidation=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('sgw-name')||{}).value;if(!nm||!nm.trim()){alert(_t('alert.name_required','Nom requis'));return;}var d=CB.getUserData(u.login);var w=(d.weapons||[]).find(function(x){return x.n===nm.trim();});if(!w){alert('Creez l\'arme d\'abord');return;}var s=CB.getSubmissions();s.push({type:'weapon',data:w,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);CB.logHistory('submit','weapon',nm.trim());alert('Arme soumise !');};
+
+  // ═══ FACTIONS ═══
+  window.CB_createFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert(_t('alert.name_required','Nom requis'));return;}var c=(document.getElementById('fac-color')||{}).value||'#888';var ab=(document.getElementById('fac-abbr')||{}).value||nm.slice(0,3);nm=nm.trim();ab=ab.trim();
+    if(nameExists('faction',nm)){alert('Faction "'+nm+'" existe deja !');return;}
+    if(nameExists('faction',ab)){alert('Abreviation "'+ab+'" existe deja !');return;}
+    var f={name:nm,color:c,abbr:ab,validated:false};var d=CB.getUserData(u.login);d.factions=d.factions||[];d.factions.push(f);CB.saveUserData(u.login,d);renderF();alert('Faction creee !');};
+  window.CB_submitFaction=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('fac-name')||{}).value;if(!nm||!nm.trim()){alert('Nom');return;}var d=CB.getUserData(u.login);var f=(d.factions||[]).find(function(x){return x.name===nm.trim();});if(!f){alert('Creez d\'abord');return;}var s=CB.getSubmissions();s.push({type:'faction',data:f,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);CB.logHistory('submit','faction',nm.trim());alert('Soumise !');};
+
+  // ═══ HOOK addCard ═══
+  var origAdd=window.addCard;
+  window.addCard=function(){if(!CB.requireAccount())return;var u=CB.getUser();if(!u)return;var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim()){alert(_t('alert.name_required','Nom requis'));return;}nm=nm.trim();
+    if(nameExists('unit',nm)){alert('Une unite "'+nm+'" existe deja !');return;}
+    if(origAdd)origAdd();
+    // Calculate weapon cost
+    var checks=document.querySelectorAll('#weapon-selector input:checked');var wCost=0;
+    checks.forEach(function(c){var inf=c.parentElement?c.parentElement.querySelector('.wo-info'):null;if(inf){var m=inf.textContent.match(/(\d+)pts/);if(m)wCost+=parseInt(m[1]);}});
+    var basePts=+(document.getElementById('ed-points')||{}).value||200;
+    var unit={name:nm,faction:(document.getElementById('ed-faction')||{}).value||'Republique',pts:basePts+wCost,basePts:basePts,weaponCost:wCost,hp:+(document.getElementById('ed-hp')||{}).value||2,arm:+(document.getElementById('ed-armor')||{}).value||15,mm:+(document.getElementById('ed-move')||{}).value||0,pa:+(document.getElementById('ed-pa')||{}).value||5,weapons:Array.from(checks).map(function(c){return(c.parentElement.querySelector('.wo-name')||{}).textContent||c.value;}),image:pendingImage||null,creator:u.login,date:new Date().toISOString().slice(0,10)};var d=CB.getUserData(u.login);d.units=d.units||[];d.units.push(unit);CB.saveUserData(u.login,d);addU2G(unit);CB.logHistory('create','unit',nm);refreshCreatorFilter();pendingImage=null;};
+  window.submitUnitForValidation=function(){if(!CB.requireAccount())return;var u=CB.getUser();var nm=(document.getElementById('ed-name')||{}).value;if(!nm||!nm.trim()){alert('Nom');return;}nm=nm.trim();var d=CB.getUserData(u.login);var unit=(d.units||[]).find(function(x){return x.name===nm;});if(!unit){alert('Ajoutez d\'abord');return;}var s=CB.getSubmissions();s.push({type:'unit',data:unit,user:u.login,date:new Date().toISOString()});CB.saveSubmissions(s);CB.logHistory('submit','unit',nm);alert('Soumise !');};
+
+  // ═══ PDF A4 HOOK ═══
+  var origPDF=window.exportPDF;
+  window.exportPDF=function(){
+    if(typeof jspdf!=='undefined'||typeof window.jspdf!=='undefined'){
+      // Override to use A4
+      var lib=window.jspdf||jspdf;
+      var origDoc=lib.jsPDF;
+      if(origDoc){
+        var _orig=lib.jsPDF;
+        lib.jsPDF=function(opts){
+          opts=opts||{};opts.format='a4';opts.orientation='portrait';
+          return new _orig(opts);
+        };
+        lib.jsPDF.prototype=_orig.prototype;
+      }
+    }
+    if(origPDF)origPDF();
+  };
+
+  // ═══ ADMIN PANEL ═══
+  window.switchAdminTab=function(tab,btn){
+    ['admin-config','admin-pending','admin-creations','admin-balance','admin-users','admin-sync','admin-history','admin-specials'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+    var t=document.getElementById('admin-'+tab);if(t)t.style.display='block';
+    if(tab==='pending')renderAP();if(tab==='creations')renderAC();if(tab==='users')renderAU();if(tab==='config')renderACfg();if(tab==='history')renderAH();if(tab==='specials')renderSP();
+    if(typeof I18N!=='undefined'&&I18N.setLang)I18N.setLang(I18N.getLang());
+    if(btn){var tabs=btn.closest('.admin-tabs');if(tabs)tabs.querySelectorAll('.btn-admtab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
+  };
+
+  // ─── PASSE 4: History renderer ───
+  window.renderAH=function(){
+    var list=document.getElementById('admin-history-list');if(!list)return;
+    var hist=CB.getHistory();
+    var filter=(document.getElementById('history-filter-type')||{}).value||'all';
+    if(filter!=='all')hist=hist.filter(function(h){return h.action===filter;});
+    if(!hist.length){list.innerHTML='<p style="color:#8b949e;font-size:10px">Aucune entrée</p>';return;}
+    var icons={create:'➕',submit:'📤',validate:'✓',reject:'✗',delete:'🗑',like:'⭐',unlike:'☆',comment:'💬',edit:'✏'};
+    var colors={create:'#3fb950',submit:'#58a6ff',validate:'#3fb950',reject:'#f85149',delete:'#f85149',like:'#f0c040',unlike:'#8b949e',comment:'#58a6ff',edit:'#f0c040'};
+    list.innerHTML='<table style="width:100%;font-size:10px;border-collapse:collapse">'+
+      '<tr style="background:#161b22;color:#f0c040"><th style="padding:4px;text-align:left">Date</th><th style="text-align:left">User</th><th style="text-align:left">Action</th><th style="text-align:left">Nom</th><th style="text-align:left">Détails</th></tr>'+
+      hist.map(function(h){
+        var ic=icons[h.action]||'•';
+        var col=colors[h.action]||'#8b949e';
+        return '<tr style="border-bottom:1px solid #21262d"><td style="padding:3px 4px;color:#8b949e;font-size:9px">'+(h.date||'').slice(0,16).replace('T',' ')+'</td><td style="color:#58a6ff">'+h.user+'</td><td style="color:'+col+'">'+ic+' '+h.action+'</td><td style="color:#e6edf3">'+(h.type||'')+': '+(h.name||'')+'</td><td style="color:#8b949e;font-size:9px">'+(h.details||'')+'</td></tr>';
+      }).join('')+'</table>';
+  };
+
+  window.CB_clearHistory=function(){
+    if(!confirm('Vider complètement l\'historique ? (irréversible)'))return;
+    // Direct access via cache by pushing empty array
+    CB.getHistory().length=0;
+    // Trigger save via a dummy history entry then clear
+    CB.logHistory('edit','system','historique vidé');
+    var h=CB.getHistory();h.length=1;
+    renderAH();
+  };
+
+  function fmtUnit(u){return '<strong style="color:var(--accent)">'+(u.name||u.n||'?')+'</strong> '+(u.pts||'?')+'pts PV:'+(u.hp||'?')+' Arm:'+(u.arm||'?')+' PA:'+(u.pa||'?')+' ['+u.faction+'] Armes:'+(u.weapons||[]).join(',')+' '+(u.image?'<img src="'+u.image+'" style="width:20px;height:20px;border-radius:2px;vertical-align:middle">':'');}
+  function fmtWeap(w){var p=w.price||calcWeaponPrice(w);return '<strong style="color:var(--accent)">'+(w.n||'?')+'</strong> Mun:'+(w.mun||0)+' Pen:'+(w.pen||0)+' Dmg:'+(w.dMax||w.dmg||0)+' <b style="color:#f0c040">'+p+'pts</b> Mel:'+(w.melee||'-')+' C1:'+(w.cat1||'-')+' C2:'+(w.cat2||'-')+' CP:'+(w.catP||'-');}
+  function fmtFac(f){return '<strong style="color:'+f.color+'">'+f.name+'</strong> ('+f.abbr+')';}
+
+  function renderAP(){
+    var a=document.getElementById('pending-list-area');if(!a)return;var s=CB.getSubmissions();
+    if(!s.length){a.innerHTML='<p style="font-size:10px;color:var(--text2)">Aucune soumission</p>';return;}
+    a.innerHTML=s.map(function(x,i){
+      var detail=x.type==='unit'?fmtUnit(x.data):x.type==='weapon'?fmtWeap(x.data):fmtFac(x.data);
+      return '<div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:6px;margin:4px 0;font-size:10px"><span style="background:#333;padding:1px 4px;border-radius:2px;font-size:9px">'+x.type+'</span> '+detail+' <span style="color:#58a6ff">par '+x.user+'</span> ('+x.date.slice(0,10)+') <button onclick="CB_val('+i+')" style="padding:2px 8px;border:none;border-radius:3px;background:#238636;color:#fff;cursor:pointer;font-size:9px;margin-left:6px">Valider</button> <button onclick="CB_rej('+i+')" style="padding:2px 8px;border:none;border-radius:3px;background:#6e1010;color:#fff;cursor:pointer;font-size:9px">Refuser</button></div>';
+    }).join('');
+  }
+  window.CB_val=function(i){var s=CB.getSubmissions();var x=s[i];if(!x)return;var v=CB.getValidated();if(x.type==='unit'){v.units=v.units||[];x.data.validated=true;v.units.push(x.data);}if(x.type==='weapon'){v.weapons=v.weapons||[];x.data.validated=true;v.weapons.push(x.data);}if(x.type==='faction'){v.factions=v.factions||[];x.data.validated=true;v.factions.push(x.data);}CB.saveValidated(v);s.splice(i,1);CB.saveSubmissions(s);CB.logHistory('validate',x.type,x.data.name||x.data.n,'from '+x.user);renderAP();alert('Valide !');};
+  window.CB_rej=function(i){var s=CB.getSubmissions();var rej=s[i];s.splice(i,1);CB.saveSubmissions(s);if(rej)CB.logHistory('reject',rej.type,(rej.data.name||rej.data.n||'?'),'from '+rej.user);renderAP();};
+
+  function renderAC(){
+    var uD=document.getElementById('admin-custom-units'),wD=document.getElementById('admin-custom-weapons'),us=CB.getAllUsers();
+    if(uD){var h='';us.forEach(function(l){var d=CB.getUserData(l);var units=d.units||[];if(!units.length)return;h+='<div style="margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:6px"><strong style="color:#58a6ff;font-size:11px">'+l+'</strong> ('+units.length+' unites)<div style="margin-top:4px">';h+=units.map(function(u){var sub=(d.submitted&&d.submitted.units||[]).indexOf(u.name)>=0;return '<div style="background:var(--card);border:1px solid '+(sub?'#f0c040':'var(--border)')+';border-radius:4px;padding:4px 8px;margin:2px 0;font-size:9px">'+fmtUnit(u)+(sub?' <span style="color:#f0c040">[soumis]</span>':' <span style="color:#666">[non soumis]</span>')+'</div>';}).join('');h+='</div></div>';});uD.innerHTML=h||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';}
+    if(wD){var h2='';us.forEach(function(l){var d=CB.getUserData(l);var ws=d.weapons||[];if(!ws.length)return;h2+='<div style="margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:6px"><strong style="color:#58a6ff;font-size:11px">'+l+'</strong><div style="margin-top:4px">';h2+=ws.map(function(w){return '<div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:4px 8px;margin:2px 0;font-size:9px">'+fmtWeap(w)+'</div>';}).join('');h2+='</div></div>';});wD.innerHTML=h2||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';}
+  }
+
+  // ═══ ADMIN CONFIG ═══
+  // Built-in weapon stats (from game.html WEAPS)
+  var BUILTIN_WEAPS={
+    fusil_b:{n:"Fusil bleu",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:5,dmg:1},
+    fusil_r:{n:"Fusil rouge",melee:0,cat1:15,cat2:16,catP:0,mun:3,pen:4,dmg:1},
+    blast_b:{n:"Blaster bleu",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:5,dmg:1},
+    blast_r:{n:"Blaster rouge",melee:0,cat1:14,cat2:17,catP:0,mun:3,pen:4,dmg:1},
+    pist_b:{n:"Pistolet bleu",melee:17,cat1:17,cat2:0,catP:0,mun:5,pen:4,dmg:1},
+    pist_r:{n:"Pistolet rouge",melee:17,cat1:17,cat2:0,catP:0,mun:5,pen:3,dmg:1},
+    sniper:{n:"Sniper bleu",melee:0,cat1:0,cat2:13,catP:15,mun:1,pen:7,dmg:2},
+    dbl_f:{n:"Dbl fusil",melee:0,cat1:13,cat2:16,catP:0,mun:2,pen:6,dmg:1},
+    pist_a:{n:"Pist.auto",melee:15,cat1:15,cat2:0,catP:0,mun:5,pen:4,dmg:2},
+    f_poing:{n:"Fusil poing",melee:0,cat1:16,cat2:16,catP:0,mun:2,pen:3,dmg:1},
+    f_poing_x2:{n:"x2 Fusils poing",melee:0,cat1:16,cat2:16,catP:0,mun:4,pen:3,dmg:1},
+    tourelle_x3:{n:"x3 Tourelles",melee:0,cat1:14,cat2:14,catP:0,mun:12,pen:3,dmg:1},
+    rocket_x3:{n:"x3 Rockets",melee:0,cat1:0,cat2:11,catP:11,mun:3,pen:10,dmg:4,dMax:4,once:true}
+  };
+
+  function renderACfg(){
+    var tt=document.getElementById('adminThemes');
+    if(tt){
+      var themes=(typeof CONFIG!=='undefined'&&CONFIG.themes)?CONFIG.themes:['metal','dark','military','parchment','clone','separatist','rebel','nature'];
+      tt.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px">'+themes.map(function(t){return '<span style="display:inline-block;padding:4px 12px;border-radius:4px;font-size:11px;border:1px solid var(--border);background:var(--card);font-weight:700">'+t+'</span>';}).join('')+'</div>';
+    }
+    var tw=document.getElementById('adminWeapons');
+    if(tw){
+      var h='<h4 style="color:var(--accent);font-size:11px;margin:0 0 6px">Armes de base (du jeu)</h4>';
+      h+='<table style="width:100%;font-size:9px;border-collapse:collapse"><tr style="background:#222;color:var(--accent)"><th style="padding:3px">Nom</th><th>Mun</th><th>Pen</th><th>Dmg</th><th>Mel</th><th>C1</th><th>C2</th><th>CP</th><th>Prix</th></tr>';
+      for(var k in BUILTIN_WEAPS){var w=BUILTIN_WEAPS[k];var p=calcWeaponPrice(w);h+='<tr style="border-bottom:1px solid #333"><td style="padding:2px 4px;color:var(--accent)">'+w.n+'</td><td>'+w.mun+'</td><td>'+w.pen+'</td><td>'+(w.dMax||w.dmg)+'</td><td>'+(w.melee||'-')+'</td><td>'+(w.cat1||'-')+'</td><td>'+(w.cat2||'-')+'</td><td>'+(w.catP||'-')+'</td><td style="color:#f0c040;font-weight:700">'+p+'</td></tr>';}
+      h+='</table>';
+      // Validated custom weapons
+      var vw=CB.getValidated().weapons||[];
+      if(vw.length){h+='<h4 style="color:#3fb950;font-size:11px;margin:10px 0 4px">Armes validees (custom) — '+vw.length+'</h4><div>';vw.forEach(function(w){h+='<span style="display:inline-block;background:var(--card);border:1px solid #f0c040;border-radius:4px;padding:3px 8px;margin:2px;font-size:9px">'+w.n+' '+(w.price||calcWeaponPrice(w))+'pts <button onclick="CB_removeValidated(\'weapon\',\''+w.n+'\')" style="color:#f44;background:none;border:none;cursor:pointer;font-size:9px">suppr</button></span>';});h+='</div>';}
+      // Validated custom units
+      var vu=CB.getValidated().units||[];
+      if(vu.length){h+='<h4 style="color:#3fb950;font-size:11px;margin:10px 0 4px">Unites validees — '+vu.length+'</h4><div>';vu.forEach(function(u){h+='<span style="display:inline-block;background:var(--card);border:1px solid #f0c040;border-radius:4px;padding:3px 8px;margin:2px;font-size:9px">'+(u.image?'<img src="'+u.image+'" style="width:14px;height:14px;border-radius:2px;vertical-align:middle;margin-right:2px">':'')+(u.name||'?')+' '+u.pts+'pts <button onclick="CB_removeValidated(\'unit\',\''+u.name+'\')" style="color:#f44;background:none;border:none;cursor:pointer;font-size:9px">suppr</button></span>';});h+='</div>';}
+      // Validated factions
+      var vf=CB.getValidated().factions||[];
+      if(vf.length){h+='<h4 style="color:#3fb950;font-size:11px;margin:10px 0 4px">Factions validees — '+vf.length+'</h4><div>';vf.forEach(function(f){h+='<span style="display:inline-block;padding:3px 8px;margin:2px;border-radius:4px;font-size:10px;border:1px solid '+f.color+';color:'+f.color+'">'+f.name+' ('+f.abbr+') <button onclick="CB_removeValidated(\'faction\',\''+f.name+'\')" style="color:#f44;background:none;border:none;cursor:pointer;font-size:9px">suppr</button></span>';});h+='</div>';}
+      tw.innerHTML=h;
+    }
+  }
+  // Remove validated item
+  window.CB_removeValidated=function(type,name){
+    if(!confirm('Supprimer "'+name+'" des elements valides ?'))return;
+    var v=CB.getValidated();
+    if(type==='weapon')v.weapons=(v.weapons||[]).filter(function(w){return w.n!==name;});
+    if(type==='unit')v.units=(v.units||[]).filter(function(u){return u.name!==name;});
+    if(type==='faction')v.factions=(v.factions||[]).filter(function(f){return f.name!==name;});
+    CB.saveValidated(v);renderACfg();alert('Supprime');
+  };
+
+  // ═══ ADMIN USERS ═══
+  function renderAU(){
+    var d=document.getElementById('admin-users-list');if(!d)return;
+    var accs=CB.getAccounts();var users=CB.getAllUsers();
+    var h='<table style="width:100%;font-size:10px;border-collapse:collapse"><tr style="background:#222;color:var(--accent)"><th style="padding:4px">Login</th><th>Units</th><th>Armes</th><th>Actions</th></tr>';
+    users.forEach(function(login){
+      var ud=CB.getUserData(login);
+      h+='<tr style="border-bottom:1px solid #333"><td style="padding:4px;color:#58a6ff;font-weight:700">'+login+'</td><td>'+(ud.units||[]).length+'</td><td>'+(ud.weapons||[]).length+'</td><td>';
+      h+='<button onclick="CB_editUser(\''+login+'\')" style="font-size:8px;padding:1px 4px;border:1px solid #555;background:#222;color:#aaa;cursor:pointer;border-radius:2px">Modifier MDP</button> ';
+      h+='<button onclick="CB_delUser(\''+login+'\')" style="font-size:8px;padding:1px 4px;border:1px solid #6e1010;background:#2a0505;color:#f44;cursor:pointer;border-radius:2px">Supprimer</button>';
+      h+='</td></tr>';
+    });
+    h+='</table>';
+    d.innerHTML=h;
+  }
+  window.CB_editUser=async function(login){var np=prompt('Nouveau MDP pour '+login+':');if(!np||np.length<4){alert('4 car. min');return;}var hashed=await CB.hashPassword(np);var a=CB.getAccounts();if(a[login]){a[login].pass=hashed;CB.saveAccounts(a);CB.logHistory('edit','account',login,'MDP modifié');alert('MDP modifié et hashé !');}};
+  window.CB_delUser=function(login){if(!confirm('Supprimer le compte '+login+' et toutes ses donnees ?'))return;var a=CB.getAccounts();delete a[login];CB.saveAccounts(a);localStorage.removeItem('cb_data_'+login);var u=CB.getAllUsers();var idx=u.indexOf(login);if(idx>=0){u.splice(idx,1);localStorage.setItem('cb_allusers',JSON.stringify(u));}renderAU();alert('Supprime');};
+
+  // ═══ EXPORT / IMPORT ═══
+  window.CB_exportAll=function(){
+    var data={accounts:JSON.parse(localStorage.getItem('cb_accounts')||'{}'),allusers:CB.getAllUsers(),validated:CB.getValidated(),submissions:CB.getSubmissions()};
+    CB.getAllUsers().forEach(function(l){data['data_'+l]=CB.getUserData(l);});
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='crossblocks_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+    document.getElementById('sync-status-msg').textContent='Exporte !';
+  };
+  window.CB_importAll=function(input){
+    var file=input.files[0];if(!file)return;
+    var r=new FileReader();r.onload=function(e){
+      try{
+        var data=JSON.parse(e.target.result);
+        // Merge accounts
+        var existing=JSON.parse(localStorage.getItem('cb_accounts')||'{}');
+        if(data.accounts)for(var k in data.accounts)if(k!=='admin')existing[k]=data.accounts[k];
+        localStorage.setItem('cb_accounts',JSON.stringify(existing));
+        // Merge users list
+        var eu=CB.getAllUsers();(data.allusers||[]).forEach(function(l){if(eu.indexOf(l)<0)eu.push(l);});
+        localStorage.setItem('cb_allusers',JSON.stringify(eu));
+        // Merge validated
+        var ev=CB.getValidated();var iv=data.validated||{};
+        ['units','weapons','factions'].forEach(function(t){(iv[t]||[]).forEach(function(item){var arr=ev[t]=ev[t]||[];if(!arr.some(function(x){return(x.name||x.n)===(item.name||item.n);}))arr.push(item);});});
+        CB.saveValidated(ev);
+        // Merge submissions
+        var es=CB.getSubmissions();(data.submissions||[]).forEach(function(s){es.push(s);});CB.saveSubmissions(es);
+        // Merge user data
+        eu.forEach(function(l){if(data['data_'+l]){var existing=CB.getUserData(l);var imported=data['data_'+l];
+          ['units','weapons','factions'].forEach(function(t){(imported[t]||[]).forEach(function(item){var arr=existing[t]=existing[t]||[];if(!arr.some(function(x){return(x.name||x.n)===(item.name||item.n);}))arr.push(item);});});
+          CB.saveUserData(l,existing);}});
+        document.getElementById('sync-status-msg').textContent='Importe et fusionne ! Rechargez la page.';
+        alert('Donnees importees et fusionnees ! Rechargez.');
+      }catch(err){alert('Erreur: '+err.message);}
+    };r.readAsText(file);
+  };
+
+  // ════════════════════════════════════════════════════════════
+  // ═══ PASSE 3 — ÉDITEUR AMÉLIORÉ ═══
+  // ════════════════════════════════════════════════════════════
+
+  // ─── #11 Bibliothèque d'icônes ───
+  var ICON_LIBRARY=[
+    '🪖','🎖','⭐','👑','🛡','⚔','🗡','🏹','🔫','💣','🧨','🔥',
+    '🤖','🦾','🦿','🕷','👾','💀','☠','👻','🎃','😈',
+    '🚀','✈','🚁','🛸','🚜','🚗','🛻','🛰','⚓','🛶',
+    '🦅','🦇','🐺','🐻','🦁','🐯','🐉','🐍','🦂','🕸',
+    '✊','🤜','🦿','🪂','⛑','🎯','🏴','🏳','🏁','⚡',
+    '🌟','💥','🌪','🌊','❄','🔱','⚙','🔧','🧬','🔬'
+  ];
+
+  function buildIconLibrary(){
+    var grid=document.getElementById('icon-library-grid');
+    if(!grid||grid.children.length)return;
+    ICON_LIBRARY.forEach(function(icon){
+      var btn=document.createElement('button');
+      btn.type='button';
+      btn.textContent=icon;
+      btn.style.cssText='width:36px;height:36px;font-size:22px;background:#161b22;border:1px solid #30363d;border-radius:4px;cursor:pointer;padding:0';
+      btn.onmouseenter=function(){btn.style.background='#1f2937';btn.style.borderColor='#f0c040';};
+      btn.onmouseleave=function(){btn.style.background='#161b22';btn.style.borderColor='#30363d';};
+      btn.onclick=function(){CB_selectIcon(icon);};
+      grid.appendChild(btn);
+    });
+  }
+
+  window.CB_selectIcon=function(icon){
+    // Render icon as a data URL (SVG with emoji text)
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="#1a1a2e"/><text x="60" y="85" font-size="80" text-anchor="middle" fill="#e6edf3">'+icon+'</text></svg>';
+    var dataUrl='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svg)));
+    pendingImage=dataUrl;
+    var prev=document.getElementById('ed-image-preview');
+    if(prev)prev.innerHTML='<div style="display:inline-block;padding:6px;background:#1a1a2e;border:1px solid #f0c040;border-radius:4px;font-size:40px">'+icon+'</div>';
+    if(typeof updatePreview==='function')updatePreview();
+  };
+
+  // ─── Tabs pour les modes d'image ───
+  window.CB_switchImgTab=function(tab){
+    ['upload','icons','crop'].forEach(function(t){
+      var panel=document.getElementById('img-panel-'+t);
+      var btn=document.getElementById('img-tab-'+t);
+      if(panel)panel.style.display=(t===tab)?'block':'none';
+      if(btn){btn.style.background=(t===tab)?'#238636':'#222';btn.style.color=(t===tab)?'#fff':'#aaa';}
+    });
+    if(tab==='icons')buildIconLibrary();
+    if(tab==='crop')initCropTool();
+  };
+
+  // ─── #10 Cropper d'image ───
+  var cropState={img:null,x:0,y:0,w:0,h:0,dragging:false,startX:0,startY:0};
+
+  function initCropTool(){
+    var canvas=document.getElementById('crop-canvas');
+    var overlay=document.getElementById('crop-overlay');
+    if(!canvas||!pendingImage){
+      var tab=document.getElementById('img-tab-crop');
+      if(tab)tab.style.display='none';
+      alert('Chargez d\'abord une image via Upload');
+      CB_switchImgTab('upload');
+      return;
+    }
+    var img=new Image();
+    img.onload=function(){
+      cropState.img=img;
+      var maxW=280;
+      var scale=Math.min(1,maxW/img.width);
+      canvas.width=img.width*scale;
+      canvas.height=img.height*scale;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      // Initial crop box = center square
+      var size=Math.min(canvas.width,canvas.height)*0.8;
+      cropState.x=(canvas.width-size)/2;
+      cropState.y=(canvas.height-size)/2;
+      cropState.w=size;
+      cropState.h=size;
+      updateCropOverlay();
+    };
+    img.src=pendingImage;
+    // Drag handlers
+    canvas.onmousedown=function(e){
+      var r=canvas.getBoundingClientRect();
+      cropState.startX=(e.clientX-r.left)*(canvas.width/r.width);
+      cropState.startY=(e.clientY-r.top)*(canvas.height/r.height);
+      cropState.dragging=true;
+      cropState.x=cropState.startX;
+      cropState.y=cropState.startY;
+      cropState.w=0;cropState.h=0;
+    };
+    canvas.onmousemove=function(e){
+      if(!cropState.dragging)return;
+      var r=canvas.getBoundingClientRect();
+      var mx=(e.clientX-r.left)*(canvas.width/r.width);
+      var my=(e.clientY-r.top)*(canvas.height/r.height);
+      cropState.w=mx-cropState.startX;
+      cropState.h=my-cropState.startY;
+      updateCropOverlay();
+    };
+    canvas.onmouseup=canvas.onmouseleave=function(){cropState.dragging=false;};
+  }
+
+  function updateCropOverlay(){
+    var canvas=document.getElementById('crop-canvas');
+    var overlay=document.getElementById('crop-overlay');
+    if(!canvas||!overlay)return;
+    var r=canvas.getBoundingClientRect();
+    var sx=r.width/canvas.width,sy=r.height/canvas.height;
+    var x=cropState.x*sx,y=cropState.y*sy,w=cropState.w*sx,h=cropState.h*sy;
+    if(w<0){x+=w;w=-w;}
+    if(h<0){y+=h;h=-h;}
+    overlay.style.left=x+'px';
+    overlay.style.top=y+'px';
+    overlay.style.width=w+'px';
+    overlay.style.height=h+'px';
+  }
+
+  window.CB_applyCrop=function(){
+    if(!cropState.img||cropState.w===0||cropState.h===0){alert('Dessinez d\'abord une zone sur l\'image');return;}
+    var canvas=document.getElementById('crop-canvas');
+    var scale=cropState.img.width/canvas.width;
+    var sx=Math.abs(cropState.w<0?cropState.x+cropState.w:cropState.x)*scale;
+    var sy=Math.abs(cropState.h<0?cropState.y+cropState.h:cropState.y)*scale;
+    var sw=Math.abs(cropState.w)*scale;
+    var sh=Math.abs(cropState.h)*scale;
+    var out=document.createElement('canvas');
+    out.width=sw;out.height=sh;
+    out.getContext('2d').drawImage(cropState.img,sx,sy,sw,sh,0,0,sw,sh);
+    pendingImage=out.toDataURL('image/png');
+    var prev=document.getElementById('ed-image-preview');
+    if(prev)prev.innerHTML='<img src="'+pendingImage+'" style="max-width:120px;max-height:80px;border-radius:4px;border:1px solid #f0c040">';
+    if(typeof updatePreview==='function')updatePreview();
+    alert('Image recadrée !');
+    CB_switchImgTab('upload');
+  };
+
+  window.CB_resetCrop=function(){
+    var canvas=document.getElementById('crop-canvas');
+    if(!canvas||!cropState.img)return;
+    canvas.getContext('2d').drawImage(cropState.img,0,0,canvas.width,canvas.height);
+    cropState.w=0;cropState.h=0;
+    updateCropOverlay();
+  };
+
+  // Show crop tab only when an image is loaded
+  var origHandleImage=window.handleUnitImage;
+  window.handleUnitImage=function(input){
+    if(origHandleImage)origHandleImage(input);
+    setTimeout(function(){
+      var tab=document.getElementById('img-tab-crop');
+      if(tab&&pendingImage)tab.style.display='inline-block';
+    },300);
+  };
+
+  // ─── #9 Prévisualisation grand format (fixée) ───
+  window.CB_showPreviewBig=function(){
+    var src=document.getElementById('card-preview');
+    var modal=document.getElementById('bigPreviewModal');
+    var content=document.getElementById('bigPreviewContent');
+    if(!src||!modal||!content){alert('Preview introuvable');return;}
+    // Clone the node and strip all IDs to avoid duplicates in DOM
+    var clone=src.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(function(e){e.removeAttribute('id');});
+    // Use zoom instead of transform:scale so layout reserves real space
+    clone.style.zoom='1.8';
+    clone.style.margin='0 auto';
+    clone.style.display='block';
+    content.innerHTML='';
+    content.appendChild(clone);
+    content.style.padding='30px';
+    content.style.background='#fff';
+    content.style.borderRadius='8px';
+    modal.style.display='flex';
+  };
+
+  // ─── #12 Duplication de fiche ───
+  window.CB_duplicateUnit=function(unitName){
+    var u=CB.getUser();if(!u){alert('Connectez-vous');return;}
+    var d=CB.getUserData(u.login);
+    var orig=(d.units||[]).find(function(x){return x.name===unitName;});
+    if(!orig){alert('Unité introuvable');return;}
+    var newName=prompt('Nom de la copie:',unitName+' (copie)');
+    if(!newName||!newName.trim())return;
+    newName=newName.trim();
+    if((d.units||[]).some(function(x){return x.name===newName;})){alert('Ce nom existe déjà');return;}
+    var copy=JSON.parse(JSON.stringify(orig));
+    copy.name=newName;
+    copy.date=new Date().toISOString().slice(0,10);
+    d.units.push(copy);
+    CB.saveUserData(u.login,d);
+    addU2G(copy);
+    // Also pre-fill the editor form with the copy's data
+    var f={'ed-name':newName,'ed-faction':copy.faction,'ed-points':copy.basePts||copy.pts,'ed-hp':copy.hp,'ed-armor':copy.arm,'ed-move':copy.mm,'ed-pa':copy.pa};
+    for(var k in f){var el=document.getElementById(k);if(el)el.value=f[k];}
+    if(copy.image){pendingImage=copy.image;var prev=document.getElementById('ed-image-preview');if(prev)prev.innerHTML='<img src="'+copy.image+'" style="max-width:120px;max-height:80px;border-radius:4px;border:1px solid #f0c040">';}
+    if(typeof updatePreview==='function')updatePreview();
+    alert('Fiche dupliquée ! Modifiez et cliquez "Ajouter fiche d\'unité"');
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+
+  // Hook addU2G to add duplicate button
+  var origAddU2G=addU2G;
+  addU2G=function(u){
+    origAddU2G(u);
+    setTimeout(function(){
+      var card=document.querySelector('.gallery-card[data-uname="'+u.name+'"]');
+      if(card&&!card.querySelector('.btn-duplicate')){
+        var btn=document.createElement('button');
+        btn.className='btn-duplicate';
+        btn.textContent='⎘ Dupliquer';
+        btn.style.cssText='margin-top:3px;padding:2px 6px;font-size:9px;background:#1f6feb;color:#fff;border:none;border-radius:3px;cursor:pointer;width:100%';
+        btn.onclick=function(e){e.stopPropagation();CB_duplicateUnit(u.name);};
+        card.appendChild(btn);
+      }
+    },50);
+  };
+
+  // ═══ LOAD USER CONTENT ═══
+  window.loadUserContent=function(){var u=CB.getUser();if(!u)return;var d=CB.getUserData(u.login);(d.weapons||[]).forEach(function(w){addW2S(w.key,w);});renderW();(d.units||[]).forEach(function(x){addU2G(x);});var v=CB.getValidated();(v.units||[]).forEach(function(x){addU2G(x);});(v.weapons||[]).forEach(function(w){addW2S(w.key||('vw_'+w.n),w);});renderF();refreshCreatorFilter();};
+  window.promptAdmin=function(){var u=CB.getUser();if(u&&u.isAdmin){var p=document.getElementById('adminPanel');if(p)p.style.display='flex';return;}alert(_t('alert.admin_only','Connectez-vous en admin.'));};
+  function init(){var v=CB.getValidated();(v.factions||[]).forEach(function(f){var s=document.getElementById('ed-faction');if(s&&!s.querySelector('option[value="'+f.name+'"]')){var o=document.createElement('option');o.value=f.name;o.textContent=f.name;s.appendChild(o);}});(v.weapons||[]).forEach(function(w){addW2S(w.key||('vw_'+w.n),w);});(v.units||[]).forEach(function(u){addU2G(u);});refreshCreatorFilter();if(CB.getUser())loadUserContent();}
+  if(document.readyState==='complete')setTimeout(init,500);else window.addEventListener('load',function(){setTimeout(init,500);});
+})();
+</script>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// BIDIRECTIONAL SYNC: index.html ↔ game.html (v2 - BroadcastChannel)
+// ═══════════════════════════════════════════════════════════════════════════
+(function() {
+  // BroadcastChannel for SAME-DOMAIN multi-tab sync (modern browsers)
+  var bc = null;
+  try {
+    bc = new BroadcastChannel('crossblocks_sync');
+  } catch(e) { console.warn('BroadcastChannel unavailable, fallback to storage events'); }
+
+  function sendToGame() {
+    try {
+      if (typeof cards === 'undefined' || !Array.isArray(cards)) return;
+      var data = { source: 'index.html', cards: cards, ts: Date.now() };
+      var json = JSON.stringify(data);
+      // Write to localStorage (cross-tab)
+      localStorage.setItem('crossblocks_cards_to_game', json);
+      // BroadcastChannel (same-domain instant)
+      if (bc) bc.postMessage({ type: 'cards_update', data: data });
+      console.log('📤 Sync → game.html:', cards.length, 'cards');
+    } catch(e) { console.warn('Sync to game fail:', e); }
+  }
+  
+  function receiveFromGame(data) {
+    if (!data || !data.cards || !Array.isArray(data.cards)) return;
+    if (typeof cards === 'undefined') return;
+    var newCards = data.cards;
+    // Merge mode: add new ones not present
+    var existing = new Set(cards.map(function(c) { return c.name; }));
+    var added = 0;
+    newCards.forEach(function(c) {
+      if (!existing.has(c.name)) {
+        cards.push(c);
+        added++;
+      }
+    });
+    if (added > 0) {
+      try { saveCards(); } catch(_) {}
+      try { displayCards(); } catch(_) {}
+      var notif = document.createElement('div');
+      notif.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#0f2a15;border:1px solid #3fb950;border-radius:8px;padding:10px 14px;z-index:99999;font-size:12px;color:#3fb950;box-shadow:0 4px 20px #0008;font-weight:600';
+      notif.textContent = '📥 ' + added + ' nouvelle(s) unité(s) depuis game.html';
+      document.body.appendChild(notif);
+      setTimeout(function() { if (notif.parentElement) notif.remove(); }, 4000);
+    }
+  }
+  
+  // Listen via BroadcastChannel
+  if (bc) {
+    bc.onmessage = function(e) {
+      if (e.data && e.data.type === 'cards_update' && e.data.data && e.data.data.source === 'game.html') {
+        receiveFromGame(e.data.data);
+      }
+    };
+  }
+  
+  // Listen via storage event (cross-tab fallback)
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'crossblocks_game_to_cards' && e.newValue) {
+      try { receiveFromGame(JSON.parse(e.newValue)); } catch(_) {}
+    }
+  });
+  
+  // Patch saveCards to auto-sync after every card change
+  function installSyncWrap() {
+    if (typeof window.saveCards === 'function' && !window.saveCards._wrapped) {
+      var orig = window.saveCards;
+      window.saveCards = function() {
+        var r = orig.apply(this, arguments);
+        sendToGame();
+        return r;
+      };
+      window.saveCards._wrapped = true;
+      console.log('✓ saveCards wrapped for sync');
+      return true;
+    }
+    return false;
+  }
+  
+  // Try multiple times because saveCards may be defined later
+  if (!installSyncWrap()) {
+    var attempts = 0;
+    var iv = setInterval(function() {
+      if (installSyncWrap() || ++attempts > 20) clearInterval(iv);
+    }, 200);
+  }
+  
+  // Add manual sync button
+  function addSyncButton() {
+    var toolbar = document.querySelector('.cards-actions, .toolbar, .actions-bar');
+    if (toolbar && !document.getElementById('btn-game-sync')) {
+      var btn = document.createElement('button');
+      btn.id = 'btn-game-sync';
+      btn.className = 'btn';
+      btn.style.cssText = 'background:none;border:1px solid #3fb950;color:#3fb950;cursor:pointer;padding:4px 10px;border-radius:4px;font-size:11px;margin-left:4px';
+      btn.title = 'Envoyer toute l\'armée vers game.html';
+      btn.innerHTML = '🎮 → Game';
+      btn.onclick = function() {
+        sendToGame();
+        btn.innerHTML = '✅ Envoyé !';
+        setTimeout(function() { btn.innerHTML = '🎮 → Game'; }, 2000);
+      };
+      toolbar.appendChild(btn);
+    }
+  }
+  
+  window.addEventListener('load', function() {
+    setTimeout(addSyncButton, 1000);
+    // Initial sync of any existing cards
+    setTimeout(sendToGame, 1500);
+  });
+  
+  // Expose for debugging
+  window.__cbSync = { sendToGame: sendToGame, receiveFromGame: receiveFromGame };
+})();
+</script>
+</body>
+</html>

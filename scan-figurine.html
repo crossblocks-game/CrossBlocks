@@ -3,7 +3,7 @@
 body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial}.wrap{max-width:850px;margin:auto;padding:20px}a,button{display:inline-block;background:#202832;color:#fff;border:1px solid #394451;border-radius:6px;padding:9px 13px;text-decoration:none;cursor:pointer}.top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.scanner{position:relative;background:#000;border-radius:12px;overflow:hidden}.scanner video{width:100%;display:block;max-height:70vh;object-fit:contain}.reticle{position:absolute;inset:18%;border:3px solid #58a6ff;border-radius:12px;box-shadow:0 0 0 9999px #0003}.reticle.ok{border-color:#3fb950}.status{margin-top:10px;padding:10px;background:#12161c;border:1px solid #30363d;border-radius:7px}.id{font-size:28px;font-weight:800;color:#f0c040}.hint{color:#8b949e;font-size:12px}.err{color:#ff7b72}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 </style></head><body><div class="wrap">
 <div class="top"><a href="index.html">‹ CrossBlocks</a><a href="figurines.html">⚙ Base ArUco</a></div>
-<h1>📷 Scanner de figurine</h1><p class="hint">Le scanner accepte tous les IDs retournés par le dictionnaire ArUco. Il ne limite pas l'ID à 0–9. Le dictionnaire ARUCO de js-aruco2 contient 1023 codes (0–1022). citeturn0search0</p>
+<h1>📷 Scanner de figurine</h1><p class="hint">Le scanner accepte tous les IDs retournés par le dictionnaire ArUco. Il ne limite pas l'ID à 0–9. Le dictionnaire ARUCO de js-aruco2 contient 1023 codes (0–1022).</p>
 <div class="scanner"><video id="video" playsinline muted></video><div class="reticle" id="reticle"></div></div>
 <div class="status" id="status">Initialisation…</div><div class="id" id="found"></div>
 <div class="controls"><button id="start">▶ Démarrer</button><button id="stop">■ Arrêter</button></div>
@@ -17,7 +17,7 @@ let stream=null,raf=0,detector=null,lastId=null,stable=0,db=null,locked=false;
 function setStatus(t,c){status.textContent=t;status.className='status '+(c||'');}
 async function start(){
  if(!window.AR||!AR.Detector){setStatus("Bibliothèque ArUco introuvable. Recharge la page.",'err');return;}
- try{db=await CrossBlocksAruco.fetchDB(); if(!db){setStatus("Base CrossBlocks indisponible. Mode scanner sans association.",'err');}
+ try{db=await CrossBlocksAruco.fetchDB(); if(!db){setStatus("Base distante indisponible : le scan continuera et affichera l'ID.",'err');}
   detector=new AR.Detector({dictionaryName:'ARUCO',maxHammingDistance:0});
   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
   video.srcObject=stream;await video.play();locked=false;stable=0;lastId=null;setStatus("Cadrez un marqueur ArUco.",'');loop();
