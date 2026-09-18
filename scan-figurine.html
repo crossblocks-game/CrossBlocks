@@ -7,10 +7,9 @@
 <style>
 body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial,sans-serif}
 .wrap{max-width:900px;margin:auto;padding:20px}
-a,button{display:inline-block;background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none}
+a{display:inline-block;background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none;margin-right:6px}
 video{width:100%;max-width:760px;background:#000;border-radius:12px;display:block;margin:18px auto}
-canvas{display:none}.status{text-align:center;padding:12px;border:1px solid #30363d;border-radius:8px}
-.id{text-align:center;font-size:26px;font-weight:bold;margin:12px}
+canvas{display:none}.status{text-align:center;padding:12px;border:1px solid #30363d;border-radius:8px}.id{text-align:center;font-size:26px;font-weight:bold;margin:12px}
 </style>
 </head>
 <body>
@@ -25,99 +24,65 @@ canvas{display:none}.status{text-align:center;padding:12px;border:1px solid #303
 </div>
 
 <script src="./crossblocks-scan-data.js"></script>
-
-<!-- js-aruco2 2.0.0 : the browser package exposes src/cv.js + src/aruco.js -->
-<script src="https://cdn.jsdelivr.net/npm/js-aruco2@2.0.0/src/cv.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/js-aruco2@2.0.0/src/aruco.js"></script>
+<!-- UNPKG sert directement les fichiers du paquet npm js-aruco2 2.0.0. -->
+<script src="https://unpkg.com/js-aruco2@2.0.0/src/cv.js"></script>
+<script src="https://unpkg.com/js-aruco2@2.0.0/src/aruco.js"></script>
 
 <script>
 (async function(){
- const S=document.getElementById('status');
- const F=document.getElementById('found');
- const V=document.getElementById('video');
- const C=document.getElementById('canvas');
- const X=C.getContext('2d',{willReadFrequently:true});
-
+ const S=document.getElementById('status'),F=document.getElementById('found'),
+       V=document.getElementById('video'),C=document.getElementById('canvas'),
+       X=C.getContext('2d',{willReadFrequently:true});
  const say=t=>S.textContent=t;
 
- // Wait briefly for external scripts to finish before testing AR.
  let tries=0;
  while((!window.AR || !window.AR.Detector) && tries<100){
-   await new Promise(r=>setTimeout(r,100));
-   tries++;
+   await new Promise(r=>setTimeout(r,100)); tries++;
  }
-
  if(!window.AR || !window.AR.Detector){
-   say('Erreur : la bibliothèque ArUco n’a pas pu être chargée.');
-   console.error('AR namespace missing. Check the CDN/network/content blocker.');
+   say('Erreur : bibliothèque ArUco non chargée. Vérifie que les scripts externes ne sont pas bloqués.');
    return;
  }
 
  let detector;
- try{
-   detector=new AR.Detector({dictionaryName:'ARUCO'});
- }catch(e){
-   console.error(e);
-   say('Erreur lors de l’initialisation du dictionnaire ArUco.');
-   return;
- }
+ try{detector=new AR.Detector({dictionaryName:'ARUCO'});}
+ catch(e){console.error(e);say('Erreur d’initialisation du dictionnaire ArUco.');return;}
 
  try{
-   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
-     throw new Error('getUserMedia indisponible');
+   if(!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia indisponible');
    V.srcObject=await navigator.mediaDevices.getUserMedia({
-     video:{facingMode:{ideal:'environment'}},
-     audio:false
+     video:{facingMode:{ideal:'environment'}},audio:false
    });
    await V.play();
- }catch(e){
-   console.error(e);
-   say('Caméra inaccessible : autorise la caméra puis recharge la page.');
-   return;
- }
+ }catch(e){console.error(e);say('Caméra inaccessible : autorise la caméra puis recharge.');return;}
 
  let lastId=null,count=0,locked=false;
 
  function loop(){
    if(locked)return;
-   if(V.readyState>=2 && V.videoWidth>0){
-     C.width=V.videoWidth;
-     C.height=V.videoHeight;
+   if(V.readyState>=2 && V.videoWidth){
+     C.width=V.videoWidth; C.height=V.videoHeight;
      X.drawImage(V,0,0,C.width,C.height);
-
      try{
-       const markers=detector.detect(
-         X.getImageData(0,0,C.width,C.height)
-       );
-
+       const markers=detector.detect(X.getImageData(0,0,C.width,C.height));
        if(markers.length){
          const id=Number(markers[0].id);
-
-         if(id!==lastId){lastId=id;count=1}
-         else count++;
-
+         if(id!==lastId){lastId=id;count=1}else count++;
          F.textContent='ArUco #'+id;
          say('Marqueur détecté — '+count+'/3');
-
          if(count>=3){
            locked=true;
-           say('Marqueur reconnu — ouverture de la fiche…');
            location.href='fiche-figurine.html?id='+encodeURIComponent(id);
            return;
          }
        }else{
-         lastId=null;
-         count=0;
-         F.textContent='';
+         lastId=null;count=0;F.textContent='';
          say('Recherche d’un marqueur ArUco…');
        }
-     }catch(e){
-       console.error(e);
-     }
+     }catch(e){console.error(e);}
    }
    requestAnimationFrame(loop);
  }
-
  say('Présente un marqueur ArUco devant la caméra.');
  requestAnimationFrame(loop);
 })();

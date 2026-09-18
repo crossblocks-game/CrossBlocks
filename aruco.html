@@ -3,8 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CrossBlocks — Base ArUco</title>
 <style>
-body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial,sans-serif}
-.wrap{max-width:1000px;margin:auto;padding:20px}
+body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial,sans-serif}.wrap{max-width:1000px;margin:auto;padding:20px}
 a,button{background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none;cursor:pointer}
 .box{background:#12161c;border:1px solid #30363d;border-radius:10px;padding:18px;margin-top:15px}
 .row{display:grid;grid-template-columns:180px 1fr auto;gap:10px}
@@ -12,62 +11,35 @@ input,select{padding:10px;border-radius:6px;border:1px solid #394451;background:
 .item{padding:11px 0;border-bottom:1px solid #30363d;display:flex;justify-content:space-between;gap:12px}
 .warn{padding:12px;border:1px solid #9e6a03;background:#211b08;border-radius:7px}
 </style></head>
-<body>
-<div class="wrap">
-<a href="index.html">‹ CrossBlocks</a>
-<a href="scan-figurine.html">📷 Scanner</a>
+<body><div class="wrap">
+<a href="index.html">‹ CrossBlocks</a><a href="scan-figurine.html">📷 Scanner</a>
 <h1>📷 Base ArUco</h1>
-<div class="box">
-<p>Associe un ID ArUco à une unité déjà présente dans la base CrossBlocks.</p>
-<div class="row">
-<input id="id" type="number" min="0" max="1022" placeholder="ID ArUco">
-<select id="unit"><option>Chargement…</option></select>
-<button id="save">Associer</button>
-</div>
-</div>
-<div class="box"><h2>Associations enregistrées</h2><div id="list">Chargement…</div></div>
+<div class="box"><p>Associe un ID ArUco à une unité CrossBlocks.</p>
+<div class="row"><input id="id" type="number" min="0" max="1022" placeholder="ID ArUco"><select id="unit"><option>Chargement…</option></select><button id="save">Associer</button></div></div>
+<div class="box"><h2>Associations</h2><div id="list">Chargement…</div></div>
 </div>
 <script src="./crossblocks-scan-data.js"></script>
 <script>
 (async function(){
- const id=document.getElementById('id');
- const unit=document.getElementById('unit');
- const list=document.getElementById('list');
+ const id=document.getElementById('id'),unit=document.getElementById('unit'),list=document.getElementById('list');
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  try{
-   const db=await CrossBlocksAruco.fetchDB();
-   const units=CrossBlocksAruco.allUnits(db);
-   unit.innerHTML=units.length
-     ? units.map(u=>'<option value="'+esc(CrossBlocksAruco.unitName(u))+'">'+esc(CrossBlocksAruco.unitName(u))+'</option>').join('')
-     : '<option>Aucune unité</option>';
-
-   function render(){
-     const a=db.aruco||{};
-     const keys=Object.keys(a).sort((x,y)=>Number(x)-Number(y));
-     list.innerHTML=keys.length
-       ? keys.map(k=>'<div class="item"><span><b>ArUco #'+esc(k)+'</b> → '+esc(a[k].unitName)+'</span></div>').join('')
-       : 'Aucune association.';
-   }
-   render();
-
-   document.getElementById('save').onclick=async()=>{
-     const n=Number(id.value);
-     if(!Number.isInteger(n)||n<0||n>1022)return alert('ID ArUco invalide. Utilise 0 à 1022 pour le dictionnaire ARUCO.');
-     if(!unit.value)return alert('Sélectionne une unité.');
-     db.aruco=db.aruco||{};
-     db.aruco[String(n)]={unitName:unit.value,updatedAt:new Date().toISOString()};
-
-     // This standalone page intentionally does not overwrite the whole JSONBin:
-     // the actual Admin save routine remains the authoritative writer.
-     // It stores the mapping locally until the Admin writer is connected.
-     localStorage.setItem('crossblocks_aruco_pending',JSON.stringify(db.aruco));
-     render();
-     alert('Association préparée. Ouvre le panneau Admin CrossBlocks pour la synchroniser dans la base distante.');
-   };
- }catch(e){
-   console.error(e);
-   list.innerHTML='<div class="warn">Impossible de charger la base CrossBlocks.</div>';
- }
+  const db=await CrossBlocksAruco.fetchDB();
+  const units=CrossBlocksAruco.allUnits(db);
+  unit.innerHTML=units.length?units.map(u=>'<option value="'+esc(CrossBlocksAruco.unitName(u))+'">'+esc(CrossBlocksAruco.unitName(u))+'</option>').join(''):'<option>Aucune unité</option>';
+  function render(){
+   const a=db.aruco||{},keys=Object.keys(a).sort((x,y)=>Number(x)-Number(y));
+   list.innerHTML=keys.length?keys.map(k=>'<div class="item"><b>ArUco #'+esc(k)+'</b><span>'+esc(a[k].unitName)+'</span></div>').join(''):'Aucune association.';
+  }
+  render();
+  document.getElementById('save').onclick=()=>{
+   const n=Number(id.value);
+   if(!Number.isInteger(n)||n<0||n>1022)return alert('ID invalide : 0 à 1022 pour le dictionnaire ARUCO.');
+   if(!unit.value)return alert('Sélectionne une unité.');
+   db.aruco=db.aruco||{};db.aruco[String(n)]={unitName:unit.value,updatedAt:new Date().toISOString()};
+   localStorage.setItem('crossblocks_aruco_pending',JSON.stringify(db.aruco));render();
+   alert('Association préparée. Elle devra être enregistrée par le panneau Admin pour être envoyée dans la base distante.');
+  };
+ }catch(e){console.error(e);list.innerHTML='<div class="warn">Impossible de charger la base CrossBlocks.</div>'}
 })();
-</script>
-</body></html>
+</script></body></html>
