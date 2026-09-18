@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CrossBlocks — Scanner une figurine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0e11;
+    --panel: #12161c;
+    --border: #262c35;
+    --text: #e8ecef;
+    --muted: #7c8793;
+    --accent: #4cff8b;
+    --accent-dim: #1f6b3e;
+    --warn: #ffb347;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    overflow: hidden;
+  }
+  .stage {
+    position: relative; width: 100%; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  video, canvas.video-canvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover; filter: saturate(0.85) contrast(1.05);
+  }
+  video { visibility: hidden; }
+
+  .scrim {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(11,14,17,0) 38%, rgba(11,14,17,0.85) 78%);
+    pointer-events: none;
+  }
+
+  .reticle {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: min(64vw, 420px); height: min(64vw, 420px);
+    pointer-events: none;
+  }
+  .reticle .corner {
+    position: absolute; width: 34px; height: 34px;
+    border: 3px solid var(--accent);
+    opacity: 0.85;
+    transition: border-color 180ms ease, opacity 180ms ease;
+  }
+  .reticle.locked .corner { border-color: var(--warn); opacity: 1; }
+  .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+  .corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+  .corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+  .corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+  .scanline {
+    position: absolute; left: 8%; right: 8%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    box-shadow: 0 0 12px 1px var(--accent);
+    animation: sweep 2.4s ease-in-out infinite;
+    opacity: 0.8;
+  }
+  @keyframes sweep {
+    0%, 100% { top: 18%; }
+    50% { top: 82%; }
+  }
+
+  header.top {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px;
+    background: linear-gradient(180deg, rgba(11,14,17,0.9), transparent);
+    z-index: 5;
+  }
+  .brand { font-weight: 700; letter-spacing: 0.02em; font-size: 1.05rem; }
+  .brand small { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
+  a.back {
+    color: var(--muted); text-decoration: none; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
+  }
+  a.back:hover { border-color: var(--accent); color: var(--accent); }
+
+  .readout {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    z-index: 5; padding: 22px 20px 30px;
+    background: linear-gradient(0deg, rgba(11,14,17,0.95), transparent);
+    display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+  }
+  .status {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--muted);
+    letter-spacing: 0.02em; min-height: 1.2em;
+  }
+  .status.active { color: var(--accent); }
+  .status.error { color: #ff6b6b; }
+  .found-id {
+    font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--warn);
+    min-height: 1.4em;
+  }
+
+  .start-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 24px; text-align: center;
+  }
+  .start-overlay h1 { font-size: 1.6rem; margin: 0; letter-spacing: 0.01em; }
+  .start-overlay p { color: var(--muted); margin: 0; max-width: 320px; line-height: 1.5; }
+  button.start {
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.05rem;
+    background: var(--accent); color: #062712; border: none; border-radius: 8px;
+    padding: 14px 30px; cursor: pointer; letter-spacing: 0.02em;
+  }
+  button.start:active { transform: scale(0.98); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="videoCanvas" class="video-canvas"></canvas>
+  <canvas id="cvCanvas" class="hidden"></canvas>
+
+  <div class="scrim"></div>
+  <div class="scanline"></div>
+  <div class="reticle" id="reticle">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+  </div>
+
+  <header class="top">
+    <div class="brand">CROSSBLOCKS<small>SCANNER DE FIGURINE</small></div>
+    <a class="back" href="index.html">‹ Retour</a>
+  </header>
+
+  <div class="readout">
+    <div class="found-id" id="foundId"></div>
+    <div class="status" id="status">Initialisation de la caméra…</div>
+  </div>
+
+  <div class="start-overlay" id="startOverlay">
+    <h1>Scanner une figurine</h1>
+    <p>Vise le marqueur ArUco collé sous le socle avec la caméra. La fiche s'ouvre automatiquement dès qu'il est reconnu.</p>
+    <button class="start" id="startBtn">Activer la caméra</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/jcmellado/js-aruco/src/cv.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/jcmellado/js-aruco/src/aruco.js"></script>
+<script src="crossblocks-scan-data.js"></script>
+<script>
+(function () {
+  const video = document.getElementById('video');
+  const videoCanvas = document.getElementById('videoCanvas');
+  const cvCanvas = document.getElementById('cvCanvas');
+  const statusEl = document.getElementById('status');
+  const foundIdEl = document.getElementById('foundId');
+  const reticle = document.getElementById('reticle');
+  const startOverlay = document.getElementById('startOverlay');
+  const startBtn = document.getElementById('startBtn');
+
+  const videoCtx = videoCanvas.getContext('2d');
+  const cvCtx = cvCanvas.getContext('2d', { willReadFrequently: true });
+  const detector = new AR.Detector();
+
+  // Nombre de détections consécutives du même ID avant de valider
+  // (évite de basculer sur une fiche à cause d'un faux positif isolé)
+  const STABILITY_THRESHOLD = 6;
+  let lastSeenId = null;
+  let stableCount = 0;
+  let locked = false;
+  let rafId = null;
+
+  function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  async function startCamera() {
+    try {
+      setStatus('Demande d\'accès à la caméra…');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+
+      videoCanvas.width = video.videoWidth || 1280;
+      videoCanvas.height = video.videoHeight || 720;
+      // Résolution réduite pour la détection = boucle plus rapide sur mobile
+      cvCanvas.width = 480;
+      cvCanvas.height = Math.round(480 * (videoCanvas.height / videoCanvas.width));
+
+      setStatus('Cherche un marqueur…', 'active');
+      startOverlay.classList.add('hidden');
+      loop();
+    } catch (err) {
+      console.error(err);
+      setStatus('Impossible d\'accéder à la caméra : ' + err.message, 'error');
+    }
+  }
+
+  function loop() {
+    if (locked) return;
+
+    videoCtx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+    cvCtx.drawImage(video, 0, 0, cvCanvas.width, cvCanvas.height);
+    const imageData = cvCtx.getImageData(0, 0, cvCanvas.width, cvCanvas.height);
+
+    let markers = [];
+    try {
+      markers = detector.detect(imageData);
+    } catch (e) {
+      // frame illisible, on continue sur la suivante
+    }
+
+    if (markers.length > 0) {
+      const id = markers[0].id;
+      reticle.classList.add('locked');
+      foundIdEl.textContent = 'Marqueur #' + id;
+
+      if (id === lastSeenId) {
+        stableCount++;
+      } else {
+        lastSeenId = id;
+        stableCount = 1;
+      }
+
+      setStatus('Lecture en cours… (' + stableCount + '/' + STABILITY_THRESHOLD + ')', 'active');
+
+      if (stableCount >= STABILITY_THRESHOLD) {
+        locked = true;
+        handleLock(id);
+        return;
+      }
+    } else {
+      reticle.classList.remove('locked');
+      foundIdEl.textContent = '';
+      lastSeenId = null;
+      stableCount = 0;
+      setStatus('Cherche un marqueur…', 'active');
+    }
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function handleLock(arucoId) {
+    const figurine = getFigurineByArucoId(arucoId);
+    if (!figurine) {
+      setStatus('Marqueur #' + arucoId + ' non reconnu dans le catalogue.', 'error');
+      // On retente après une courte pause plutôt que de rester bloqué
+      setTimeout(() => { locked = false; stableCount = 0; lastSeenId = null; loop(); }, 1500);
+      return;
+    }
+    setStatus('Figurine reconnue — ouverture de la fiche…', 'active');
+    stopCamera();
+    window.location.href = 'fiche-figurine.html?id=' + encodeURIComponent(arucoId);
+  }
+
+  function stopCamera() {
+    if (rafId) cancelAnimationFrame(rafId);
+    const stream = video.srcObject;
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+  }
+
+  startBtn.addEventListener('click', startCamera, { once: true });
+  window.addEventListener('beforeunload', stopCamera);
+})();
+</script>
+</body>
+</html>
