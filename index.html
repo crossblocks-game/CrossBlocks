@@ -586,7 +586,13 @@
  <button class="btn btn-admtab" onclick="switchAdminTab('sync',this)" data-i18n="admin.sync"> Import/Export</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('history',this)" data-i18n="admin.history">📜 Historique</button>
 <button class="btn btn-admtab" onclick="switchAdminTab('specials',this)">⚡ Règles spéciales</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('aruco',this)">📷 ArUco</button>
  <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)" data-i18n="admin.balance"> Balance</button>
+ </div>
+ <div class="admin-body" id="admin-aruco" style="display:none">
+ <h3>📷 Base de données ArUco</h3>
+ <p class="admin-desc">Associez n'importe quel ID ArUco à une unité déjà renseignée dans CrossBlocks. Les associations sont stockées dans la base distante.</p>
+ <div id="admin-aruco-box"></div>
  </div>
  <div class="admin-body" id="admin-config">
  <h3 data-i18n="admin.themes_title">Thèmes disponibles</h3>
@@ -785,7 +791,7 @@ window.CB=(function(){
   function isHashed(p){return typeof p==='string'&&p.length===64&&/^[a-f0-9]+$/.test(p);}
 
   // ─── Local cache (updated from remote) ───
-  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{},likes:{},comments:{},history:[],specialRules:{},version:0};
+  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{},likes:{},comments:{},history:[],specialRules:{},aruco:{},version:0};
   var remoteReady=false;
   var syncStatus='En attente...';
   var pushPending=false;
@@ -811,6 +817,7 @@ window.CB=(function(){
         if(!cache.likes)cache.likes={};
         if(!cache.comments)cache.comments={};
         if(!cache.specialRules)cache.specialRules={};
+        if(!cache.aruco)cache.aruco={};
         if(!cache.history)cache.history=[];
         if(typeof cache.version!=='number')cache.version=0;
         remoteReady=true;
@@ -836,6 +843,7 @@ window.CB=(function(){
       validated:{units:[],weapons:[],factions:[]},
       submissions:[],
       userData:{},
+      aruco:{},
       version:Math.max(local.version||0,remote.version||0)
     };
     // Accounts: union (remote wins on conflict)
@@ -850,6 +858,11 @@ window.CB=(function(){
       ((local.validated||{})[t]||[]).forEach(function(it){var k=it.name||it.n;if(!seen[k]){seen[k]=1;merged.validated[t].push(it);}});
       ((remote.validated||{})[t]||[]).forEach(function(it){var k=it.name||it.n;if(!seen[k]){seen[k]=1;merged.validated[t].push(it);}});
     });
+    // ArUco database: merge by marker ID.
+    var arucoIds={};
+    Object.keys(local.aruco||{}).forEach(function(id){arucoIds[id]=local.aruco[id];});
+    Object.keys(remote.aruco||{}).forEach(function(id){arucoIds[id]=remote.aruco[id];});
+    merged.aruco=arucoIds;
     // Submissions: concat (append all from both)
     var subSeen={};
     (local.submissions||[]).forEach(function(s){var k=s.user+'|'+s.type+'|'+(s.data.name||s.data.n)+'|'+s.date;if(!subSeen[k]){subSeen[k]=1;merged.submissions.push(s);}});
@@ -1142,6 +1155,8 @@ window.CB=(function(){
     toggleLike:toggleLike,addComment:addComment,deleteComment:deleteComment,
     logHistory:logHistory,
     getSpecialRules:function(){return cache.specialRules||{}; },
+    getAruco:function(){return cache.aruco||{};},
+    saveAruco:function(db){cache.aruco=db||{};pushRemote();},
     setSpecialRule:function(unitName,rule){
       cache.specialRules=cache.specialRules||{};
       if(rule&&rule.trim()){cache.specialRules[unitName]=rule.trim();}
@@ -1601,9 +1616,9 @@ window.CB=(function(){
 
   // ═══ ADMIN PANEL ═══
   window.switchAdminTab=function(tab,btn){
-    ['admin-config','admin-pending','admin-creations','admin-balance','admin-users','admin-sync','admin-history','admin-specials'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+    ['admin-config','admin-pending','admin-creations','admin-balance','admin-users','admin-sync','admin-history','admin-specials','admin-aruco'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
     var t=document.getElementById('admin-'+tab);if(t)t.style.display='block';
-    if(tab==='pending')renderAP();if(tab==='creations')renderAC();if(tab==='users')renderAU();if(tab==='config')renderACfg();if(tab==='history')renderAH();if(tab==='specials')renderSP();
+    if(tab==='pending')renderAP();if(tab==='creations')renderAC();if(tab==='users')renderAU();if(tab==='config')renderACfg();if(tab==='history')renderAH();if(tab==='specials')renderSP();if(tab==='aruco')renderArUcoAdmin();
     if(typeof I18N!=='undefined'&&I18N.setLang)I18N.setLang(I18N.getLang());
     if(btn){var tabs=btn.closest('.admin-tabs');if(tabs)tabs.querySelectorAll('.btn-admtab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
   };
@@ -1657,6 +1672,31 @@ window.CB=(function(){
     if(wD){var h2='';us.forEach(function(l){var d=CB.getUserData(l);var ws=d.weapons||[];if(!ws.length)return;h2+='<div style="margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:6px"><strong style="color:#58a6ff;font-size:11px">'+l+'</strong><div style="margin-top:4px">';h2+=ws.map(function(w){return '<div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:4px 8px;margin:2px 0;font-size:9px">'+fmtWeap(w)+'</div>';}).join('');h2+='</div></div>';});wD.innerHTML=h2||'<p style="font-size:10px;color:var(--text2)">Aucune</p>';}
   }
 
+
+  // ═══ ARUCO DATABASE ADMIN ═══
+  function escAruco(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function cbArucoUnits(){
+    var out=[],seen={};
+    function add(u,source){var n=u&&(u.name||u.n);if(!n||seen[n])return;seen[n]=1;out.push({name:n,source:source});}
+    var v=CB.getValidated();(v.units||[]).forEach(function(u){add(u,'validée');});
+    (CB.getAllUsers()||[]).forEach(function(l){var d=CB.getUserData(l);(d.units||[]).forEach(function(u){add(u,l);});});
+    return out;
+  }
+  window.renderArUcoAdmin=function(){
+    var box=document.getElementById('admin-aruco-box');if(!box)return;
+    var db=CB.getAruco(),units=cbArucoUnits();
+    var opts='<option value="">— Choisir une unité existante —</option>'+units.map(function(x){return '<option value="'+escAruco(x.name)+'">'+escAruco(x.name)+' ['+escAruco(x.source)+']</option>';}).join('');
+    var rows=Object.keys(db).sort(function(a,b){return Number(a)-Number(b);}).map(function(id){var m=db[id]||{};return '<tr><td style="padding:4px;color:#f0c040;font-weight:700">'+escAruco(id)+'</td><td>'+escAruco(m.unitName||'')+'</td><td><button onclick="CB_editAruco('+JSON.stringify(String(id))+')" style="font-size:9px">Modifier</button> <button onclick="CB_deleteAruco('+JSON.stringify(String(id))+')" style="font-size:9px;background:#6e1010;color:#fff">Supprimer</button></td></tr>';}).join('');
+    box.innerHTML='<div style="display:grid;grid-template-columns:1fr 2fr;gap:8px"><div><label>ID ArUco</label><input id="aruco-admin-id" type="number" min="0" step="1" placeholder="ex. 137"></div><div><label>Unité existante</label><select id="aruco-admin-unit" style="width:100%;padding:6px;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:4px">'+opts+'</select></div></div><div style="margin-top:8px"><button class="btn btn-add" onclick="CB_saveArucoAdmin()">💾 Associer</button> <button class="btn" onclick="renderArUcoAdmin()">↻ Actualiser</button></div><h4>Associations ('+Object.keys(db).length+')</h4><div style="max-height:350px;overflow:auto"><table style="width:100%;font-size:10px;border-collapse:collapse"><tr><th>ID</th><th>Unité</th><th>Actions</th></tr>'+rows+'</table></div>';
+  };
+  window.CB_saveArucoAdmin=function(){
+    var id=document.getElementById('aruco-admin-id').value,unit=document.getElementById('aruco-admin-unit').value;
+    if(id===''||!Number.isInteger(Number(id))||Number(id)<0){alert('ID ArUco invalide');return;}
+    if(!unit){alert('Choisissez une unité');return;}
+    var db=CB.getAruco();db[String(Number(id))]={unitName:unit,updatedAt:new Date().toISOString(),updatedBy:(CB.getUser()||{}).login||'admin'};CB.saveAruco(db);CB.logHistory('edit','aruco',String(id),'→ '+unit);renderArUcoAdmin();alert('Association enregistrée.');
+  };
+  window.CB_editAruco=function(id){var m=CB.getAruco()[String(id)]||{};document.getElementById('aruco-admin-id').value=id;document.getElementById('aruco-admin-unit').value=m.unitName||'';};
+  window.CB_deleteAruco=function(id){if(!confirm('Supprimer l’association ArUco #'+id+' ?'))return;var db=CB.getAruco();delete db[String(id)];CB.saveAruco(db);CB.logHistory('delete','aruco',String(id));renderArUcoAdmin();};
   // ═══ ADMIN CONFIG ═══
   // Built-in weapon stats (from game.html WEAPS)
   var BUILTIN_WEAPS={
@@ -1729,7 +1769,7 @@ window.CB=(function(){
 
   // ═══ EXPORT / IMPORT ═══
   window.CB_exportAll=function(){
-    var data={accounts:JSON.parse(localStorage.getItem('cb_accounts')||'{}'),allusers:CB.getAllUsers(),validated:CB.getValidated(),submissions:CB.getSubmissions()};
+    var data={accounts:JSON.parse(localStorage.getItem('cb_accounts')||'{}'),allusers:CB.getAllUsers(),validated:CB.getValidated(),submissions:CB.getSubmissions(),aruco:(cache.aruco||{})};
     CB.getAllUsers().forEach(function(l){data['data_'+l]=CB.getUserData(l);});
     var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='crossblocks_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
@@ -1751,6 +1791,7 @@ window.CB=(function(){
         var ev=CB.getValidated();var iv=data.validated||{};
         ['units','weapons','factions'].forEach(function(t){(iv[t]||[]).forEach(function(item){var arr=ev[t]=ev[t]||[];if(!arr.some(function(x){return(x.name||x.n)===(item.name||item.n);}))arr.push(item);});});
         CB.saveValidated(ev);
+        if(data.aruco){cache.aruco=cache.aruco||{};Object.keys(data.aruco).forEach(function(id){cache.aruco[id]=data.aruco[id];});pushRemote();}
         // Merge submissions
         var es=CB.getSubmissions();(data.submissions||[]).forEach(function(s){es.push(s);});CB.saveSubmissions(es);
         // Merge user data
@@ -2107,6 +2148,30 @@ window.CB=(function(){
   
   // Expose for debugging
   window.__cbSync = { sendToGame: sendToGame, receiveFromGame: receiveFromGame };
+})();
+</script>
+
+<script>
+(function(){
+  function openArucoFromQuery(){
+    try{
+      if(new URLSearchParams(location.search).get('open')!=='aruco')return;
+      var tries=0;
+      var iv=setInterval(function(){
+        tries++;
+        var panel=document.getElementById('adminPanel');
+        var u=window.CB&&CB.getUser?CB.getUser():null;
+        if(panel&&u&&u.isAdmin){
+          clearInterval(iv);
+          panel.style.display='flex';
+          var btn=document.querySelector(".admin-tabs button[onclick*="switchAdminTab('aruco'"]");
+          if(window.switchAdminTab)switchAdminTab('aruco',btn);
+        }else if(tries>30)clearInterval(iv);
+      },200);
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',openArucoFromQuery);
+  else openArucoFromQuery();
 })();
 </script>
 </body>

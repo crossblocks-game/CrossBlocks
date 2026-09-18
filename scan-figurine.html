@@ -1,363 +1,45 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CrossBlocks — Scanner une figurine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CrossBlocks — Scanner ArUco</title>
 <style>
-  :root {
-    --bg: #0b0e11;
-    --panel: #12161c;
-    --border: #262c35;
-    --text: #e8ecef;
-    --muted: #7c8793;
-    --accent: #4cff8b;
-    --accent-dim: #1f6b3e;
-    --warn: #ffb347;
-  }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; height: 100%; background: var(--bg); color: var(--text);
-    font-family: 'Rajdhani', sans-serif;
-    overflow: hidden;
-  }
-  .stage {
-    position: relative; width: 100%; height: 100vh;
-    display: flex; align-items: center; justify-content: center;
-  }
-  video, canvas.video-canvas {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    object-fit: cover; filter: saturate(0.85) contrast(1.05);
-  }
-  video { visibility: hidden; }
-
-  .scrim {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at center, rgba(11,14,17,0) 38%, rgba(11,14,17,0.85) 78%);
-    pointer-events: none;
-  }
-
-  .reticle {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: min(64vw, 420px); height: min(64vw, 420px);
-    pointer-events: none;
-  }
-  .reticle .corner {
-    position: absolute; width: 34px; height: 34px;
-    border: 3px solid var(--accent);
-    opacity: 0.85;
-    transition: border-color 180ms ease, opacity 180ms ease;
-  }
-  .reticle.locked .corner { border-color: var(--warn); opacity: 1; }
-  .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
-  .corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
-  .corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
-  .corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
-
-  .scanline {
-    position: absolute; left: 8%; right: 8%; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    box-shadow: 0 0 12px 1px var(--accent);
-    animation: sweep 2.4s ease-in-out infinite;
-    opacity: 0.8;
-  }
-  @keyframes sweep {
-    0%, 100% { top: 18%; }
-    50% { top: 82%; }
-  }
-
-  header.top {
-    position: absolute; top: 0; left: 0; right: 0;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 20px;
-    background: linear-gradient(180deg, rgba(11,14,17,0.9), transparent);
-    z-index: 5;
-  }
-  .brand { font-weight: 700; letter-spacing: 0.02em; font-size: 1.05rem; }
-  .brand small { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
-  a.back {
-    color: var(--muted); text-decoration: none; font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
-  }
-  a.back:hover { border-color: var(--accent); color: var(--accent); }
-
-  .readout {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    z-index: 5; padding: 22px 20px 30px;
-    background: linear-gradient(0deg, rgba(11,14,17,0.95), transparent);
-    display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
-  }
-  .status {
-    font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--muted);
-    letter-spacing: 0.02em; min-height: 1.2em;
-  }
-  .status.active { color: var(--accent); }
-  .status.error { color: #ff6b6b; }
-  .found-id {
-    font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--warn);
-    min-height: 1.4em;
-  }
-
-  .start-overlay {
-    position: absolute; inset: 0; z-index: 10;
-    background: var(--bg);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 18px; padding: 24px; text-align: center;
-  }
-  .start-overlay h1 { font-size: 1.6rem; margin: 0; letter-spacing: 0.01em; }
-  .start-overlay p { color: var(--muted); margin: 0; max-width: 320px; line-height: 1.5; }
-  button.start {
-    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.05rem;
-    background: var(--accent); color: #062712; border: none; border-radius: 8px;
-    padding: 14px 30px; cursor: pointer; letter-spacing: 0.02em;
-  }
-  button.start:active { transform: scale(0.98); }
-  .hidden { display: none !important; }
-
-  button.capture-btn {
-    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.92rem;
-    background: none; color: var(--warn); border: 1.5px solid var(--warn); border-radius: 8px;
-    padding: 9px 20px; cursor: pointer; letter-spacing: 0.01em;
-  }
-  button.capture-btn:active { transform: scale(0.97); }
-</style>
-</head>
-<body>
-
-<div class="stage">
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="videoCanvas" class="video-canvas"></canvas>
-  <canvas id="cvCanvas" class="hidden"></canvas>
-
-  <div class="scrim"></div>
-  <div class="scanline"></div>
-  <div class="reticle" id="reticle">
-    <div class="corner tl"></div>
-    <div class="corner tr"></div>
-    <div class="corner bl"></div>
-    <div class="corner br"></div>
-  </div>
-
-  <header class="top">
-    <div class="brand">CROSSBLOCKS<small>SCANNER DE FIGURINE</small></div>
-    <a class="back" href="index.html">‹ Retour</a>
-  </header>
-
-  <div class="readout">
-    <div class="found-id" id="foundId"></div>
-    <div class="status" id="status">Initialisation de la caméra…</div>
-    <button class="capture-btn hidden" id="captureBtn">📸 Capturer maintenant</button>
-  </div>
-
-  <div class="start-overlay" id="startOverlay">
-    <h1>Scanner une figurine</h1>
-    <p>Vise le marqueur ArUco collé sous le socle avec la caméra. La fiche s'ouvre automatiquement dès qu'il est reconnu.</p>
-    <button class="start" id="startBtn">Activer la caméra</button>
-  </div>
-</div>
-
-<!-- ArUco : js-aruco2 2.0.0, version figée pour éviter les changements du CDN -->
+body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial}.wrap{max-width:850px;margin:auto;padding:20px}a,button{display:inline-block;background:#202832;color:#fff;border:1px solid #394451;border-radius:6px;padding:9px 13px;text-decoration:none;cursor:pointer}.top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.scanner{position:relative;background:#000;border-radius:12px;overflow:hidden}.scanner video{width:100%;display:block;max-height:70vh;object-fit:contain}.reticle{position:absolute;inset:18%;border:3px solid #58a6ff;border-radius:12px;box-shadow:0 0 0 9999px #0003}.reticle.ok{border-color:#3fb950}.status{margin-top:10px;padding:10px;background:#12161c;border:1px solid #30363d;border-radius:7px}.id{font-size:28px;font-weight:800;color:#f0c040}.hint{color:#8b949e;font-size:12px}.err{color:#ff7b72}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="top"><a href="index.html">‹ CrossBlocks</a><a href="figurines.html">⚙ Base ArUco</a></div>
+<h1>📷 Scanner de figurine</h1><p class="hint">Le scanner accepte tous les IDs retournés par le dictionnaire ArUco. Il ne limite pas l'ID à 0–9. Le dictionnaire ARUCO de js-aruco2 contient 1023 codes (0–1022). citeturn0search0</p>
+<div class="scanner"><video id="video" playsinline muted></video><div class="reticle" id="reticle"></div></div>
+<div class="status" id="status">Initialisation…</div><div class="id" id="found"></div>
+<div class="controls"><button id="start">▶ Démarrer</button><button id="stop">■ Arrêter</button></div>
+<canvas id="canvas" hidden></canvas></div>
 <script src="https://cdn.jsdelivr.net/npm/js-aruco2@2.0.0/src/cv.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-aruco2@2.0.0/src/aruco.js"></script>
 <script src="crossblocks-scan-data.js"></script>
 <script>
-(function () {
-  const video = document.getElementById('video');
-  const videoCanvas = document.getElementById('videoCanvas');
-  const cvCanvas = document.getElementById('cvCanvas');
-  const statusEl = document.getElementById('status');
-  const foundIdEl = document.getElementById('foundId');
-  const reticle = document.getElementById('reticle');
-  const startOverlay = document.getElementById('startOverlay');
-  const startBtn = document.getElementById('startBtn');
-  const captureBtn = document.getElementById('captureBtn');
-
-  const videoCtx = videoCanvas.getContext('2d');
-  const cvCtx = cvCanvas.getContext('2d', { willReadFrequently: true });
-
-  // Vérification explicite : sans cette bibliothèque, AR.Detector n'existe pas.
-  if (!window.AR || typeof window.AR.Detector !== 'function') {
-    setStatus(
-      "Erreur : la bibliothèque ArUco n'a pas été chargée. Recharge la page et vérifie la connexion internet.",
-      'error'
-    );
-    console.error('CrossBlocks: AR.Detector est indisponible.');
-    return;
-  }
-
-  // Le générateur CrossBlocks utilise le dictionnaire « Original ArUco ».
-  // js-aruco2 appelle ce dictionnaire simplement « ARUCO ».
-  const detector = new AR.Detector({ dictionaryName: 'ARUCO' });
-
-  // Nombre de détections consécutives du même ID avant de valider automatiquement.
-  // Abaissé à 3 (au lieu de 6) : plus tolérant à une main qui n'est pas parfaitement fixe.
-  const STABILITY_THRESHOLD = 3;
-  // Nombre de frames ratées tolérées avant de considérer le marqueur perdu.
-  // Un léger flou de mouvement fait parfois échouer 1-2 frames d'affilée sans que
-  // le marqueur ait réellement bougé hors champ — on ne réinitialise pas pour si peu.
-  const MISS_TOLERANCE = 5;
-  let lastSeenId = null;
-  let stableCount = 0;
-  let missStreak = 0;
-  let locked = false;
-  let rafId = null;
-
-  function setStatus(text, cls) {
-    statusEl.textContent = text;
-    statusEl.className = 'status' + (cls ? ' ' + cls : '');
-  }
-
-  async function startCamera() {
-    try {
-      setStatus('Demande d\'accès à la caméra…');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false
-      });
-      video.srcObject = stream;
-      await video.play();
-
-      // Tentative optionnelle de réglage de mise au point continue — purement
-      // best-effort : si le navigateur/appareil ne supporte pas ce réglage,
-      // on l'ignore silencieusement plutôt que de bloquer le démarrage de la caméra.
-      try {
-        const track = stream.getVideoTracks()[0];
-        const caps = track.getCapabilities ? track.getCapabilities() : {};
-        if (caps.focusMode && caps.focusMode.includes('continuous')) {
-          await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-        }
-      } catch (focusErr) {
-        console.warn('Réglage focus non supporté, ignoré :', focusErr);
-      }
-
-      videoCanvas.width = video.videoWidth || 1280;
-      videoCanvas.height = video.videoHeight || 720;
-      // Résolution de travail pour la détection : un compromis vitesse/précision.
-      // Augmentée à 640 (au lieu de 480) pour mieux distinguer les coins du marqueur.
-      cvCanvas.width = 640;
-      cvCanvas.height = Math.round(640 * (videoCanvas.height / videoCanvas.width));
-
-      setStatus('Cherche un marqueur…', 'active');
-      startOverlay.classList.add('hidden');
-      captureBtn.classList.remove('hidden');
-      loop();
-    } catch (err) {
-      console.error(err);
-      setStatus('Impossible d\'accéder à la caméra : ' + err.name + ' — ' + err.message, 'error');
-    }
-  }
-
-  function drawFrame() {
-    videoCtx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
-    cvCtx.drawImage(video, 0, 0, cvCanvas.width, cvCanvas.height);
-    return cvCtx.getImageData(0, 0, cvCanvas.width, cvCanvas.height);
-  }
-
-  function loop() {
-    if (locked) return;
-
-    const imageData = drawFrame();
-
-    let markers = [];
-    try {
-      markers = detector.detect(imageData);
-    } catch (e) {
-      // frame illisible, on continue sur la suivante
-    }
-
-    if (markers.length > 0) {
-      const id = markers[0].id;
-      missStreak = 0;
-      reticle.classList.add('locked');
-      foundIdEl.textContent = 'Marqueur #' + id;
-
-      if (id === lastSeenId) {
-        stableCount++;
-      } else {
-        lastSeenId = id;
-        stableCount = 1;
-      }
-
-      setStatus('Lecture en cours… (' + stableCount + '/' + STABILITY_THRESHOLD + ')', 'active');
-
-      if (stableCount >= STABILITY_THRESHOLD) {
-        locked = true;
-        handleLock(id);
-        return;
-      }
-    } else if (lastSeenId !== null) {
-      // On tolère quelques frames ratées (flou passager) sans tout réinitialiser
-      missStreak++;
-      if (missStreak > MISS_TOLERANCE) {
-        reticle.classList.remove('locked');
-        foundIdEl.textContent = '';
-        lastSeenId = null;
-        stableCount = 0;
-        missStreak = 0;
-        setStatus('Cherche un marqueur…', 'active');
-      }
-      // sinon : on ne touche pas à l'affichage, on retente sur la frame suivante
-    } else {
-      setStatus('Cherche un marqueur…', 'active');
-    }
-
-    rafId = requestAnimationFrame(loop);
-  }
-
-  function manualCapture() {
-    if (locked) return;
-    setStatus('Capture en cours…', 'active');
-    // On tente la détection sur plusieurs frames rapprochées (au cas où la toute
-    // première serait floue), et on valide dès la première image lisible —
-    // sans exiger la stabilité sur plusieurs frames comme en mode automatique.
-    let attempts = 0;
-    const tryOnce = () => {
-      attempts++;
-      const imageData = drawFrame();
-      let markers = [];
-      try { markers = detector.detect(imageData); } catch (e) {}
-      if (markers.length > 0) {
-        locked = true;
-        if (rafId) cancelAnimationFrame(rafId);
-        handleLock(markers[0].id);
-        return;
-      }
-      if (attempts < 5) {
-        requestAnimationFrame(tryOnce);
-      } else {
-        setStatus('Aucun marqueur net sur cette capture — rapproche-toi ou stabilise un instant.', 'error');
-        setTimeout(() => setStatus('Cherche un marqueur…', 'active'), 2200);
-      }
-    };
-    tryOnce();
-  }
-
-  function handleLock(arucoId) {
-    const figurine = getFigurineByArucoId(arucoId);
-    if (!figurine) {
-      setStatus('Marqueur #' + arucoId + ' non reconnu dans le catalogue.', 'error');
-      // On retente après une courte pause plutôt que de rester bloqué
-      setTimeout(() => { locked = false; stableCount = 0; lastSeenId = null; loop(); }, 1500);
-      return;
-    }
-    setStatus('Figurine reconnue — ouverture de la fiche…', 'active');
-    stopCamera();
-    window.location.href = 'fiche-figurine.html?id=' + encodeURIComponent(arucoId);
-  }
-
-  function stopCamera() {
-    if (rafId) cancelAnimationFrame(rafId);
-    const stream = video.srcObject;
-    if (stream) stream.getTracks().forEach((t) => t.stop());
-  }
-
-  startBtn.addEventListener('click', startCamera, { once: true });
-  captureBtn.addEventListener('click', manualCapture);
-  window.addEventListener('beforeunload', stopCamera);
-})();
-</script>
-</body>
-</html>
+const video=document.getElementById('video'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true}),status=document.getElementById('status'),found=document.getElementById('found'),reticle=document.getElementById('reticle');
+let stream=null,raf=0,detector=null,lastId=null,stable=0,db=null,locked=false;
+function setStatus(t,c){status.textContent=t;status.className='status '+(c||'');}
+async function start(){
+ if(!window.AR||!AR.Detector){setStatus("Bibliothèque ArUco introuvable. Recharge la page.",'err');return;}
+ try{db=await CrossBlocksAruco.fetchDB(); if(!db){setStatus("Base CrossBlocks indisponible. Mode scanner sans association.",'err');}
+  detector=new AR.Detector({dictionaryName:'ARUCO',maxHammingDistance:0});
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream;await video.play();locked=false;stable=0;lastId=null;setStatus("Cadrez un marqueur ArUco.",'');loop();
+ }catch(e){setStatus("Impossible d'ouvrir la caméra : "+e.message,'err');}
+}
+function stop(){if(raf)cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;}
+function loop(){
+ if(!stream||locked)return;
+ if(video.readyState>=2){
+  canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  try{
+   const ms=detector.detect(ctx.getImageData(0,0,canvas.width,canvas.height));
+   if(ms.length){
+    const id=Number(ms[0].id);found.textContent='ID '+id;
+    if(id===lastId)stable++;else{lastId=id;stable=1;}
+    reticle.classList.add('ok');setStatus('Marqueur détecté — stabilisation '+stable+'/3','');
+    if(stable>=3){locked=true;reticle.classList.add('ok');location.href='fiche-figurine.html?id='+encodeURIComponent(id);}
+   }else{stable=0;lastId=null;found.textContent='';reticle.classList.remove('ok');setStatus("Aucun marqueur détecté.",'');}
+  }catch(e){setStatus("Erreur de détection : "+e.message,'err');}
+ }
+ raf=requestAnimationFrame(loop);
+}
+document.getElementById('start').onclick=start;document.getElementById('stop').onclick=stop;
+window.addEventListener('beforeunload',stop);
+</script></body></html>
