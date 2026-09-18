@@ -116,6 +116,13 @@
   }
   button.start:active { transform: scale(0.98); }
   .hidden { display: none !important; }
+
+  button.capture-btn {
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.92rem;
+    background: none; color: var(--warn); border: 1.5px solid var(--warn); border-radius: 8px;
+    padding: 9px 20px; cursor: pointer; letter-spacing: 0.01em;
+  }
+  button.capture-btn:active { transform: scale(0.97); }
 </style>
 </head>
 <body>
@@ -142,6 +149,7 @@
   <div class="readout">
     <div class="found-id" id="foundId"></div>
     <div class="status" id="status">Initialisation de la caméra…</div>
+    <button class="capture-btn hidden" id="captureBtn">📸 Capturer maintenant</button>
   </div>
 
   <div class="start-overlay" id="startOverlay">
@@ -164,16 +172,22 @@
   const reticle = document.getElementById('reticle');
   const startOverlay = document.getElementById('startOverlay');
   const startBtn = document.getElementById('startBtn');
+  const captureBtn = document.getElementById('captureBtn');
 
   const videoCtx = videoCanvas.getContext('2d');
   const cvCtx = cvCanvas.getContext('2d', { willReadFrequently: true });
   const detector = new AR.Detector();
 
-  // Nombre de détections consécutives du même ID avant de valider
-  // (évite de basculer sur une fiche à cause d'un faux positif isolé)
-  const STABILITY_THRESHOLD = 6;
+  // Nombre de détections consécutives du même ID avant de valider automatiquement.
+  // Abaissé à 3 (au lieu de 6) : plus tolérant à une main qui n'est pas parfaitement fixe.
+  const STABILITY_THRESHOLD = 3;
+  // Nombre de frames ratées tolérées avant de considérer le marqueur perdu.
+  // Un léger flou de mouvement fait parfois échouer 1-2 frames d'affilée sans que
+  // le marqueur ait réellement bougé hors champ — on ne réinitialise pas pour si peu.
+  const MISS_TOLERANCE = 5;
   let lastSeenId = null;
   let stableCount = 0;
+  let missStreak = 0;
   let locked = false;
   let rafId = null;
 
@@ -186,7 +200,12 @@
     try {
       setStatus('Demande d\'accès à la caméra…');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: {
+          facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 },
+          // Certains navigateurs/appareils honorent ces réglages avancés pour une
+          // image plus nette (moins de flou de mouvement à traiter).
+          advanced: [{ focusMode: 'continuous' }]
+        },
         audio: false
       });
       video.srcObject = stream;
@@ -194,12 +213,14 @@
 
       videoCanvas.width = video.videoWidth || 1280;
       videoCanvas.height = video.videoHeight || 720;
-      // Résolution réduite pour la détection = boucle plus rapide sur mobile
-      cvCanvas.width = 480;
-      cvCanvas.height = Math.round(480 * (videoCanvas.height / videoCanvas.width));
+      // Résolution de travail pour la détection : un compromis vitesse/précision.
+      // Augmentée à 640 (au lieu de 480) pour mieux distinguer les coins du marqueur.
+      cvCanvas.width = 640;
+      cvCanvas.height = Math.round(640 * (videoCanvas.height / videoCanvas.width));
 
       setStatus('Cherche un marqueur…', 'active');
       startOverlay.classList.add('hidden');
+      captureBtn.classList.remove('hidden');
       loop();
     } catch (err) {
       console.error(err);
@@ -207,12 +228,16 @@
     }
   }
 
+  function drawFrame() {
+    videoCtx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+    cvCtx.drawImage(video, 0, 0, cvCanvas.width, cvCanvas.height);
+    return cvCtx.getImageData(0, 0, cvCanvas.width, cvCanvas.height);
+  }
+
   function loop() {
     if (locked) return;
 
-    videoCtx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
-    cvCtx.drawImage(video, 0, 0, cvCanvas.width, cvCanvas.height);
-    const imageData = cvCtx.getImageData(0, 0, cvCanvas.width, cvCanvas.height);
+    const imageData = drawFrame();
 
     let markers = [];
     try {
@@ -223,6 +248,7 @@
 
     if (markers.length > 0) {
       const id = markers[0].id;
+      missStreak = 0;
       reticle.classList.add('locked');
       foundIdEl.textContent = 'Marqueur #' + id;
 
@@ -240,15 +266,51 @@
         handleLock(id);
         return;
       }
+    } else if (lastSeenId !== null) {
+      // On tolère quelques frames ratées (flou passager) sans tout réinitialiser
+      missStreak++;
+      if (missStreak > MISS_TOLERANCE) {
+        reticle.classList.remove('locked');
+        foundIdEl.textContent = '';
+        lastSeenId = null;
+        stableCount = 0;
+        missStreak = 0;
+        setStatus('Cherche un marqueur…', 'active');
+      }
+      // sinon : on ne touche pas à l'affichage, on retente sur la frame suivante
     } else {
-      reticle.classList.remove('locked');
-      foundIdEl.textContent = '';
-      lastSeenId = null;
-      stableCount = 0;
       setStatus('Cherche un marqueur…', 'active');
     }
 
     rafId = requestAnimationFrame(loop);
+  }
+
+  function manualCapture() {
+    if (locked) return;
+    setStatus('Capture en cours…', 'active');
+    // On tente la détection sur plusieurs frames rapprochées (au cas où la toute
+    // première serait floue), et on valide dès la première image lisible —
+    // sans exiger la stabilité sur plusieurs frames comme en mode automatique.
+    let attempts = 0;
+    const tryOnce = () => {
+      attempts++;
+      const imageData = drawFrame();
+      let markers = [];
+      try { markers = detector.detect(imageData); } catch (e) {}
+      if (markers.length > 0) {
+        locked = true;
+        if (rafId) cancelAnimationFrame(rafId);
+        handleLock(markers[0].id);
+        return;
+      }
+      if (attempts < 5) {
+        requestAnimationFrame(tryOnce);
+      } else {
+        setStatus('Aucun marqueur net sur cette capture — rapproche-toi ou stabilise un instant.', 'error');
+        setTimeout(() => setStatus('Cherche un marqueur…', 'active'), 2200);
+      }
+    };
+    tryOnce();
   }
 
   function handleLock(arucoId) {
@@ -271,6 +333,7 @@
   }
 
   startBtn.addEventListener('click', startCamera, { once: true });
+  captureBtn.addEventListener('click', manualCapture);
   window.addEventListener('beforeunload', stopCamera);
 })();
 </script>
