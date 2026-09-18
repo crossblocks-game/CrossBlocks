@@ -5,86 +5,182 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CrossBlocks — Scanner ArUco</title>
 <style>
+*{box-sizing:border-box}
 body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial,sans-serif}
-.wrap{max-width:900px;margin:auto;padding:20px}
-a{display:inline-block;background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none;margin-right:6px}
-video{width:100%;max-width:760px;background:#000;border-radius:12px;display:block;margin:18px auto}
-canvas{display:none}.status{text-align:center;padding:12px;border:1px solid #30363d;border-radius:8px}.id{text-align:center;font-size:26px;font-weight:bold;margin:12px}
+.wrap{max-width:1000px;margin:auto;padding:16px}
+a,button{display:inline-block;background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none;cursor:pointer}
+.top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.viewer{position:relative;width:100%;max-width:900px;margin:auto;background:#000;border-radius:14px;overflow:hidden}
+video{display:block;width:100%;height:auto;min-height:300px;object-fit:cover}
+#overlay{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
+.status{text-align:center;padding:11px;margin:12px 0;border:1px solid #30363d;border-radius:8px}
+.id{text-align:center;font-size:28px;font-weight:bold;margin:10px}
+.hint{text-align:center;opacity:.8;margin:8px}
 </style>
 </head>
 <body>
 <div class="wrap">
+<div class="top">
 <a href="index.html">‹ CrossBlocks</a>
 <a href="aruco.html">⚙ Base ArUco</a>
+</div>
 <h1>📷 Scanner une figurine</h1>
-<div class="status" id="status">Chargement de la bibliothèque ArUco…</div>
-<div class="id" id="found"></div>
+<div class="status" id="status">Chargement…</div>
+<div class="id" id="found">Aucun marqueur</div>
+<div class="viewer">
 <video id="video" autoplay playsinline muted></video>
-<canvas id="canvas"></canvas>
+<canvas id="overlay"></canvas>
+</div>
+<div class="hint">Approche le marqueur. Tu peux aussi <b>cliquer directement sur le carré du marqueur</b>.</div>
 </div>
 
 <script src="./crossblocks-scan-data.js"></script>
-<!-- UNPKG sert directement les fichiers du paquet npm js-aruco2 2.0.0. -->
 <script src="https://unpkg.com/js-aruco2@2.0.0/src/cv.js"></script>
 <script src="https://unpkg.com/js-aruco2@2.0.0/src/aruco.js"></script>
 
 <script>
 (async function(){
- const S=document.getElementById('status'),F=document.getElementById('found'),
-       V=document.getElementById('video'),C=document.getElementById('canvas'),
-       X=C.getContext('2d',{willReadFrequently:true});
- const say=t=>S.textContent=t;
+const S=document.getElementById('status');
+const F=document.getElementById('found');
+const V=document.getElementById('video');
+const O=document.getElementById('overlay');
+const G=O.getContext('2d');
 
- let tries=0;
- while((!window.AR || !window.AR.Detector) && tries<100){
-   await new Promise(r=>setTimeout(r,100)); tries++;
- }
- if(!window.AR || !window.AR.Detector){
-   say('Erreur : bibliothèque ArUco non chargée. Vérifie que les scripts externes ne sont pas bloqués.');
-   return;
- }
+const say=t=>S.textContent=t;
+let tries=0;
+while((!window.AR||!window.AR.Detector)&&tries<100){
+ await new Promise(r=>setTimeout(r,50)); tries++;
+}
+if(!window.AR||!window.AR.Detector){
+ say('Bibliothèque ArUco non chargée.'); return;
+}
 
- let detector;
- try{detector=new AR.Detector({dictionaryName:'ARUCO'});}
- catch(e){console.error(e);say('Erreur d’initialisation du dictionnaire ArUco.');return;}
+const detector=new AR.Detector({dictionaryName:'ARUCO'});
 
- try{
-   if(!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia indisponible');
-   V.srcObject=await navigator.mediaDevices.getUserMedia({
-     video:{facingMode:{ideal:'environment'}},audio:false
-   });
-   await V.play();
- }catch(e){console.error(e);say('Caméra inaccessible : autorise la caméra puis recharge.');return;}
+try{
+ V.srcObject=await navigator.mediaDevices.getUserMedia({
+   video:{
+     facingMode:{ideal:'environment'},
+     width:{ideal:1280},
+     height:{ideal:720}
+   },
+   audio:false
+ });
+ await V.play();
+}catch(e){
+ console.error(e);
+ say('Caméra inaccessible : autorise la caméra puis recharge.');
+ return;
+}
 
- let lastId=null,count=0,locked=false;
+let markers=[];
+let lastId=null;
+let stable=0;
+let navigating=false;
+let busy=false;
+let lastDetect=0;
 
- function loop(){
-   if(locked)return;
-   if(V.readyState>=2 && V.videoWidth){
-     C.width=V.videoWidth; C.height=V.videoHeight;
-     X.drawImage(V,0,0,C.width,C.height);
-     try{
-       const markers=detector.detect(X.getImageData(0,0,C.width,C.height));
-       if(markers.length){
-         const id=Number(markers[0].id);
-         if(id!==lastId){lastId=id;count=1}else count++;
-         F.textContent='ArUco #'+id;
-         say('Marqueur détecté — '+count+'/3');
-         if(count>=3){
-           locked=true;
-           location.href='fiche-figurine.html?id='+encodeURIComponent(id);
-           return;
-         }
-       }else{
-         lastId=null;count=0;F.textContent='';
-         say('Recherche d’un marqueur ArUco…');
-       }
-     }catch(e){console.error(e);}
+function resizeOverlay(){
+ const r=V.getBoundingClientRect();
+ O.width=Math.max(1,Math.round(r.width*devicePixelRatio));
+ O.height=Math.max(1,Math.round(r.height*devicePixelRatio));
+}
+window.addEventListener('resize',resizeOverlay);
+resizeOverlay();
+
+function draw(list){
+ G.clearRect(0,0,O.width,O.height);
+ const sx=O.width/V.videoWidth, sy=O.height/V.videoHeight;
+
+ list.forEach(m=>{
+   const pts=m.corners.map(p=>({x:p.x*sx,y:p.y*sy}));
+   G.beginPath();
+   G.moveTo(pts[0].x,pts[0].y);
+   for(let i=1;i<pts.length;i++)G.lineTo(pts[i].x,pts[i].y);
+   G.closePath();
+   G.lineWidth=5*devicePixelRatio;
+   G.strokeStyle='#00ff66';
+   G.stroke();
+
+   const cx=pts.reduce((a,p)=>a+p.x,0)/4;
+   const cy=pts.reduce((a,p)=>a+p.y,0)/4;
+   G.font=`bold ${Math.max(18,28*devicePixelRatio)}px Arial`;
+   G.textAlign='center';
+   G.textBaseline='middle';
+   G.fillStyle='#00ff66';
+   G.fillText('#'+m.id,cx,cy);
+ });
+}
+
+function openMarker(id){
+ if(navigating)return;
+ navigating=true;
+ say('ArUco #'+id+' détecté — ouverture de la fiche…');
+ location.href='fiche-figurine.html?id='+encodeURIComponent(id);
+}
+
+O.addEventListener('click',ev=>{
+ if(!markers.length)return;
+ const r=O.getBoundingClientRect();
+ const x=(ev.clientX-r.left)*(O.width/r.width);
+ const y=(ev.clientY-r.top)*(O.height/r.height);
+ const sx=O.width/V.videoWidth, sy=O.height/V.videoHeight;
+
+ for(const m of markers){
+   const pts=m.corners.map(p=>({x:p.x*sx,y:p.y*sy}));
+   const minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x));
+   const minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));
+   if(x>=minX&&x<=maxX&&y>=minY&&y<=maxY){
+     openMarker(Number(m.id));
+     return;
    }
-   requestAnimationFrame(loop);
  }
- say('Présente un marqueur ArUco devant la caméra.');
- requestAnimationFrame(loop);
+});
+
+async function detect(){
+ if(navigating||busy)return;
+ const now=performance.now();
+ if(now-lastDetect<70){requestAnimationFrame(detect);return;}
+ lastDetect=now;
+
+ if(V.readyState>=2&&V.videoWidth){
+   busy=true;
+   try{
+     const c=document.createElement('canvas');
+     c.width=V.videoWidth;
+     c.height=V.videoHeight;
+     const x=c.getContext('2d',{willReadFrequently:true});
+     x.drawImage(V,0,0,c.width,c.height);
+
+     markers=detector.detect(x.getImageData(0,0,c.width,c.height));
+     draw(markers);
+
+     if(markers.length){
+       const id=Number(markers[0].id);
+       F.textContent='ArUco #'+id;
+
+       if(id===lastId)stable++;
+       else{lastId=id;stable=1}
+
+       say('Marqueur trouvé — ouverture automatique…');
+
+       // Deux images identiques suffisent : beaucoup plus rapide que 3.
+       if(stable>=2)openMarker(id);
+     }else{
+       markers=[];
+       lastId=null;
+       stable=0;
+       F.textContent='Aucun marqueur';
+       say('Place un ArUco bien visible dans la caméra.');
+     }
+   }catch(e){console.error(e)}
+   busy=false;
+ }
+ requestAnimationFrame(detect);
+}
+
+say('Caméra prête — vise un ArUco.');
+requestAnimationFrame(detect);
 })();
 </script>
 </body>
