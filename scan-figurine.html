@@ -7,181 +7,187 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial,sans-serif}
-.wrap{max-width:1000px;margin:auto;padding:16px}
-a,button{display:inline-block;background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none;cursor:pointer}
-.top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.viewer{position:relative;width:100%;max-width:900px;margin:auto;background:#000;border-radius:14px;overflow:hidden}
-video{display:block;width:100%;height:auto;min-height:300px;object-fit:cover}
-#overlay{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
-.status{text-align:center;padding:11px;margin:12px 0;border:1px solid #30363d;border-radius:8px}
-.id{text-align:center;font-size:28px;font-weight:bold;margin:10px}
-.hint{text-align:center;opacity:.8;margin:8px}
+.wrap{max-width:900px;margin:auto;padding:14px}
+.top{display:flex;gap:8px;flex-wrap:wrap}
+a,button,select{background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 12px;text-decoration:none;cursor:pointer}
+.status{margin:10px 0;padding:10px;border:1px solid #30363d;border-radius:8px;text-align:center}
+#found{font-size:28px;font-weight:800;text-align:center;margin:8px}
+.scanner{position:relative;background:#000;border-radius:12px;overflow:hidden}
+video{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain}
+canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:auto}
+.controls{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.small{font-size:12px;color:#8b949e;text-align:center}
+.ok{color:#3fb950}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="top">
 <a href="index.html">‹ CrossBlocks</a>
-<a href="aruco.html">⚙ Base ArUco</a>
+<a href="figurines.html">⚙ Base ArUco</a>
 </div>
-<h1>📷 Scanner une figurine</h1>
-<div class="status" id="status">Chargement…</div>
-<div class="id" id="found">Aucun marqueur</div>
-<div class="viewer">
-<video id="video" autoplay playsinline muted></video>
+<h1>📷 Scanner de figurine</h1>
+<div class="controls">
+<label>Type de scan :
+<select id="dict">
+<option value="aruco">ARUCO — 1023 IDs (0 à 1022)</option>
+<option value="4x4">4×4 — 50 IDs (0 à 49)</option>
+</select></label>
+<label>ID recherché :
+<select id="wanted"><option value="">Tous les IDs</option></select></label>
+<button id="start">▶ Scanner</button>
+<button id="stop">■ Stop</button>
+</div>
+<div class="status" id="status">Prêt. Clique sur « Scanner ».</div>
+<div id="found"></div>
+<div class="scanner">
+<video id="video" playsinline muted></video>
 <canvas id="overlay"></canvas>
 </div>
-<div class="hint">Approche le marqueur. Tu peux aussi <b>cliquer directement sur le carré du marqueur</b>.</div>
+<p class="small">Le scanner traite une image réduite pour privilégier la vitesse. Dès qu'un marqueur est reconnu, la fiche s'ouvre automatiquement. Tu peux aussi cliquer sur le marqueur encadré.</p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/js-aruco2@2.0.0/src/cv.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-aruco2@2.0.0/src/aruco.js"></script>
 <script src="./crossblocks-scan-data.js"></script>
-<script src="https://unpkg.com/js-aruco2@2.0.0/src/cv.js"></script>
-<script src="https://unpkg.com/js-aruco2@2.0.0/src/aruco.js"></script>
-
 <script>
-(async function(){
-const S=document.getElementById('status');
-const F=document.getElementById('found');
-const V=document.getElementById('video');
-const O=document.getElementById('overlay');
-const G=O.getContext('2d');
+const ARUCO4X4={
+ nBits:16,
+ tau:4,
+ codeList:["0xB532UL","0x0F9AUL","0x332DUL","0x9946UL","0x549EUL","0x79CDUL","0x9E2EUL","0xC4F2UL","0xFEDAUL","0xCF56UL","0xF991UL","0x11A7UL","0x0EB7UL","0x2A0FUL","0x24B1UL","0x263EUL","0x4665UL","0x6600UL","0x6C5EUL","0x76AFUL","0x868BUL","0xB02BUL","0xCCD5UL","0xDD82UL","0xFE47UL","0x9471UL","0xACE4UL","0xA554UL","0x2123UL","0x346FUL","0x4415UL","0x57B2UL","0x9ECFUL","0xF0CBUL","0x08AEUL","0x0929UL","0x1875UL","0x04FFUL","0x0DF6UL","0x1C5AUL","0x1718UL","0x2A28UL","0x328CUL","0x38B2UL","0x24E8UL","0x2EEBUL","0x2D3FUL","0x4B64UL","0x502EUL","0x5013UL"]
+};
+let detector4=null, detectorA=null, stream=null, raf=0, running=false, busy=false;
+const wanted=document.getElementById('wanted');
+for(let i=0;i<1023;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent='#'+i; wanted.appendChild(o); }
 
-const say=t=>S.textContent=t;
-let tries=0;
-while((!window.AR||!window.AR.Detector)&&tries<100){
- await new Promise(r=>setTimeout(r,50)); tries++;
+let video=document.getElementById('video'), overlay=document.getElementById('overlay');
+let g=overlay.getContext('2d');
+let status=document.getElementById('status'), found=document.getElementById('found');
+let dict=document.getElementById('dict');
+let lastMarkers=[], lastScaleX=1,lastScaleY=1, opened=false, frameSkip=0;
+
+function say(t,ok=false){status.textContent=t;status.className='status'+(ok?' ok':'');}
+function resize(){
+ const r=video.getBoundingClientRect();
+ overlay.width=Math.max(1,Math.round(r.width*devicePixelRatio));
+ overlay.height=Math.max(1,Math.round(r.height*devicePixelRatio));
 }
-if(!window.AR||!window.AR.Detector){
- say('Bibliothèque ArUco non chargée.'); return;
-}
+window.addEventListener('resize',resize);
 
-const detector=new AR.Detector({dictionaryName:'ARUCO'});
-
-try{
- V.srcObject=await navigator.mediaDevices.getUserMedia({
-   video:{
-     facingMode:{ideal:'environment'},
-     width:{ideal:1280},
-     height:{ideal:720}
-   },
-   audio:false
- });
- await V.play();
-}catch(e){
- console.error(e);
- say('Caméra inaccessible : autorise la caméra puis recharge.');
- return;
+function makeDetectors(){
+ if(!window.AR||!AR.Detector) throw Error('Bibliothèque ArUco non chargée');
+ if(!detector4){
+   AR.DICTIONARIES.CrossBlocks4x4_50=ARUCO4X4;
+   detector4=new AR.Detector({dictionaryName:'CrossBlocks4x4_50',maxHammingDistance:1});
+ }
+ if(!detectorA) detectorA=new AR.Detector({dictionaryName:'ARUCO',maxHammingDistance:0});
 }
 
-let markers=[];
-let lastId=null;
-let stable=0;
-let navigating=false;
-let busy=false;
-let lastDetect=0;
-
-function resizeOverlay(){
- const r=V.getBoundingClientRect();
- O.width=Math.max(1,Math.round(r.width*devicePixelRatio));
- O.height=Math.max(1,Math.round(r.height*devicePixelRatio));
-}
-window.addEventListener('resize',resizeOverlay);
-resizeOverlay();
-
-function draw(list){
- G.clearRect(0,0,O.width,O.height);
- const sx=O.width/V.videoWidth, sy=O.height/V.videoHeight;
-
- list.forEach(m=>{
-   const pts=m.corners.map(p=>({x:p.x*sx,y:p.y*sy}));
-   G.beginPath();
-   G.moveTo(pts[0].x,pts[0].y);
-   for(let i=1;i<pts.length;i++)G.lineTo(pts[i].x,pts[i].y);
-   G.closePath();
-   G.lineWidth=5*devicePixelRatio;
-   G.strokeStyle='#00ff66';
-   G.stroke();
-
-   const cx=pts.reduce((a,p)=>a+p.x,0)/4;
-   const cy=pts.reduce((a,p)=>a+p.y,0)/4;
-   G.font=`bold ${Math.max(18,28*devicePixelRatio)}px Arial`;
-   G.textAlign='center';
-   G.textBaseline='middle';
-   G.fillStyle='#00ff66';
-   G.fillText('#'+m.id,cx,cy);
- });
+function draw(markers, scaleX, scaleY){
+ g.clearRect(0,0,overlay.width,overlay.height);
+ g.lineWidth=4*devicePixelRatio;
+ g.font='bold '+(20*devicePixelRatio)+'px Arial';
+ g.textAlign='center';g.textBaseline='middle';
+ for(const m of markers){
+   const p=m.corners.map(q=>({x:q.x*scaleX,y:q.y*scaleY}));
+   g.strokeStyle='#00ff66';g.beginPath();g.moveTo(p[0].x,p[0].y);
+   for(let i=1;i<4;i++)g.lineTo(p[i].x,p[i].y);
+   g.closePath();g.stroke();
+   const cx=p.reduce((a,q)=>a+q.x,0)/4,cy=p.reduce((a,q)=>a+q.y,0)/4;
+   g.fillStyle='#00ff66';g.fillText('#'+m.id,cx,cy);
+ }
 }
 
-function openMarker(id){
- if(navigating)return;
- navigating=true;
- say('ArUco #'+id+' détecté — ouverture de la fiche…');
+function open(id){
+ if(opened)return;
+ opened=true;
+ say('ArUco #'+id+' reconnu — ouverture…',true);
  location.href='fiche-figurine.html?id='+encodeURIComponent(id);
 }
 
-O.addEventListener('click',ev=>{
- if(!markers.length)return;
- const r=O.getBoundingClientRect();
- const x=(ev.clientX-r.left)*(O.width/r.width);
- const y=(ev.clientY-r.top)*(O.height/r.height);
- const sx=O.width/V.videoWidth, sy=O.height/V.videoHeight;
-
- for(const m of markers){
-   const pts=m.corners.map(p=>({x:p.x*sx,y:p.y*sy}));
-   const minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x));
-   const minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));
-   if(x>=minX&&x<=maxX&&y>=minY&&y<=maxY){
-     openMarker(Number(m.id));
-     return;
-   }
+overlay.addEventListener('click',e=>{
+ if(!lastMarkers.length)return;
+ const r=overlay.getBoundingClientRect();
+ const x=(e.clientX-r.left)*(overlay.width/r.width);
+ const y=(e.clientY-r.top)*(overlay.height/r.height);
+ for(const m of lastMarkers){
+   const p=m.corners.map(q=>({x:q.x*lastScaleX,y:q.y*lastScaleY}));
+   const minX=Math.min(...p.map(q=>q.x)),maxX=Math.max(...p.map(q=>q.x));
+   const minY=Math.min(...p.map(q=>q.y)),maxY=Math.max(...p.map(q=>q.y));
+   if(x>=minX&&x<=maxX&&y>=minY&&y<=maxY){open(Number(m.id));return;}
  }
 });
 
-async function detect(){
- if(navigating||busy)return;
- const now=performance.now();
- if(now-lastDetect<70){requestAnimationFrame(detect);return;}
- lastDetect=now;
-
- if(V.readyState>=2&&V.videoWidth){
-   busy=true;
-   try{
-     const c=document.createElement('canvas');
-     c.width=V.videoWidth;
-     c.height=V.videoHeight;
-     const x=c.getContext('2d',{willReadFrequently:true});
-     x.drawImage(V,0,0,c.width,c.height);
-
-     markers=detector.detect(x.getImageData(0,0,c.width,c.height));
-     draw(markers);
-
-     if(markers.length){
-       const id=Number(markers[0].id);
-       F.textContent='ArUco #'+id;
-
-       if(id===lastId)stable++;
-       else{lastId=id;stable=1}
-
-       say('Marqueur trouvé — ouverture automatique…');
-
-       // Deux images identiques suffisent : beaucoup plus rapide que 3.
-       if(stable>=2)openMarker(id);
-     }else{
-       markers=[];
-       lastId=null;
-       stable=0;
-       F.textContent='Aucun marqueur';
-       say('Place un ArUco bien visible dans la caméra.');
-     }
-   }catch(e){console.error(e)}
-   busy=false;
- }
- requestAnimationFrame(detect);
+async function start(){
+ if(running)return;
+ try{
+   makeDetectors();
+   stream=await navigator.mediaDevices.getUserMedia({
+     video:{facingMode:{ideal:'environment'},width:{ideal:720},height:{ideal:720},frameRate:{ideal:30,max:30}},
+     audio:false
+   });
+   video.srcObject=stream;await video.play();resize();
+   running=true;opened=false;lastMarkers=[];found.textContent='';
+   say('Vise un marqueur '+(dict.value==='4x4'?'4×4':'ARUCO')+'…');
+   requestAnimationFrame(loop);
+ }catch(e){console.error(e);say('Impossible de démarrer le scanner : '+e.message);}
 }
 
-say('Caméra prête — vise un ArUco.');
-requestAnimationFrame(detect);
-})();
+function stop(){
+ running=false;
+ if(raf)cancelAnimationFrame(raf);
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ stream=null;video.srcObject=null;lastMarkers=[];g.clearRect(0,0,overlay.width,overlay.height);
+}
+
+function loop(){
+ if(!running)return;
+ raf=requestAnimationFrame(loop);
+ if(busy||video.readyState<2||!video.videoWidth)return;
+
+ // 480 px processing width = large speed gain over full 1280x720.
+ frameSkip=(frameSkip+1)%2;
+ if(frameSkip!==0)return;
+
+ busy=true;
+ const W=480;
+ const H=Math.max(270,Math.round(video.videoHeight*(W/video.videoWidth)));
+ const c=document.createElement('canvas');c.width=W;c.height=H;
+ const x=c.getContext('2d',{willReadFrequently:true});
+ x.drawImage(video,0,0,W,H);
+
+ try{
+   let ms;
+   if(dict.value==='4x4') ms=detector4.detect(x.getImageData(0,0,W,H));
+   else ms=detectorA.detect(x.getImageData(0,0,W,H));
+
+   const sx=overlay.width/W,sy=overlay.height/H;
+   lastScaleX=sx;lastScaleY=sy;lastMarkers=ms||[];
+   draw(lastMarkers,sx,sy);
+
+   if(lastMarkers.length){
+     let visible=lastMarkers;
+   const target=wanted.value;
+   if(target!=='') visible=lastMarkers.filter(m=>Number(m.id)===Number(target));
+   if(visible.length){
+     lastMarkers=visible;
+     const id=Number(visible[0].id);
+     found.textContent='ID '+id;
+     // Instant navigation: one valid detection is enough.
+     open(id);
+   }
+   }else{
+     found.textContent='';
+     say('Recherche…');
+   }
+ }catch(e){console.error(e);say('Erreur de détection : '+e.message);}
+ busy=false;
+}
+
+dict.addEventListener('change',()=>{if(running){stop();start();}});
+document.getElementById('start').onclick=start;
+document.getElementById('stop').onclick=stop;
+window.addEventListener('beforeunload',stop);
 </script>
 </body>
 </html>
