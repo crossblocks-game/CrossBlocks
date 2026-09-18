@@ -200,16 +200,24 @@
     try {
       setStatus('Demande d\'accès à la caméra…');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 },
-          // Certains navigateurs/appareils honorent ces réglages avancés pour une
-          // image plus nette (moins de flou de mouvement à traiter).
-          advanced: [{ focusMode: 'continuous' }]
-        },
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false
       });
       video.srcObject = stream;
       await video.play();
+
+      // Tentative optionnelle de réglage de mise au point continue — purement
+      // best-effort : si le navigateur/appareil ne supporte pas ce réglage,
+      // on l'ignore silencieusement plutôt que de bloquer le démarrage de la caméra.
+      try {
+        const track = stream.getVideoTracks()[0];
+        const caps = track.getCapabilities ? track.getCapabilities() : {};
+        if (caps.focusMode && caps.focusMode.includes('continuous')) {
+          await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+        }
+      } catch (focusErr) {
+        console.warn('Réglage focus non supporté, ignoré :', focusErr);
+      }
 
       videoCanvas.width = video.videoWidth || 1280;
       videoCanvas.height = video.videoHeight || 720;
@@ -224,7 +232,7 @@
       loop();
     } catch (err) {
       console.error(err);
-      setStatus('Impossible d\'accéder à la caméra : ' + err.message, 'error');
+      setStatus('Impossible d\'accéder à la caméra : ' + err.name + ' — ' + err.message, 'error');
     }
   }
 
