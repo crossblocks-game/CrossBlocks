@@ -1,23 +1,96 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CrossBlocks — Fiche figurine</title>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CrossBlocks — Fiche figurine</title>
 <style>
-body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial}.wrap{max-width:900px;margin:auto;padding:20px}a{display:inline-block;background:#202832;color:#fff;border:1px solid #394451;border-radius:6px;padding:9px 13px;text-decoration:none}.card{margin-top:15px;background:#12161c;border:1px solid #30363d;border-radius:12px;padding:20px}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.stat{background:#0d1117;padding:12px;border-radius:7px;text-align:center}.stat b{font-size:24px;display:block}.weapon{border:1px solid #30363d;border-radius:8px;padding:12px;margin:10px 0}.wg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.w{background:#0d1117;padding:8px;text-align:center;border-radius:5px}.muted{color:#8b949e}.warn{padding:12px;border:1px solid #9e6a03;background:#211b08;border-radius:7px}@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.wg{grid-template-columns:repeat(2,1fr)}}
-</style></head><body><div class="wrap"><a href="scan-figurine.html">📷 Scanner</a> <a href="figurines.html">⚙ Base ArUco</a><div class="card" id="card">Chargement…</div></div>
-<script src="crossblocks-scan-data.js"></script><script>
-const id=new URLSearchParams(location.search).get('id'),card=document.getElementById('card');
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function statUnit(u){
- return {name:u.name||u.n||'?',faction:u.faction||'',points:u.basePts??u.pts??0,pv:u.hp??u.pv??0,actions:u.pa??u.actions??5,mm:u.mm??0,armor:u.arm??u.armor??0,image:u.image||'',abilities:u.abilities||u.special||u.rule||'',weapons:u.weapons||[]};
-}
-function weaponDef(db,name){return CrossBlocksAruco.allWeapons(db).find(w=>(w.n||w.name)===name)||null}
-function render(db,u){
- const x=statUnit(u);
- let weapons=x.weapons.map(w=>typeof w==='string'?weaponDef(db,w):w).filter(Boolean);
- card.innerHTML='<div class="muted">ARUCO #'+esc(id)+'</div><h1>'+esc(x.name)+'</h1><p>'+esc(x.faction)+' · '+x.points+' points</p>'+
- (x.image?'<img src="'+esc(x.image)+'" style="max-width:220px;max-height:220px;display:block;margin:10px auto">':'')+
- '<div class="stats"><div class="stat"><b>'+x.pv+'</b>PV</div><div class="stat"><b>'+x.actions+'</b>Actions</div><div class="stat"><b>'+(x.mm>=0?'+':'')+x.mm+'</b>MM</div><div class="stat"><b>'+x.armor+'+</b>Armure</div><div class="stat"><b>'+x.points+'</b>Points</div></div>'+
- '<h2>Armes</h2>'+ (weapons.length?weapons.map(w=>'<div class="weapon"><h3>'+esc(w.n||w.name)+'</h3><div class="wg">'+
- '<div class="w"><b>'+ (w.mun??w.touches??0)+'</b><br>Touches/Mun.</div><div class="w"><b>'+ (w.melee||'—')+'</b><br>Mêlée</div><div class="w"><b>'+ (w.cat1??w.range1??'—')+'</b><br>Cat.1</div><div class="w"><b>'+ (w.cat2??w.range2??'—')+'</b><br>Cat.2</div><div class="w"><b>'+ (w.catP??w.rangePlus??'—')+'</b><br>Cat.P</div><div class="w"><b>+'+(w.pen??w.penetration??0)+'</b><br>Pénétration</div><div class="w"><b>'+ (w.dMax??w.dmg??w.damage??0)+'</b><br>Dégâts</div><div class="w"><b>'+ (w.effect||'—')+'</b><br>Effet</div></div></div>').join(''):'<p class="muted">Aucune arme renseignée.</p>')+
- '<h2>Compétences / règles</h2><p>'+esc(x.abilities||'Aucune')+'</p>';
-}
-(async()=>{const db=await CrossBlocksAruco.fetchDB();if(!db){card.innerHTML='<div class="warn">Impossible de charger la base CrossBlocks.</div>';return;}const map=(db.aruco||{})[String(id)];if(!map){card.innerHTML='<h1>ArUco #'+esc(id)+'</h1><div class="warn">Ce marqueur est bien reconnu, mais il n’est pas encore associé à une figurine dans la base.</div>';return;}const u=CrossBlocksAruco.unitFor(db,id);if(!u){card.innerHTML='<h1>ArUco #'+esc(id)+'</h1><div class="warn">L’association pointe vers « '+esc(map.unitName)+' », mais cette unité n’est plus présente dans la base.</div>';return;}render(db,u);})();
-</script></body></html>
+body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial}
+.wrap{max-width:900px;margin:auto;padding:20px}
+a{background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none}
+.card{margin-top:16px;background:#12161c;border:1px solid #30363d;border-radius:12px;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.stat,.weapon-stat{background:#0d1117;padding:12px;border-radius:7px;text-align:center}
+.stat b{display:block;font-size:25px}
+.weapon{border:1px solid #30363d;border-radius:8px;padding:14px;margin:12px 0}
+.weapon-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.warn{padding:12px;background:#211b08;border:1px solid #9e6a03;border-radius:7px}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.weapon-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a href="scan-figurine.html">📷 Scanner</a>
+<a href="index.html">‹ CrossBlocks</a>
+<div class="card" id="card">Chargement…</div>
+</div>
+<script src="crossblocks-scan-data.js"></script>
+<script>
+(async function(){
+ const card=document.getElementById('card');
+ const id=new URLSearchParams(location.search).get('id');
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+ if(id===null){card.innerHTML='<h1>Fiche inconnue</h1>';return}
+
+ try{
+   const db=await CrossBlocksAruco.fetchDB();
+   const mapping=CrossBlocksAruco.getMapping(db,id);
+
+   if(!mapping){
+     card.innerHTML='<h1>ArUco #'+esc(id)+'</h1><div class="warn">Ce marqueur est reconnu mais n’est associé à aucune figurine.</div>';
+     return;
+   }
+
+   const u=CrossBlocksAruco.getUnitByAruco(db,id);
+   if(!u){
+     card.innerHTML='<h1>ArUco #'+esc(id)+'</h1><div class="warn">L’association existe, mais l’unité « '+esc(mapping.unitName)+' » est introuvable.</div>';
+     return;
+   }
+
+   const name=u.name||u.n||'Figurine';
+   const faction=u.faction||'';
+   const points=u.basePts??u.pts??u.points??0;
+   const pv=u.hp??u.pv??0;
+   const actions=u.pa??u.actions??5;
+   const mm=u.mm??u.move??0;
+   const armor=u.arm??u.armor??0;
+   const abilities=u.abilities||u.special||u.rule||'';
+   const weapons=u.weapons||[];
+
+   let html='<small>ARUCO #'+esc(id)+'</small><h1>'+esc(name)+'</h1>'+
+     '<p>'+esc(faction)+' · '+points+' points</p>'+
+     '<div class="stats">'+
+     '<div class="stat"><b>'+pv+'</b>PV</div>'+
+     '<div class="stat"><b>'+actions+'</b>Actions</div>'+
+     '<div class="stat"><b>'+(mm>=0?'+':'')+mm+'</b>MM</div>'+
+     '<div class="stat"><b>'+armor+'+</b>Armure</div>'+
+     '<div class="stat"><b>'+points+'</b>Points</div></div>'+
+     '<h2>Armes</h2>';
+
+   if(!weapons.length) html+='<p>Aucune arme renseignée.</p>';
+   else html+=weapons.map(w=>{
+     if(typeof w==='string') w={name:w};
+     return '<div class="weapon"><h3>'+esc(w.n||w.name||'Arme')+'</h3>'+
+       '<div class="weapon-grid">'+
+       '<div class="weapon-stat"><b>'+esc(w.mun??w.touches??'—')+'</b><br>Touches/Munitions</div>'+
+       '<div class="weapon-stat"><b>'+esc(w.melee??'—')+'</b><br>Mêlée</div>'+
+       '<div class="weapon-stat"><b>'+esc(w.cat1??w.range1??'—')+'</b><br>Portée 1</div>'+
+       '<div class="weapon-stat"><b>'+esc(w.cat2??w.range2??'—')+'</b><br>Portée 2</div>'+
+       '<div class="weapon-stat"><b>'+esc(w.catP??w.rangePlus??'—')+'</b><br>Portée +</div>'+
+       '<div class="weapon-stat"><b>+'+esc(w.pen??w.penetration??0)+'</b><br>Pénétration</div>'+
+       '<div class="weapon-stat"><b>'+esc(w.dMax??w.dmg??w.damage??'—')+'</b><br>Dégâts</div>'+
+       '<div class="weapon-stat"><b>'+esc(w.effect||'—')+'</b><br>Effet</div>'+
+       '</div></div>';
+   }).join('');
+
+   html+='<h2>Compétences / règles spéciales</h2><p>'+esc(abilities||'Aucune')+'</p>';
+   card.innerHTML=html;
+ }catch(e){
+   console.error(e);
+   card.innerHTML='<h1>Erreur</h1><div class="warn">Impossible de charger la base CrossBlocks. Vérifie la connexion à la base distante.</div>';
+ }
+})();
+</script>
+</body>
+</html>
