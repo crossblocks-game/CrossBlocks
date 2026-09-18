@@ -1,114 +1,32 @@
-<!doctype html>
-<html lang="fr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CrossBlocks — Scanner ArUco</title>
-<style>
-body{margin:0;background:#090c10;color:#e6edf3;font-family:Arial,sans-serif}
-.wrap{max-width:900px;margin:auto;padding:20px}
-a,button{background:#202832;color:#fff;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none;cursor:pointer}
-video{width:100%;max-width:700px;background:#000;border-radius:12px;display:block;margin:18px auto}
-.status{text-align:center;padding:12px;border:1px solid #30363d;border-radius:8px}
-.id{text-align:center;font-size:26px;font-weight:bold;margin:12px}
-</style>
-</head>
-<body>
-<div class="wrap">
-<a href="index.html">‹ CrossBlocks</a>
-<h1>📷 Scanner une figurine</h1>
-<div class="status" id="status">Initialisation…</div>
-<div class="id" id="found"></div>
-<video id="video" autoplay playsinline muted></video>
-<canvas id="canvas" hidden></canvas>
-</div>
-
-<script src="crossblocks-scan-data.js"></script>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CrossBlocks — Scanner ArUco</title>
+<style>body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial}.wrap{max-width:900px;margin:auto;padding:20px}a{color:#fff;background:#202832;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none}video{width:100%;max-width:700px;background:#000;border-radius:12px;display:block;margin:18px auto}.status{text-align:center;padding:12px;border:1px solid #30363d;border-radius:8px}.id{text-align:center;font-size:26px;font-weight:bold;margin:12px}</style></head>
+<body><div class="wrap"><a href="index.html">‹ CrossBlocks</a><h1>📷 Scanner une figurine</h1><div class="status" id="status">Initialisation…</div><div class="id" id="found"></div><video id="video" autoplay playsinline muted></video><canvas id="canvas" hidden></canvas></div>
+<script src="./crossblocks-scan-data.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-aruco2@2.0.0/build/aruco.js"></script>
 <script>
 (async function(){
-  const status=document.getElementById('status');
-  const found=document.getElementById('found');
-  const video=document.getElementById('video');
-  const canvas=document.getElementById('canvas');
-  const ctx=canvas.getContext('2d',{willReadFrequently:true});
-
-  function setStatus(t){status.textContent=t}
-
-  if(!window.CrossBlocksAruco){
-    setStatus('Erreur : base ArUco non chargée.');
-    return;
+ const S=document.getElementById('status'),F=document.getElementById('found'),V=document.getElementById('video'),C=document.getElementById('canvas'),X=C.getContext('2d',{willReadFrequently:true});
+ const say=t=>S.textContent=t;
+ if(!window.CrossBlocksAruco){say('Erreur : crossblocks-scan-data.js n’est pas chargé.');return;}
+ let detector;try{detector=new AR.Detector()}catch(e){say('Erreur : bibliothèque ArUco non chargée.');console.error(e);return;}
+ try{V.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});await V.play()}catch(e){say('Caméra inaccessible : autorise la caméra puis recharge.');return}
+ let last=null,count=0,locked=false;
+ function loop(){
+  if(locked){return}
+  if(V.readyState>=2){
+   C.width=V.videoWidth;C.height=V.videoHeight;X.drawImage(V,0,0,C.width,C.height);
+   try{
+    const ms=detector.detect(X.getImageData(0,0,C.width,C.height));
+    if(ms.length){
+     const id=Number(ms[0].id);
+     if(id!==last){last=id;count=1}else count++;
+     F.textContent='ArUco #'+id;say('Marqueur détecté — '+count+'/3');
+     if(count>=3){locked=true;location.href='fiche-figurine.html?id='+encodeURIComponent(id);return}
+    }else{last=null;count=0;F.textContent='';say('Recherche d’un marqueur…')}
+   }catch(e){console.error(e)}
   }
-
-  let detector;
-  try {
-    detector=new AR.Detector();
-  } catch(e) {
-    setStatus('Erreur : bibliothèque ArUco non chargée.');
-    console.error(e);
-    return;
-  }
-
-  let stream;
-  try {
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'}},
-      audio:false
-    });
-    video.srcObject=stream;
-    await video.play();
-    setStatus('Présente le marqueur ArUco devant la caméra.');
-  } catch(e) {
-    setStatus('Impossible d’accéder à la caméra. Autorise la caméra puis recharge la page.');
-    console.error(e);
-    return;
-  }
-
-  let lastId=null, stable=0, locked=false;
-
-  function loop(){
-    if(locked || video.readyState<2){
-      requestAnimationFrame(loop);
-      return;
-    }
-
-    canvas.width=video.videoWidth;
-    canvas.height=video.videoHeight;
-    ctx.drawImage(video,0,0,canvas.width,canvas.height);
-
-    try {
-      const markers=detector.detect(ctx.getImageData(0,0,canvas.width,canvas.height));
-      if(markers.length){
-        const id=Number(markers[0].id);
-
-        // IMPORTANT: accept all IDs returned by the dictionary.
-        if(id!==lastId){lastId=id;stable=1}
-        else stable++;
-
-        found.textContent='ArUco #'+id;
-        setStatus('Marqueur détecté — stabilisation '+stable+'/3');
-
-        if(stable>=3){
-          locked=true;
-          setStatus('Fiche trouvée, ouverture…');
-          location.href='fiche-figurine.html?id='+encodeURIComponent(id);
-          return;
-        }
-      }else{
-        lastId=null;
-        stable=0;
-        found.textContent='';
-        setStatus('Recherche d’un marqueur…');
-      }
-    }catch(e){
-      console.error(e);
-    }
-
-    requestAnimationFrame(loop);
-  }
-
   requestAnimationFrame(loop);
+ }
+ say('Présente un marqueur ArUco devant la caméra.');requestAnimationFrame(loop);
 })();
-</script>
-</body>
-</html>
+</script></body></html>
