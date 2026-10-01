@@ -150,7 +150,7 @@ function loop(){
  if(frameSkip!==0)return;
 
  busy=true;
- const W=480;
+ const W=960;
  const H=Math.max(270,Math.round(video.videoHeight*(W/video.videoWidth)));
  const c=document.createElement('canvas');c.width=W;c.height=H;
  const x=c.getContext('2d',{willReadFrequently:true});
