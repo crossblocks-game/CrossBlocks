@@ -66,8 +66,7 @@
  <span class="nav-sep">|</span>
  <a href="index.html" class="nav-active" data-i18n="nav.editor"> Éditeur de fiches d'unités</a>
  <a href="game.html" data-i18n="nav.simulator"> Simulateur</a>
- <a href="aruco.html">📷 Base ArUco</a>
-  <a href="scan-figurine.html" data-i18n="nav.scan">📷 Scanner</a>
+ <a href="scan-figurine.html" data-i18n="nav.scan">📷 Scanner</a>
  <a href="#" id="nav-admin-link" onclick="promptAdmin();return false;" style="display:none;color:#f0c040;font-weight:700" data-i18n="nav.admin"> Panneau Admin</a>
  <div id="auth-box" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap">
   <select id="lang-switch" onchange="setLang(this.value)" style="padding:2px 4px;border-radius:3px;border:1px solid #444;background:#1a1a2e;color:#e6edf3;font-size:10px;cursor:pointer">
@@ -1687,17 +1686,85 @@ window.CB=(function(){
     var box=document.getElementById('admin-aruco-box');if(!box)return;
     var db=CB.getAruco(),units=cbArucoUnits();
     var opts='<option value="">— Choisir une unité existante —</option>'+units.map(function(x){return '<option value="'+escAruco(x.name)+'">'+escAruco(x.name)+' ['+escAruco(x.source)+']</option>';}).join('');
-    var rows=Object.keys(db).sort(function(a,b){return Number(a)-Number(b);}).map(function(id){var m=db[id]||{};return '<tr><td style="padding:4px;color:#f0c040;font-weight:700">'+escAruco(id)+'</td><td>'+escAruco(m.unitName||'')+'</td><td><button onclick="CB_editAruco('+JSON.stringify(String(id))+')" style="font-size:9px">Modifier</button> <button onclick="CB_deleteAruco('+JSON.stringify(String(id))+')" style="font-size:9px;background:#6e1010;color:#fff">Supprimer</button></td></tr>';}).join('');
-    box.innerHTML='<div style="display:grid;grid-template-columns:1fr 2fr;gap:8px"><div><label>ID ArUco</label><input id="aruco-admin-id" type="number" min="0" step="1" placeholder="ex. 137"></div><div><label>Unité existante</label><select id="aruco-admin-unit" style="width:100%;padding:6px;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:4px">'+opts+'</select></div></div><div style="margin-top:8px"><button class="btn btn-add" onclick="CB_saveArucoAdmin()">💾 Associer</button> <button class="btn" onclick="renderArUcoAdmin()">↻ Actualiser</button></div><h4>Associations ('+Object.keys(db).length+')</h4><div style="max-height:350px;overflow:auto"><table style="width:100%;font-size:10px;border-collapse:collapse"><tr><th>ID</th><th>Unité</th><th>Actions</th></tr>'+rows+'</table></div>';
+    var rows=Object.keys(db).sort(function(a,b){return Number(a)-Number(b);}).map(function(id){var m=db[id]||{};return '<tr><td style="padding:4px;color:#f0c040;font-weight:700">#'+escAruco(id)+'</td><td>'+escAruco(m.unitName||'')+'</td><td><button onclick="CB_editAruco('+JSON.stringify(String(id))+')" style="font-size:9px">Modifier</button> <button onclick="CB_deleteAruco('+JSON.stringify(String(id))+')" style="font-size:9px;background:#6e1010;color:#fff">Supprimer</button></td></tr>';}).join('');
+    box.innerHTML='
+      <div style="padding:12px;background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:12px">
+        <h3 style="margin:0 0 6px;color:#f0c040">🧱 Créer une figurine permanente + ArUco</h3>
+        <p style="margin:0 0 10px;font-size:12px;color:#aaa">Cette création est enregistrée dans la base distante CrossBlocks. Elle sera donc disponible après reconnexion et pour le scanner.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label>Nom de la figurine *</label><input id="aruco-new-name" type="text" placeholder="ex. Clone personnalisé" style="width:100%"></div>
+          <div><label>ID ArUco * <small>(0–1022)</small></label><input id="aruco-new-id" type="number" min="0" max="1022" step="1" placeholder="ex. 37" style="width:100%"></div>
+          <div><label>Faction</label><input id="aruco-new-faction" type="text" placeholder="ex. clones" style="width:100%"></div>
+          <div><label>Points</label><input id="aruco-new-points" type="number" min="0" step="1" value="0" style="width:100%"></div>
+          <div><label>PV</label><input id="aruco-new-pv" type="number" min="1" step="1" value="2" style="width:100%"></div>
+          <div><label>Actions</label><input id="aruco-new-actions" type="number" min="0" step="1" value="5" style="width:100%"></div>
+          <div><label>MM</label><input id="aruco-new-mm" type="number" step="1" value="0" style="width:100%"></div>
+          <div><label>Armure</label><input id="aruco-new-armor" type="number" min="0" max="20" step="1" value="15" style="width:100%"></div>
+        </div>
+        <div style="margin-top:10px"><button class="btn btn-add" onclick="CB_createPermanentArucoUnit()">💾 Créer et enregistrer définitivement</button></div>
+      </div>
+      <div style="padding:10px;background:#10151b;border:1px solid #30363d;border-radius:8px;margin-bottom:12px">
+        <b>Associer un ArUco à une figurine déjà existante</b>
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:8px">
+          <div><label>ID ArUco</label><input id="aruco-admin-id" type="number" min="0" max="1022" step="1" placeholder="ex. 137"></div>
+          <div><label>Unité existante</label><select id="aruco-admin-unit" style="width:100%;padding:6px;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:4px">'+opts+'</select></div>
+        </div>
+        <div style="margin-top:8px"><button class="btn btn-add" onclick="CB_saveArucoAdmin()">💾 Associer</button> <button class="btn" onclick="renderArUcoAdmin()">↻ Actualiser</button></div>
+      </div>
+      <h4>Associations ('+Object.keys(db).length+')</h4>
+      <div style="max-height:350px;overflow:auto"><table style="width:100%;font-size:10px;border-collapse:collapse"><tr><th>ID</th><th>Unité</th><th>Actions</th></tr>'+rows+'</table></div>';
   };
+
+  window.CB_createPermanentArucoUnit=function(){
+    var user=CB.getUser();
+    if(!user||!user.isAdmin){alert('Réservé au compte administrateur.');return;}
+    var name=(document.getElementById('aruco-new-name').value||'').trim();
+    var id=Number(document.getElementById('aruco-new-id').value);
+    var faction=(document.getElementById('aruco-new-faction').value||'').trim();
+    var points=Number(document.getElementById('aruco-new-points').value);
+    var pv=Number(document.getElementById('aruco-new-pv').value);
+    var actions=Number(document.getElementById('aruco-new-actions').value);
+    var mm=Number(document.getElementById('aruco-new-mm').value);
+    var armor=Number(document.getElementById('aruco-new-armor').value);
+    if(!name){alert('Donne un nom à la figurine.');return;}
+    if(!Number.isInteger(id)||id<0||id>1022){alert('ID ArUco invalide : utilise 0 à 1022.');return;}
+    if(!Number.isFinite(points)||points<0||!Number.isFinite(pv)||pv<1||!Number.isFinite(actions)||actions<0||!Number.isFinite(mm)||!Number.isFinite(armor)||armor<0){alert('Vérifie les statistiques de la figurine.');return;}
+
+    var ar=CB.getAruco()||{};
+    var old=ar[String(id)];
+    if(old&&old.unitName&&old.unitName!==name && !confirm('ArUco #'+id+' est déjà associé à « '+old.unitName+' ». Remplacer cette association par « '+name+' » ?'))return;
+
+    var v=CB.getValidated()||{units:[],weapons:[],factions:[]};
+    v.units=Array.isArray(v.units)?v.units:[];
+    var idx=-1;
+    for(var i=0;i<v.units.length;i++){
+      var un=v.units[i];if(String(un.name||un.n||'').trim().toLowerCase()===name.toLowerCase()){idx=i;break;}
+    }
+    var unit={name:name,faction:faction,points:points,pv:pv,actions:actions,mm:mm,armor:armor,source:'admin',adminCreated:true,updatedAt:new Date().toISOString()};
+    if(idx>=0){
+      unit=Object.assign({},v.units[idx],unit);
+      v.units[idx]=unit;
+    }else{
+      v.units.push(unit);
+    }
+    CB.saveValidated(v);
+
+    ar[String(id)]={unitName:name,owner:'admin',dictionary:'ARUCO',updatedAt:new Date().toISOString(),updatedBy:'admin'};
+    CB.saveAruco(ar);
+    CB.logHistory(idx>=0?'edit':'create','unit',name,'Figurine permanente + ArUco #'+id);
+    alert('Figurine « '+name+' » enregistrée définitivement avec l’ArUco #'+id+'.');
+    renderArUcoAdmin();
+  };
+
   window.CB_saveArucoAdmin=function(){
+    var user=CB.getUser();if(!user||!user.isAdmin){alert('Réservé au compte administrateur.');return;}
     var id=document.getElementById('aruco-admin-id').value,unit=document.getElementById('aruco-admin-unit').value;
-    if(id===''||!Number.isInteger(Number(id))||Number(id)<0){alert('ID ArUco invalide');return;}
+    if(id===''||!Number.isInteger(Number(id))||Number(id)<0||Number(id)>1022){alert('ID ArUco invalide : 0 à 1022.');return;}
     if(!unit){alert('Choisissez une unité');return;}
-    var db=CB.getAruco();db[String(Number(id))]={unitName:unit,updatedAt:new Date().toISOString(),updatedBy:(CB.getUser()||{}).login||'admin'};CB.saveAruco(db);CB.logHistory('edit','aruco',String(id),'→ '+unit);renderArUcoAdmin();alert('Association enregistrée.');
+    var db=CB.getAruco();db[String(Number(id))]={unitName:unit,owner:'admin',dictionary:'ARUCO',updatedAt:new Date().toISOString(),updatedBy:(CB.getUser()||{}).login||'admin'};CB.saveAruco(db);CB.logHistory('edit','aruco',String(id),'→ '+unit);renderArUcoAdmin();alert('Association enregistrée.');
   };
   window.CB_editAruco=function(id){var m=CB.getAruco()[String(id)]||{};document.getElementById('aruco-admin-id').value=id;document.getElementById('aruco-admin-unit').value=m.unitName||'';};
-  window.CB_deleteAruco=function(id){if(!confirm('Supprimer l’association ArUco #'+id+' ?'))return;var db=CB.getAruco();delete db[String(id)];CB.saveAruco(db);CB.logHistory('delete','aruco',String(id));renderArUcoAdmin();};
+  window.CB_deleteAruco=function(id){var user=CB.getUser();if(!user||!user.isAdmin){alert('Réservé au compte administrateur.');return;}if(!confirm('Supprimer l’association ArUco #'+id+' ?'))return;var db=CB.getAruco();delete db[String(id)];CB.saveAruco(db);CB.logHistory('delete','aruco',String(id));renderArUcoAdmin();};
   // ═══ ADMIN CONFIG ═══
   // Built-in weapon stats (from game.html WEAPS)
   var BUILTIN_WEAPS={
