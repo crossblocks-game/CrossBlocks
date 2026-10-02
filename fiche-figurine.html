@@ -1,20 +1,347 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CrossBlocks — Fiche</title>
-<style>body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial}.wrap{max-width:900px;margin:auto;padding:20px}a{color:#fff;background:#202832;border:1px solid #394451;border-radius:7px;padding:9px 13px;text-decoration:none}.card{margin-top:16px;background:#12161c;border:1px solid #30363d;border-radius:12px;padding:20px}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.stat,.w{background:#0d1117;padding:12px;border-radius:7px;text-align:center}.stat b{display:block;font-size:24px}.weapon{border:1px solid #30363d;border-radius:8px;padding:12px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.warn{padding:12px;background:#211b08;border:1px solid #9e6a03;border-radius:7px}@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(2,1fr)}}</style></head>
-<body><div class="wrap"><a href="scan-figurine.html">📷 Scanner</a> <a href="index.html">‹ CrossBlocks</a><div class="card" id="card">Chargement…</div></div>
-<script src="./crossblocks-scan-data.js"></script><script>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CrossBlocks — Fiche figurine</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090c10;color:#e6edf3;font:14px Arial,sans-serif}
+.wrap{max-width:1050px;margin:auto;padding:18px}
+.top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+a,button{background:#202832;color:#fff;border:1px solid #394451;border-radius:8px;padding:9px 13px;text-decoration:none;cursor:pointer}
+button.primary{background:#1f6feb;border-color:#3182f6}
+button.danger{background:#651d1d;border-color:#a52a2a}
+.card,.panel{background:#12161c;border:1px solid #30363d;border-radius:12px;padding:18px;margin-top:14px}
+h1,h2,h3{margin-top:0}
+.header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.sub{color:#9da7b3}
+.badge{display:inline-block;padding:5px 9px;border:1px solid #394451;border-radius:999px;background:#0d1117;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0}
+.stat{background:#0d1117;padding:12px;border-radius:8px;text-align:center;border:1px solid #252c35}
+.stat b{display:block;font-size:25px;margin-bottom:4px}
+.editor{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+label{font-weight:700;color:#c7d0da}
+input,select,textarea{width:100%;padding:10px;border-radius:7px;border:1px solid #394451;background:#0d1117;color:#fff}
+textarea{min-height:75px;resize:vertical}
+.actions,.hpbox{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pip{width:48px;height:48px;padding:0;border-radius:9px;background:#202832;border:2px solid #4b5663;font-size:20px;font-weight:800}
+.pip.used{background:#7b2020;border-color:#d04747;color:#fff}
+.pip.hp{background:#12351f;border-color:#318451}
+.pip.hp.lost{background:#651d1d;border-color:#a52a2a}
+.counter{font-size:22px;font-weight:800;margin-top:8px}
+.resetrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.weapon{border:1px solid #30363d;border-radius:8px;padding:14px;margin:12px 0}
+.weapon-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.weapon-stat{background:#0d1117;padding:10px;border-radius:7px;text-align:center}
+.warn{padding:12px;background:#211b08;border:1px solid #9e6a03;border-radius:7px}
+.ok{color:#55d67a}
+.small{font-size:12px;color:#8b949e}
+@media(max-width:760px){
+ .stats{grid-template-columns:repeat(2,1fr)}
+ .editor{grid-template-columns:1fr}
+ .field.full{grid-column:auto}
+ .weapon-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top">
+<a href="scan-figurine.html">📷 Scanner</a>
+<a href="index.html">‹ CrossBlocks</a>
+</div>
+<div id="card" class="card">Chargement…</div>
+</div>
+
+<script src="crossblocks-scan-data.js"></script>
+<script>
 (async function(){
- const card=document.getElementById('card'),id=new URLSearchParams(location.search).get('id');
- const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- if(id===null){card.innerHTML='<h1>Fiche inconnue</h1>';return}
- try{
-  const db=await CrossBlocksAruco.fetchDB(),map=CrossBlocksAruco.getMapping(db,id);
-  if(!map){card.innerHTML='<h1>ArUco #'+esc(id)+'</h1><div class="warn">Marqueur reconnu, mais aucune figurine ne lui est associée.</div>';return}
-  const u=CrossBlocksAruco.getUnitByAruco(db,id);
-  if(!u){card.innerHTML='<h1>ArUco #'+esc(id)+'</h1><div class="warn">Association trouvée, mais unité introuvable : '+esc(map.unitName)+'</div>';return}
-  const n=u.name||u.n||'Figurine',f=u.faction||'',pts=u.basePts??u.pts??u.points??0,pv=u.hp??u.pv??0,pa=u.pa??u.actions??5,mm=u.mm??u.move??0,arm=u.arm??u.armor??0,ws=u.weapons||[];
-  let h='<small>ARUCO #'+esc(id)+'</small><h1>'+esc(n)+'</h1><p>'+esc(f)+' · '+pts+' points</p><div class="stats"><div class="stat"><b>'+pv+'</b>PV</div><div class="stat"><b>'+pa+'</b>Actions</div><div class="stat"><b>'+mm+'</b>MM</div><div class="stat"><b>'+arm+'+</b>Armure</div><div class="stat"><b>'+pts+'</b>Points</div></div><h2>Armes</h2>';
-  h+=ws.length?ws.map(w=>{if(typeof w==='string')w={name:w};return '<div class="weapon"><h3>'+esc(w.n||w.name||'Arme')+'</h3><div class="grid"><div class="w"><b>'+esc(w.mun??w.touches??'—')+'</b><br>Touches/Munitions</div><div class="w"><b>'+esc(w.melee??'—')+'</b><br>Mêlée</div><div class="w"><b>'+esc(w.cat1??w.range1??'—')+'</b><br>Portée 1</div><div class="w"><b>'+esc(w.cat2??w.range2??'—')+'</b><br>Portée 2</div><div class="w"><b>'+esc(w.catP??w.rangePlus??'—')+'</b><br>Portée +</div><div class="w"><b>+'+esc(w.pen??w.penetration??0)+'</b><br>Pénétration</div><div class="w"><b>'+esc(w.dMax??w.dmg??w.damage??'—')+'</b><br>Dégâts</div><div class="w"><b>'+esc(w.effect||'—')+'</b><br>Effet</div></div></div>'}).join(''):'<p>Aucune arme renseignée.</p>';
-  h+='<h2>Compétences / règles spéciales</h2><p>'+esc(u.abilities||u.special||u.rule||'Aucune')+'</p>';card.innerHTML=h;
- }catch(e){console.error(e);card.innerHTML='<h1>Erreur de chargement</h1><div class="warn">La base CrossBlocks est inaccessible.</div>'}
+'use strict';
+
+const card=document.getElementById('card');
+const arucoId=new URLSearchParams(location.search).get('id');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+if(arucoId===null){card.innerHTML='<h1>Fiche inconnue</h1>';return;}
+
+let db,u,mapping;
+let player='admin';
+try{
+  const session=JSON.parse(localStorage.getItem('cb_session')||'null');
+  if(session&&session.login)player=session.login;
+}catch(_){}
+
+const stateKey='crossblocks_figure_session_v2:'+player+':aruco:'+String(arucoId);
+// Les statistiques de la base restent toujours intactes.
+// state.overrides contient uniquement les modifications du joueur pour cette figurine.
+const defaultState=()=>({overrides:{},actionsUsed:0,hpLost:0});
+let state=defaultState();
+
+function loadState(){
+  try{
+    const x=JSON.parse(localStorage.getItem(stateKey)||'null');
+    if(x&&typeof x==='object'){
+    state={...defaultState(),...x,overrides:{...(x.overrides||{})}};
+  }
+  }catch(_){}
+}
+function saveState(){
+  try{localStorage.setItem(stateKey,JSON.stringify(state));}
+  catch(_){}
+}
+function num(v,fallback){const n=Number(v);return Number.isFinite(n)?n:fallback;}
+
+function getDefaults(){
+  return {
+    name:u.name||u.n||mapping?.unitName||'Figurine',
+    points:num(u.basePts??u.pts??u.points,0),
+    pvMax:num(u.hp??u.pv,0),
+    actionsMax:num(u.pa??u.actions,5),
+    mm:num(u.mm??u.move,0),
+    armor:num(u.arm??u.armor,0)
+  };
+}
+
+function currentValues(){
+  const d=getDefaults();
+  const o=state.overrides||{};
+  return {
+    name:o.name??d.name,
+    points:o.points??d.points,
+    pvMax:Math.max(0,num(o.pvMax,d.pvMax)),
+    actionsMax:Math.max(0,num(o.actionsMax,d.actionsMax)),
+    mm:num(o.mm,d.mm),
+    armor:Math.max(0,num(o.armor,d.armor))
+  };
+}
+
+function clampRuntime(){
+  const v=currentValues();
+  state.actionsUsed=Math.max(0,Math.min(v.actionsMax,num(state.actionsUsed,0)));
+  state.hpLost=Math.max(0,Math.min(v.pvMax,num(state.hpLost,0)));
+}
+
+function renderRuntime(){
+  const v=currentValues();
+  clampRuntime();
+  const remainingActions=Math.max(0,v.actionsMax-state.actionsUsed);
+  const remainingHP=Math.max(0,v.pvMax-state.hpLost);
+
+  const actions=document.getElementById('actionsPips');
+  const hp=document.getElementById('hpPips');
+  const ac=document.getElementById('actionsCount');
+  const hc=document.getElementById('hpCount');
+  if(!actions||!hp)return;
+
+  actions.innerHTML='';
+  for(let i=0;i<v.actionsMax;i++){
+    const b=document.createElement('button');
+    b.className='pip'+(i<state.actionsUsed?' used':'');
+    b.title=i<state.actionsUsed?'Action consommée':'Action disponible';
+    b.textContent=i<state.actionsUsed?'✓':'';
+    b.onclick=()=>{
+      if(i<state.actionsUsed)state.actionsUsed=i;
+      else state.actionsUsed=i+1;
+      saveState();renderRuntime();
+    };
+    actions.appendChild(b);
+  }
+
+  hp.innerHTML='';
+  for(let i=0;i<v.pvMax;i++){
+    const b=document.createElement('button');
+    b.className='pip hp'+(i>=remainingHP?' lost':'');
+    b.title=i<remainingHP?'PV restant':'PV perdu';
+    b.textContent=i<remainingHP?'♥':'×';
+    b.onclick=()=>{
+      if(i>=remainingHP)state.hpLost=i;
+      else state.hpLost=v.pvMax-i;
+      saveState();renderRuntime();
+    };
+    hp.appendChild(b);
+  }
+
+  ac.textContent=remainingActions+' / '+v.actionsMax+' actions restantes';
+  hc.textContent=remainingHP+' / '+v.pvMax+' PV restants';
+  saveState();
+}
+
+function renderEditor(){
+  const v=currentValues();
+  const editor=document.getElementById('editor');
+  editor.innerHTML=`
+    <div class="field">
+      <label>Nom du joueur</label>
+      <input id="playerName" value="${esc(player)}" disabled>
+      <span class="small">Compte utilisé pour mémoriser l'état de cette figurine : ${esc(player)}.</span>
+    </div>
+    <div class="field">
+      <label>Nom de la figurine</label>
+      <input id="figureName" value="${esc(v.name)}">
+    </div>
+    <div class="field">
+      <label>Points d'armée</label>
+      <input id="figurePoints" type="number" min="0" value="${v.points}">
+    </div>
+    <div class="field">
+      <label>PV maximum</label>
+      <input id="figurePV" type="number" min="0" value="${v.pvMax}">
+    </div>
+    <div class="field">
+      <label>Actions maximum</label>
+      <input id="figureActions" type="number" min="0" value="${v.actionsMax}">
+    </div>
+    <div class="field">
+      <label>Modificateur de mouvement</label>
+      <input id="figureMM" type="number" value="${v.mm}">
+    </div>
+    <div class="field">
+      <label>Armure</label>
+      <input id="figureArmor" type="number" min="0" value="${v.armor}">
+    </div>
+    <div class="field">
+      <label>ID ArUco</label>
+      <input value="${esc(arucoId)}" disabled>
+    </div>
+    <div class="field full">
+      <button id="saveEditor" class="primary">💾 Enregistrer les modifications</button>
+      <span id="saveInfo" class="small"></span>
+    </div>`;
+
+  document.getElementById('saveEditor').onclick=()=>{
+    const oldMaxActions=currentValues().actionsMax;
+    const oldMaxHP=currentValues().pvMax;
+    // On ne modifie JAMAIS u ni db : seules les valeurs du joueur sont enregistrées.
+    const d=getDefaults();
+    state.overrides={
+      ...state.overrides,
+      name:document.getElementById('figureName').value.trim()||d.name,
+      points:num(document.getElementById('figurePoints').value,d.points),
+      pvMax:Math.max(0,num(document.getElementById('figurePV').value,d.pvMax)),
+      actionsMax:Math.max(0,num(document.getElementById('figureActions').value,d.actionsMax)),
+      mm:num(document.getElementById('figureMM').value,d.mm),
+      armor:Math.max(0,num(document.getElementById('figureArmor').value,d.armor))
+    };
+
+    if(state.actionsMax!==oldMaxActions)state.actionsUsed=Math.min(state.actionsUsed,state.actionsMax);
+    if(state.pvMax!==oldMaxHP)state.hpLost=Math.min(state.hpLost,state.pvMax);
+
+    saveState();
+    buildPage();
+  };
+}
+
+function resetActions(){
+  state.actionsUsed=0;
+  saveState();
+  renderRuntime();
+}
+function resetHP(){
+  state.hpLost=0;
+  saveState();
+  renderRuntime();
+}
+
+function buildPage(){
+  const v=currentValues();
+  const abilities=u.abilities||u.special||u.rule||'';
+  const weapons=Array.isArray(u.weapons)?u.weapons:(u.weapons?String(u.weapons).split(',').map(function(x){return {name:x.trim()};}).filter(function(x){return x.name;}):[]);
+
+  card.innerHTML=`
+  <div class="header">
+    <div>
+      <span class="badge">ARUCO #${esc(arucoId)}</span>
+      <h1 id="titleName">${esc(v.name)}</h1>
+      <div class="sub">${esc(u.faction||'')} · ${v.points} points · Joueur : <b>${esc(player)}</b></div>
+    </div>
+    <div class="badge">État mémorisé automatiquement</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>${v.pvMax}</b>PV max</div>
+    <div class="stat"><b>${v.actionsMax}</b>Actions</div>
+    <div class="stat"><b>${v.mm>=0?'+':''}${v.mm}</b>MM</div>
+    <div class="stat"><b>${v.armor}+</b>Armure</div>
+    <div class="stat"><b>${v.points}</b>Points</div>
+  </div>
+
+  <div class="panel">
+    <h2>🎮 État de la figurine</h2>
+    <p class="small">Cliquez sur les cases à la volée. L'état reste mémorisé pour ce joueur et cet ArUco, même après changement de page.</p>
+
+    <h3>Actions</h3>
+    <div id="actionsPips" class="actions"></div>
+    <div id="actionsCount" class="counter"></div>
+    <div class="resetrow">
+      <button id="resetActions" class="danger">↺ Réinitialiser les actions</button>
+    </div>
+
+    <h3 style="margin-top:22px">Points de vie</h3>
+    <div id="hpPips" class="hpbox"></div>
+    <div id="hpCount" class="counter"></div>
+    <div class="resetrow">
+      <button id="resetHP" class="danger">↺ Réinitialiser les PV</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>✏️ Éditeur en direct</h2>
+    <p class="small">Les statistiques de base de CrossBlocks restent inchangées. Chaque modification est enregistrée séparément comme un <b>override de session du joueur</b>, uniquement pour ce joueur et cet ArUco.</p>
+    <div id="editor" class="editor"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Armes</h2>
+    ${weapons.length?weapons.map(w=>{
+      if(typeof w==='string')w={name:w};
+      return `<div class="weapon">
+        <h3>${esc(w.n||w.name||'Arme')}</h3>
+        <div class="weapon-grid">
+          <div class="weapon-stat"><b>${esc(w.mun??w.touches??'—')}</b><br>Touches/Munitions</div>
+          <div class="weapon-stat"><b>${esc(w.melee??'—')}</b><br>Mêlée</div>
+          <div class="weapon-stat"><b>${esc(w.cat1??w.range1??'—')}</b><br>Portée 1</div>
+          <div class="weapon-stat"><b>${esc(w.cat2??w.range2??'—')}</b><br>Portée 2</div>
+          <div class="weapon-stat"><b>${esc(w.catP??w.rangePlus??'—')}</b><br>Portée +</div>
+          <div class="weapon-stat"><b>+${esc(w.pen??w.penetration??0)}</b><br>Pénétration</div>
+          <div class="weapon-stat"><b>${esc(w.dMax??w.dmg??w.damage??'—')}</b><br>Dégâts</div>
+          <div class="weapon-stat"><b>${esc(w.effect||'—')}</b><br>Effet</div>
+        </div>
+      </div>`;
+    }).join(''):'<p>Aucune arme renseignée.</p>'}
+  </div>
+
+  <div class="panel">
+    <h2>Compétences / règles spéciales</h2>
+    <p>${esc(abilities||'Aucune')}</p>
+  </div>`;
+
+  renderEditor();
+  renderRuntime();
+  document.getElementById('resetActions').onclick=resetActions;
+  document.getElementById('resetHP').onclick=resetHP;
+}
+
+try{
+  db=await CrossBlocksAruco.fetchDB();
+  mapping=CrossBlocksAruco.getMapping(db,arucoId);
+  if(!mapping){
+    card.innerHTML='<h1>ArUco #'+esc(arucoId)+'</h1><div class="warn">Marqueur reconnu, mais aucune figurine ne lui est associée.</div>';
+    return;
+  }
+  u=CrossBlocksAruco.getUnitByAruco(db,arucoId);
+  if(!u){
+    card.innerHTML='<h1>ArUco #'+esc(arucoId)+'</h1><div class="warn">Association trouvée, mais unité introuvable : '+esc(mapping.unitName)+'</div>';
+    return;
+  }
+  loadState();
+  buildPage();
+}catch(e){
+  console.error(e);
+  card.innerHTML='<h1>Erreur de chargement</h1><div class="warn">La base CrossBlocks est inaccessible ou l’association ArUco est invalide.</div>';
+}
 })();
-</script></body></html>
+</script>
+</body>
+</html>

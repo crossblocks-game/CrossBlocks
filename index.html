@@ -390,7 +390,7 @@
   </select>
  </div>
  <div id="gallery-grid" class="gallery-grid"></div>
- 
+ <div class="base-units-public-wrap" style="margin-top:18px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--card)"><h3 style="margin:0 0 8px;color:var(--accent)">Unités de base — accessibles sans compte</h3><p style="font-size:11px;color:var(--text2);margin:0 0 8px">Catalogue commun : les numéros de base restent identiques pour tous les visiteurs.</p><div id="base-units-public-list">Chargement des unités de base…</div></div>
  </section>
 
  <!-- ═══ FICHES D'UNITÉS GÉNÉRÉES ═══ -->
@@ -637,11 +637,11 @@
  <h3> Gestion des utilisateurs</h3>
  <div id="admin-users-list"></div>
  </div>
+ <div class="admin-body" id="admin-baseunits" style="display:none"><h3>📦 Unités de base communes</h3><p class="admin-desc">Ces unités sont enregistrées dans la base distante et visibles par tous, même sans connexion. Chaque numéro est stable : par exemple, le numéro 1 désigne toujours la même unité.</p><div id="admin-baseunits-editor"></div></div>
  <div class="admin-body" id="admin-sync" style="display:none">
  <h3> Transfert de données entre ordinateurs</h3>
- <p class="admin-desc" style="background:#0d2012;border:1px solid #238636;border-radius:4px;padding:8px;margin-bottom:8px;font-size:10px"><strong style="color:#3fb950">Synchronisation distante JSONBin</strong> Les comptes, unités validées, propositions, associations ArUco, unités de base et données partagées sont synchronisés en ligne lorsque la connexion distante est disponible. GitHub Pages reste un hébergement statique ; JSONBin assure le stockage partagé.</p>
- <div id="sync-controls-sync" style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px;margin:8px 0"></div>
- <p class="admin-desc">L’export/import JSON reste disponible comme sauvegarde manuelle et pour transférer une copie des données. La synchronisation distante est automatique et réessaie lors d’une reconnexion.</p>
+ <p class="admin-desc" style="background:#1a0a0a;border:1px solid #6e1010;border-radius:4px;padding:8px;margin-bottom:8px;font-size:10px"><strong style="color:#f85149">Pourquoi pas de sauvegarde directe sur GitHub ?</strong> GitHub Pages est un hébergement <b>statique en lecture seule</b> — les visiteurs ne peuvent pas écrire de fichiers sur le serveur. Pour un stockage en ligne partagé, il faudrait un serveur backend (Firebase, Supabase, etc.). En attendant, utilisez <b>Export/Import JSON</b> pour transférer les données entre ordinateurs.</p>
+ <p class="admin-desc"><b>Workflow :</b> Sur le PC où les utilisateurs créent → l'admin exporte le JSON. Sur un autre PC → l'admin importe le JSON. Les données sont fusionnées automatiquement (pas d'écrasement).</p>
  <div style="display:flex;gap:8px;margin:10px 0">
  <button class="btn btn-add" onclick="CB_exportAll()"> Exporter tout (JSON)</button>
  <button class="btn btn-suggest" onclick="document.getElementById('import-file').click()"> Importer (JSON)</button>
@@ -827,15 +827,14 @@ window.CB=(function(){
         if(!cache.comments)cache.comments={};
         if(!cache.specialRules)cache.specialRules={};
         if(!cache.aruco)cache.aruco={};
-        if(!cache.baseUnits||typeof cache.baseUnits!=='object'||Array.isArray(cache.baseUnits))cache.baseUnits={};
+        if(!cache.baseUnits)cache.baseUnits={};
         if(!cache.history)cache.history=[];
         if(typeof cache.version!=='number')cache.version=0;
         remoteReady=true;
         setStatus('Sync OK v'+cache.version+' ('+new Date().toLocaleTimeString()+')');
         _lastSyncVersion = cache.version || 0;
         startPolling(); // démarre le polling auto toutes les 45s
-        if(window.loadUserContent)setTimeout(window.loadUserContent,0);
-        if(window.renderSyncStatus)setTimeout(window.renderSyncStatus,0);
+        if(typeof window.renderPublicBaseUnits==='function')window.renderPublicBaseUnits();
         if(cb)cb();
       })
       .catch(function(err){
@@ -843,9 +842,8 @@ window.CB=(function(){
         setStatus('ERREUR: '+err.message+' (mode local)');
         remoteReady=false;
         try{var local=localStorage.getItem('cb_cache');if(local)cache=JSON.parse(local);}catch(e){}
-        if(!cache.baseUnits||typeof cache.baseUnits!=='object'||Array.isArray(cache.baseUnits))cache.baseUnits={};
-        if(window.loadUserContent)setTimeout(window.loadUserContent,0);
-        if(window.renderSyncStatus)setTimeout(window.renderSyncStatus,0);
+        if(!Array.isArray(cache.baseUnits))cache.baseUnits=[];
+        if(typeof window.renderPublicBaseUnits==='function')window.renderPublicBaseUnits();
         if(cb)cb();
       });
   }
@@ -879,6 +877,10 @@ window.CB=(function(){
     Object.keys(local.aruco||{}).forEach(function(id){arucoIds[id]=local.aruco[id];});
     Object.keys(remote.aruco||{}).forEach(function(id){arucoIds[id]=remote.aruco[id];});
     merged.aruco=arucoIds;
+    var baseById={};
+    (local.baseUnits||[]).forEach(function(u){if(u&&u.id!==undefined)baseById[String(u.id)]=u;});
+    (remote.baseUnits||[]).forEach(function(u){if(u&&u.id!==undefined)baseById[String(u.id)]=u;});
+    merged.baseUnits=Object.keys(baseById).map(function(id){return baseById[id];}).sort(function(a,b){return Number(a.id)-Number(b.id);});
     merged.likes=Object.assign({},local.likes||{},remote.likes||{});
     merged.comments=Object.assign({},local.comments||{},remote.comments||{});
     merged.history=(remote.history||local.history||[]).slice(0,500);
@@ -965,8 +967,6 @@ window.CB=(function(){
             var prevComments = JSON.stringify(cache.comments || {});
             cache = mergeData(cache, remote);
             try { localStorage.setItem('cb_cache', JSON.stringify(cache)); } catch(e) {}
-            if (window.loadUserContent) window.loadUserContent(); // refresh shared base units for guests and accounts
-            if (window.renderSyncStatus) window.renderSyncStatus();
             setStatus('Sync v' + cache.version + ' (' + new Date().toLocaleTimeString() + ')');
             // Detect new likes/comments
             var newLikes = JSON.stringify(cache.likes || {});
@@ -1039,6 +1039,8 @@ window.CB=(function(){
   function saveValidated(v){cache.validated=v;pushRemote();}
   function getSubmissions(){return cache.submissions||[];}
   function saveSubmissions(s){cache.submissions=s;pushRemote();}
+  function getBaseUnits(){return Array.isArray(cache.baseUnits)?cache.baseUnits:[];}
+  function saveBaseUnits(list){cache.baseUnits=Array.isArray(list)?list:[];pushRemote();if(typeof window.renderPublicBaseUnits==='function')window.renderPublicBaseUnits();}
   function getAllUsers(){return cache.allusers||[];}
   function addToAllUsers(l){var u=cache.allusers=cache.allusers||[];if(u.indexOf(l)<0){u.push(l);pushRemote();}}
 
@@ -1172,6 +1174,7 @@ window.CB=(function(){
     getUserData:getUserData,saveUserData:saveUserData,
     getValidated:getValidated,saveValidated:saveValidated,
     getSubmissions:getSubmissions,saveSubmissions:saveSubmissions,
+    getBaseUnits:getBaseUnits,saveBaseUnits:saveBaseUnits,
     getAllUsers:getAllUsers,addToAllUsers:addToAllUsers,
     getAccounts:getAccounts,saveAccounts:saveAccounts,setAccountAdmin:setAccountAdmin,
     updateAuthUI:ui,refresh:refresh,
@@ -1713,28 +1716,124 @@ window.CB=(function(){
 
   // ═══ ARUCO DATABASE ADMIN ═══
   function escAruco(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+  // Catalogue natif du jeu : toutes les unités actuellement définies dans game/crossblocs.jsx.
+  var CB_GAME_UNITS=[
+    {type:'clone',name:'Clone Ph.2',faction:'République',pts:200,hp:2,pa:5,mm:0,arm:15,weapons:'Fusil bleu',description:'Clone Phase 2'},
+    {type:'clone_geo',name:'Clone Geonosis',faction:'République',pts:230,hp:2,pa:5,mm:0,arm:15,weapons:'Blaster bleu',description:'Clone spécialisé Geonosis'},
+    {type:'sniper',name:'Clone Sniper',faction:'République',pts:260,hp:2,pa:5,mm:0,arm:15,weapons:'Sniper bleu',description:'Tireur longue portée'},
+    {type:'spec',name:'Clone Spéc.',faction:'République',pts:250,hp:2,pa:5,mm:0,arm:15,weapons:'Dbl fusil',description:'Clone spécialisé'},
+    {type:'officer',name:'Clone Officier',faction:'République',pts:270,hp:2,pa:5,mm:0,arm:15,weapons:'Pistolet bleu',description:'Officier clone'},
+    {type:'airborne',name:'Clone Airborne',faction:'République',pts:270,hp:2,pa:5,mm:0,arm:15,weapons:'Blaster bleu',description:'Unité aéroportée'},
+    {type:'fives',name:'Cmdt Fives',faction:'République',pts:430,hp:2,pa:5,mm:0,arm:13,weapons:'Pist.auto',description:'Commandant Fives'},
+    {type:'rex',name:'Cmdt Rex',faction:'République',pts:400,hp:2,pa:5,mm:0,arm:12,weapons:'Pist.auto',description:'Commandant Rex'},
+    {type:'b1',name:'Droïde B1',faction:'Séparatistes',pts:170,hp:2,pa:4,mm:0,arm:18,weapons:'Fusil rouge',description:'Droïde de combat B1'},
+    {type:'b2',name:'Droïde B2',faction:'Séparatistes',pts:300,hp:3,pa:4,mm:-2,arm:11,weapons:'×2 Fusils poing',description:'Droïde de combat B2'},
+    {type:'tri_droid',name:'Tri-Droïde',faction:'Séparatistes',pts:1800,hp:10,pa:4,mm:2,arm:6,weapons:'×3 Tourelles, ×3 Rockets',description:'Tri-Droïde'},
+    {type:'rebel',name:'Rebelle',faction:'Rebelles',pts:180,hp:2,pa:5,mm:0,arm:17,weapons:'Blaster rouge',description:'Rebelle standard'},
+    {type:'rebel_f',name:'Rebelle Fusil',faction:'Rebelles',pts:180,hp:2,pa:5,mm:0,arm:17,weapons:'Fusil rouge',description:'Rebelle avec fusil'},
+    {type:'rebel_p',name:'Rebelle Pistol.',faction:'Rebelles',pts:150,hp:2,pa:5,mm:0,arm:17,weapons:'Pistolet rouge',description:'Rebelle avec pistolet'},
+    {type:'rebel_jet',name:'Rebelle Jetpack',faction:'Rebelles',pts:240,hp:2,pa:5,mm:2,arm:17,weapons:'Blaster rouge',description:'Rebelle avec jetpack'},
+    {type:'guard',name:'Garde Reb.',faction:'Rebelles',pts:200,hp:2,pa:5,mm:0,arm:16,weapons:'Blaster bleu',description:'Garde rebelle'}
+  ];
+
   function cbArucoUnits(){
     var out=[],seen={};
-    function add(u,source){var n=u&&(u.name||u.n);if(!n||seen[n])return;seen[n]=1;out.push({name:n,source:source});}
-    var v=CB.getValidated();(v.units||[]).forEach(function(u){add(u,'validée');});
-    (CB.getAllUsers()||[]).forEach(function(l){var d=CB.getUserData(l);(d.units||[]).forEach(function(u){add(u,l);});});
+    function add(u,source){
+      if(!u)return;
+      var n=u.name||u.n||u.unitName;if(!n)return;
+      var key=n.toLowerCase();if(seen[key])return;seen[key]=1;
+      out.push({unit:u,name:n,source:source});
+    }
+    // Toujours proposer les unités natives du jeu, même si elles ne sont pas encore validées dans JSONBin.
+    CB_GAME_UNITS.forEach(function(u){add(u,'Jeu');});
+    var b=CB.getBaseUnits();
+    if(Array.isArray(b))b.forEach(function(u){add(u,'Unité de base');});
+    else if(b&&typeof b==='object')Object.keys(b).forEach(function(id){var u=b[id]||{};add(Object.assign({id:id},u),'Unité de base #'+id);});
+    var v=CB.getValidated();(v.units||[]).forEach(function(u){add(u,'Validée');});
+    (CB.getAllUsers()||[]).forEach(function(l){var d=CB.getUserData(l);(d.units||[]).forEach(function(u){add(u,'Créée par '+l);});});
     return out;
   }
+
+  function cbArucoUnitSnapshot(u){
+    u=u||{};
+    return {
+      name:u.name||u.n||u.unitName||'',
+      faction:u.faction||u.fac||'',
+      pts:Number(u.pts!=null?u.pts:0),
+      hp:Number(u.hp!=null?u.hp:(u.pv!=null?u.pv:2)),
+      pa:Number(u.pa!=null?u.pa:(u.act!=null?u.act:5)),
+      mm:Number(u.mm!=null?u.mm:0),
+      arm:Number(u.arm!=null?u.arm:15),
+      weapons:Array.isArray(u.weapons)?u.weapons.join(', '):(u.weapons||u.w||''),
+      description:u.description||u.desc||'',
+      type:u.type||''
+    };
+  }
+
+  function cbArucoFill(u){
+    u=cbArucoUnitSnapshot(u);
+    [['aruco-unit-name',u.name],['aruco-unit-faction',u.faction],['aruco-unit-pts',u.pts],['aruco-unit-hp',u.hp],['aruco-unit-pa',u.pa],['aruco-unit-mm',u.mm],['aruco-unit-arm',u.arm],['aruco-unit-weapons',u.weapons],['aruco-unit-desc',u.description]].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.value=x[1];});
+  }
+
   window.renderArUcoAdmin=function(){
     var box=document.getElementById('admin-aruco-box');if(!box)return;
-    var db=CB.getAruco(),units=cbArucoUnits();
-    var opts='<option value="">— Choisir une unité existante —</option>'+units.map(function(x){return '<option value="'+escAruco(x.name)+'">'+escAruco(x.name)+' ['+escAruco(x.source)+']</option>';}).join('');
-    var rows=Object.keys(db).sort(function(a,b){return Number(a)-Number(b);}).map(function(id){var m=db[id]||{};return '<tr><td style="padding:4px;color:#f0c040;font-weight:700">'+escAruco(id)+'</td><td>'+escAruco(m.unitName||'')+'</td><td><button onclick="CB_editAruco('+JSON.stringify(String(id))+')" style="font-size:9px">Modifier</button> <button onclick="CB_deleteAruco('+JSON.stringify(String(id))+')" style="font-size:9px;background:#6e1010;color:#fff">Supprimer</button></td></tr>';}).join('');
-    box.innerHTML='<div style="display:grid;grid-template-columns:1fr 2fr;gap:8px"><div><label>ID ArUco</label><input id="aruco-admin-id" type="number" min="0" step="1" placeholder="ex. 137"></div><div><label>Unité existante</label><select id="aruco-admin-unit" style="width:100%;padding:6px;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:4px">'+opts+'</select></div></div><div style="margin-top:8px"><button class="btn btn-add" onclick="CB_saveArucoAdmin()">💾 Associer</button> <button class="btn" onclick="renderArUcoAdmin()">↻ Actualiser</button></div><h4>Associations ('+Object.keys(db).length+')</h4><div style="max-height:350px;overflow:auto"><table style="width:100%;font-size:10px;border-collapse:collapse"><tr><th>ID</th><th>Unité</th><th>Actions</th></tr>'+rows+'</table></div>';
+    var db=CB.getAruco()||{},units=cbArucoUnits();
+    var opts='<option value="">— Choisir une unité existante —</option>'+units.map(function(x,i){return '<option value="'+i+'">'+escAruco(x.name)+' ['+escAruco(x.source)+']</option>';}).join('');
+    var rows=Object.keys(db).sort(function(a,b){return Number(a)-Number(b);}).map(function(id){var m=db[id]||{},u=m.unit||{};return '<tr><td style="padding:4px;color:#f0c040;font-weight:700">#'+escAruco(id)+'</td><td>'+escAruco(u.name||m.unitName||'')+'</td><td>'+escAruco(u.faction||'')+'</td><td>'+escAruco(u.pts!=null?u.pts:'')+' pts · PV '+escAruco(u.hp!=null?u.hp:'')+' · PA '+escAruco(u.pa!=null?u.pa:'')+'</td><td><button onclick="CB_editAruco('+JSON.stringify(String(id))+')" style="font-size:9px">Modifier</button> <button onclick="CB_deleteAruco('+JSON.stringify(String(id))+')" style="font-size:9px;background:#6e1010;color:#fff">Supprimer</button></td></tr>';}).join('');
+    box.innerHTML='<div style="padding:8px;background:#11161d;border:1px solid #30363d;border-radius:6px;margin-bottom:10px">'+
+      '<b>Catalogue disponible : '+units.length+' unités</b><div style="font-size:10px;color:var(--text2);margin-top:3px">Le catalogue contient les unités natives du jeu, les unités de base, les unités validées et les créations des joueurs.</div></div>'+
+      '<div style="display:grid;grid-template-columns:150px 1fr;gap:8px">'+
+      '<label>ID ArUco (0–1022)<input id="aruco-admin-id" type="number" min="0" max="1022" step="1" placeholder="ex. 37" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label>Choisir une unité existante<select id="aruco-admin-unit" style="width:100%;padding:6px;background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:4px">'+opts+'</select></label></div>'+
+      '<div id="aruco-edit-fields" style="margin-top:10px;display:none">'+
+      '<div style="font-size:11px;color:#f0c040;font-weight:700;margin-bottom:6px">✏️ Modification libre de l’unité associée</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:7px">'+
+      '<label>Nom<input id="aruco-unit-name" type="text" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label>Faction<input id="aruco-unit-faction" type="text" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label>Points<input id="aruco-unit-pts" type="number" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label>PV<input id="aruco-unit-hp" type="number" min="1" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label>PA<input id="aruco-unit-pa" type="number" min="0" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label>MM<input id="aruco-unit-mm" type="number" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label>Armure<input id="aruco-unit-arm" type="number" min="0" max="20" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label style="grid-column:span 1">Armes<input id="aruco-unit-weapons" type="text" placeholder="Fusil bleu, pistolet…" style="display:block;width:100%;box-sizing:border-box"></label>'+
+      '<label style="grid-column:1/-1">Description / règles<input id="aruco-unit-desc" type="text" style="display:block;width:100%;box-sizing:border-box"></label></div></div>'+
+      '<div style="margin-top:8px"><button class="btn btn-add" onclick="CB_saveArucoAdmin()">💾 Enregistrer l’association et les modifications</button> <button class="btn" onclick="renderArUcoAdmin()">↻ Actualiser</button></div>'+
+      '<h4>Associations ('+Object.keys(db).length+')</h4><div style="max-height:350px;overflow:auto"><table style="width:100%;font-size:10px;border-collapse:collapse"><tr><th>ID</th><th>Unité</th><th>Faction</th><th>Stats</th><th>Actions</th></tr>'+rows+'</table></div>';
+
+    var sel=document.getElementById('aruco-admin-unit');
+    if(sel)sel.onchange=function(){
+      var idx=Number(sel.value),item=units[idx];
+      var fields=document.getElementById('aruco-edit-fields');
+      if(!item){if(fields)fields.style.display='none';return;}
+      if(fields)fields.style.display='block';cbArucoFill(item.unit);
+    };
   };
+
   window.CB_saveArucoAdmin=function(){
-    var id=document.getElementById('aruco-admin-id').value,unit=document.getElementById('aruco-admin-unit').value;
-    if(id===''||!Number.isInteger(Number(id))||Number(id)<0){alert('ID ArUco invalide');return;}
-    if(!unit){alert('Choisissez une unité');return;}
-    var db=CB.getAruco();db[String(Number(id))]={unitName:unit,updatedAt:new Date().toISOString(),updatedBy:(CB.getUser()||{}).login||'admin'};CB.saveAruco(db);CB.logHistory('edit','aruco',String(id),'→ '+unit);renderArUcoAdmin();alert('Association enregistrée.');
+    var idEl=document.getElementById('aruco-admin-id'),sel=document.getElementById('aruco-admin-unit');
+    var id=Number(idEl&&idEl.value),idx=Number(sel&&sel.value);
+    if(!Number.isInteger(id)||id<0||id>1022){alert('ID ArUco invalide : 0 à 1022.');return;}
+    var units=cbArucoUnits(),src=units[idx];if(!src){alert('Choisissez une unité existante.');return;}
+    var get=function(id,def){var e=document.getElementById(id);return e?e.value:def;};
+    var edited={name:String(get('aruco-unit-name',src.name)).trim(),faction:String(get('aruco-unit-faction','')).trim(),pts:Number(get('aruco-unit-pts',0)),hp:Number(get('aruco-unit-hp',2)),pa:Number(get('aruco-unit-pa',5)),mm:Number(get('aruco-unit-mm',0)),arm:Number(get('aruco-unit-arm',15)),weapons:String(get('aruco-unit-weapons','')).trim(),description:String(get('aruco-unit-desc','')).trim(),type:(src.unit||{}).type||''};
+    if(!edited.name){alert('Le nom est obligatoire.');return;}
+    var db=CB.getAruco()||{};
+    db[String(id)]={unitName:edited.name,unit:edited,sourceName:src.name,updatedAt:new Date().toISOString(),updatedBy:(CB.getUser()||{}).login||'admin'};
+    CB.saveAruco(db);CB.logHistory('edit','aruco',String(id),'→ '+edited.name);renderArUcoAdmin();alert('ArUco #'+id+' enregistré avec ses statistiques personnalisées.');
   };
-  window.CB_editAruco=function(id){var m=CB.getAruco()[String(id)]||{};document.getElementById('aruco-admin-id').value=id;document.getElementById('aruco-admin-unit').value=m.unitName||'';};
-  window.CB_deleteAruco=function(id){if(!confirm('Supprimer l’association ArUco #'+id+' ?'))return;var db=CB.getAruco();delete db[String(id)];CB.saveAruco(db);CB.logHistory('delete','aruco',String(id));renderArUcoAdmin();};
+
+  window.CB_editAruco=function(id){
+    var m=(CB.getAruco()||{})[String(id)]||{},units=cbArucoUnits();
+    var target=m.sourceName||m.unitName||'';
+    var idx=units.findIndex(function(x){return x.name===target;});
+    var idEl=document.getElementById('aruco-admin-id'),sel=document.getElementById('aruco-admin-unit');
+    if(idEl)idEl.value=id;
+    if(sel&&idx>=0){sel.value=String(idx);sel.dispatchEvent(new Event('change'));}
+    var fields=document.getElementById('aruco-edit-fields');if(fields)fields.style.display='block';cbArucoFill(m.unit||{name:m.unitName||''});
+  };
+  window.CB_deleteAruco=function(id){if(!confirm('Supprimer l’association ArUco #'+id+' ?'))return;var db=CB.getAruco()||{};delete db[String(id)];CB.saveAruco(db);CB.logHistory('delete','aruco',String(id));renderArUcoAdmin();};
+
   // ═══ ADMIN CONFIG ═══
   // Built-in weapon stats (from game.html WEAPS)
   var BUILTIN_WEAPS={
@@ -1786,6 +1885,46 @@ window.CB=(function(){
     if(type==='faction')v.factions=(v.factions||[]).filter(function(f){return f.name!==name;});
     CB.saveValidated(v);renderACfg();alert('Supprime');
   };
+
+  // ═══ UNITÉS DE BASE PARTAGÉES ═══
+  function escapeBase(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  window.renderPublicBaseUnits=function(){
+    var el=document.getElementById('base-units-public-list');if(!el)return;
+    var units=(CB&&CB.getBaseUnits?CB.getBaseUnits():[]).slice().sort(function(a,b){return Number(a.id)-Number(b.id);});
+    if(!units.length){el.innerHTML='<span style="font-size:11px;color:var(--text2)">Aucune unité de base enregistrée pour le moment.</span>';return;}
+    el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">'+units.map(function(u){return '<div style="padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg)"><div style="color:var(--accent);font-weight:700">#'+escapeBase(u.id)+' — '+escapeBase(u.name)+'</div>'+(u.faction?'<div style="font-size:10px;color:var(--text2)">'+escapeBase(u.faction)+'</div>':'')+'<div style="font-size:11px;margin-top:4px">'+escapeBase(u.pts)+' pts · PV '+escapeBase(u.hp)+' · Armure '+escapeBase(u.arm)+' · MM '+escapeBase(u.mm)+' · PA '+escapeBase(u.pa)+'</div>'+(u.weapons?'<div style="font-size:10px;margin-top:3px">Armes : '+escapeBase(u.weapons)+'</div>':'')+(u.description?'<div style="font-size:10px;margin-top:3px;color:var(--text2)">'+escapeBase(u.description)+'</div>':'')+'</div>';}).join('')+'</div>';
+  };
+  window.renderBaseUnitsAdmin=function(){
+    if(!CB.getUser()||!CB.getUser().isAdmin){var box=document.getElementById('admin-baseunits-editor');if(box)box.innerHTML='<p>Accès administrateur requis.</p>';return;}
+    var box=document.getElementById('admin-baseunits-editor');if(!box)return;
+    var units=CB.getBaseUnits().slice().sort(function(a,b){return Number(a.id)-Number(b.id);});
+    box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px">'+
+      '<label>Numéro stable (1–1023)<input id="bu-id" type="number" min="1" max="1023" step="1" style="display:block;width:100%;box-sizing:border-box" placeholder="1"></label>'+ 
+      '<label>Nom<input id="bu-name" type="text" style="display:block;width:100%;box-sizing:border-box" placeholder="Capitaine Rex"></label>'+ 
+      '<label>Faction<input id="bu-faction" type="text" style="display:block;width:100%;box-sizing:border-box" placeholder="République"></label>'+ 
+      '<label>Points<input id="bu-pts" type="number" min="0" style="display:block;width:100%;box-sizing:border-box" value="200"></label>'+ 
+      '<label>PV<input id="bu-hp" type="number" min="1" style="display:block;width:100%;box-sizing:border-box" value="2"></label>'+ 
+      '<label>Armure (ex. 15)<input id="bu-arm" type="number" min="1" max="20" style="display:block;width:100%;box-sizing:border-box" value="15"></label>'+ 
+      '<label>Modificateur mouvement<input id="bu-mm" type="number" style="display:block;width:100%;box-sizing:border-box" value="0"></label>'+ 
+      '<label>Points d’action<input id="bu-pa" type="number" min="0" style="display:block;width:100%;box-sizing:border-box" value="5"></label>'+ 
+      '<label style="grid-column:1/-1">Armes (texte libre)<input id="bu-weapons" type="text" style="display:block;width:100%;box-sizing:border-box" placeholder="Blaster, pistolet…"></label>'+ 
+      '<label style="grid-column:1/-1">Description / règles<input id="bu-desc" type="text" style="display:block;width:100%;box-sizing:border-box" placeholder="Notes facultatives"></label></div>'+ 
+      '<button class="btn btn-add" onclick="CB_saveBaseUnit()">💾 Enregistrer l’unité de base</button> <button class="btn" onclick="CB_clearBaseUnitForm()">Nouveau / vider</button>'+ 
+      '<p style="font-size:10px;color:var(--text2)">Un numéro déjà utilisé sera mis à jour : il ne peut exister qu’une unité par numéro. Les modifications sont synchronisées avec la base distante.</p>'+ 
+      '<h4>Unités enregistrées ('+units.length+')</h4>'+ 
+      (units.length?'<div style="overflow:auto"><table style="width:100%;font-size:10px;border-collapse:collapse"><tr><th>Numéro</th><th>Nom</th><th>Faction</th><th>Stats</th><th>Actions</th></tr>'+units.map(function(u){return '<tr style="border-bottom:1px solid var(--border)"><td>#'+escapeBase(u.id)+'</td><td>'+escapeBase(u.name)+'</td><td>'+escapeBase(u.faction||'')+'</td><td>'+escapeBase(u.pts)+' pts · PV '+escapeBase(u.hp)+' · Arm '+escapeBase(u.arm)+'</td><td><button onclick="CB_editBaseUnit('+Number(u.id)+')">Modifier</button> <button onclick="CB_deleteBaseUnit('+Number(u.id)+')" style="color:#f44">Supprimer</button></td></tr>';}).join('')+'</table></div>':'<p>Aucune unité de base.</p>');
+  };
+  window.CB_clearBaseUnitForm=function(){['bu-id','bu-name','bu-faction','bu-weapons','bu-desc'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});[['bu-pts','200'],['bu-hp','2'],['bu-arm','15'],['bu-mm','0'],['bu-pa','5']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.value=x[1];});};
+  window.CB_editBaseUnit=function(id){var u=CB.getBaseUnits().find(function(x){return Number(x.id)===Number(id);});if(!u)return;[['bu-id','id'],['bu-name','name'],['bu-faction','faction'],['bu-pts','pts'],['bu-hp','hp'],['bu-arm','arm'],['bu-mm','mm'],['bu-pa','pa'],['bu-weapons','weapons'],['bu-desc','description']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.value=u[x[1]]==null?'':u[x[1]];});};
+  window.CB_saveBaseUnit=function(){
+    if(!CB.getUser()||!CB.getUser().isAdmin){alert('Action réservée à l’administrateur.');return;}
+    var id=Number(document.getElementById('bu-id').value),name=(document.getElementById('bu-name').value||'').trim();
+    if(!Number.isInteger(id)||id<1||id>1023){alert('Le numéro doit être compris entre 1 et 1023.');return;}
+    if(!name){alert('Le nom de l’unité est obligatoire.');return;}
+    var unit={id:id,name:name,faction:(document.getElementById('bu-faction').value||'').trim(),pts:Number(document.getElementById('bu-pts').value)||0,hp:Number(document.getElementById('bu-hp').value)||1,arm:Number(document.getElementById('bu-arm').value)||15,mm:Number(document.getElementById('bu-mm').value)||0,pa:Number(document.getElementById('bu-pa').value)||0,weapons:(document.getElementById('bu-weapons').value||'').trim(),description:(document.getElementById('bu-desc').value||'').trim(),updatedAt:new Date().toISOString()};
+    var units=CB.getBaseUnits().filter(function(x){return Number(x.id)!==id;});units.push(unit);units.sort(function(a,b){return Number(a.id)-Number(b.id);});CB.saveBaseUnits(units);CB.logHistory('edit','base-unit',name,'Numéro #'+id);renderBaseUnitsAdmin();renderPublicBaseUnits();alert('Unité de base #'+id+' enregistrée.');
+  };
+  window.CB_deleteBaseUnit=function(id){if(!CB.getUser()||!CB.getUser().isAdmin){alert('Action réservée à l’administrateur.');return;}if(!confirm('Supprimer l’unité de base #'+id+' ?'))return;CB.saveBaseUnits(CB.getBaseUnits().filter(function(x){return Number(x.id)!==Number(id);}));CB.logHistory('delete','base-unit',String(id));renderBaseUnitsAdmin();renderPublicBaseUnits();};
 
   // ═══ ADMIN USERS ═══
   function renderAU(){
@@ -1853,7 +1992,7 @@ window.CB=(function(){
         ['units','weapons','factions'].forEach(function(t){(iv[t]||[]).forEach(function(item){var arr=ev[t]=ev[t]||[];if(!arr.some(function(x){return(x.name||x.n)===(item.name||item.n);}))arr.push(item);});});
         CB.saveValidated(ev);
         if(data.aruco){cache.aruco=cache.aruco||{};Object.keys(data.aruco).forEach(function(id){cache.aruco[id]=data.aruco[id];});pushRemote();}
-        if(data.baseUnits&&typeof data.baseUnits==='object'){var bu=CB.getBaseUnits();Object.keys(data.baseUnits).forEach(function(id){bu[id]=data.baseUnits[id];});CB.saveBaseUnits(bu);}
+        if(Array.isArray(data.baseUnits)){var bu=CB.getBaseUnits();data.baseUnits.forEach(function(x){var ix=bu.findIndex(function(y){return String(y.id)===String(x.id);});if(ix>=0)bu[ix]=x;else bu.push(x);});CB.saveBaseUnits(bu);}
         // Merge submissions
         var es=CB.getSubmissions();(data.submissions||[]).forEach(function(s){es.push(s);});CB.saveSubmissions(es);
         // Merge user data
@@ -2240,9 +2379,9 @@ window.CB=(function(){
 (function(){
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   window.renderSyncStatus=function(){
-    var boxes=[document.getElementById('sync-controls'),document.getElementById('sync-controls-sync')].filter(Boolean);if(!boxes.length)return;
+    var box=document.getElementById('sync-controls'); if(!box)return;
     var st=window.CB&&CB.getRemoteStatus?CB.getRemoteStatus():{ready:false,status:'Initialisation…',version:0};
-    var html='<div style="color:'+(st.ready?'#3fb950':'#f85149')+';font-size:11px;margin:6px 0">'+(st.ready?'● Synchronisation distante active':'● Synchronisation distante indisponible')+' — '+esc(st.status)+' — version '+esc(st.version)+'</div><button class="btn" onclick="CB.refresh();setTimeout(renderSyncStatus,1200)">↻ Reconnecter / synchroniser</button>';boxes.forEach(function(box){box.innerHTML=html;});
+    box.innerHTML='<div style="color:'+(st.ready?'#3fb950':'#f85149')+';font-size:11px;margin:6px 0">'+(st.ready?'● Synchronisation distante active':'● Synchronisation distante indisponible')+' — '+esc(st.status)+' — version '+esc(st.version)+'</div><button class="btn" onclick="CB.refresh();setTimeout(renderSyncStatus,1200)">↻ Reconnecter / synchroniser</button>';
   };
   window.renderBaseUnitsAdmin=function(){
     var el=document.getElementById('admin-baseunits-editor');if(!el||!window.CB)return;
