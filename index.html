@@ -390,6 +390,7 @@
   </select>
  </div>
  <div id="gallery-grid" class="gallery-grid"></div>
+ 
  </section>
 
  <!-- ═══ FICHES D'UNITÉS GÉNÉRÉES ═══ -->
@@ -583,10 +584,12 @@
  <button class="btn btn-admtab" onclick="switchAdminTab('pending',this)" data-i18n="admin.proposals"> Propositions</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('creations',this)" data-i18n="admin.creations"> Créations</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('users',this)" data-i18n="admin.users"> Utilisateurs</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('baseunits',this)">📦 Unités de base</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('sync',this)" data-i18n="admin.sync"> Import/Export</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('history',this)" data-i18n="admin.history">📜 Historique</button>
 <button class="btn btn-admtab" onclick="switchAdminTab('specials',this)">⚡ Règles spéciales</button>
  <button class="btn btn-admtab" onclick="switchAdminTab('aruco',this)">📷 ArUco</button>
+ <button class="btn btn-admtab" onclick="switchAdminTab('baseunits',this)">🧱 Unités de base</button>
  <button class="btn btn-admtab" id="admin-bal-tab" style="display:none" onclick="switchAdminTab('balance',this)" data-i18n="admin.balance"> Balance</button>
  </div>
  <div class="admin-body" id="admin-aruco" style="display:none">
@@ -594,7 +597,12 @@
  <p class="admin-desc">Associez n'importe quel ID ArUco à une unité déjà renseignée dans CrossBlocks. Les associations sont stockées dans la base distante.</p>
  <div id="admin-aruco-box"></div>
  </div>
- <div class="admin-body" id="admin-config">
+ <div class="admin-body" id="admin-baseunits" style="display:none">
+ <h3>🧱 Unités de base publiques</h3>
+ <p class="admin-desc">Ces unités sont communes à tous les visiteurs, même sans compte. Le numéro est stable : l’unité n°1 reste par exemple Capitaine Rex.</p>
+ <div id="admin-baseunits-editor"></div>
+</div>
+<div class="admin-body" id="admin-config">
  <h3 data-i18n="admin.themes_title">Thèmes disponibles</h3>
  <div id="adminThemes"></div>
  <h3 data-i18n="admin.weapons_title">Armes et statistiques</h3>
@@ -631,8 +639,9 @@
  </div>
  <div class="admin-body" id="admin-sync" style="display:none">
  <h3> Transfert de données entre ordinateurs</h3>
- <p class="admin-desc" style="background:#1a0a0a;border:1px solid #6e1010;border-radius:4px;padding:8px;margin-bottom:8px;font-size:10px"><strong style="color:#f85149">Pourquoi pas de sauvegarde directe sur GitHub ?</strong> GitHub Pages est un hébergement <b>statique en lecture seule</b> — les visiteurs ne peuvent pas écrire de fichiers sur le serveur. Pour un stockage en ligne partagé, il faudrait un serveur backend (Firebase, Supabase, etc.). En attendant, utilisez <b>Export/Import JSON</b> pour transférer les données entre ordinateurs.</p>
- <p class="admin-desc"><b>Workflow :</b> Sur le PC où les utilisateurs créent → l'admin exporte le JSON. Sur un autre PC → l'admin importe le JSON. Les données sont fusionnées automatiquement (pas d'écrasement).</p>
+ <p class="admin-desc" style="background:#0d2012;border:1px solid #238636;border-radius:4px;padding:8px;margin-bottom:8px;font-size:10px"><strong style="color:#3fb950">Synchronisation distante JSONBin</strong> Les comptes, unités validées, propositions, associations ArUco, unités de base et données partagées sont synchronisés en ligne lorsque la connexion distante est disponible. GitHub Pages reste un hébergement statique ; JSONBin assure le stockage partagé.</p>
+ <div id="sync-controls-sync" style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px;margin:8px 0"></div>
+ <p class="admin-desc">L’export/import JSON reste disponible comme sauvegarde manuelle et pour transférer une copie des données. La synchronisation distante est automatique et réessaie lors d’une reconnexion.</p>
  <div style="display:flex;gap:8px;margin:10px 0">
  <button class="btn btn-add" onclick="CB_exportAll()"> Exporter tout (JSON)</button>
  <button class="btn btn-suggest" onclick="document.getElementById('import-file').click()"> Importer (JSON)</button>
@@ -791,7 +800,7 @@ window.CB=(function(){
   function isHashed(p){return typeof p==='string'&&p.length===64&&/^[a-f0-9]+$/.test(p);}
 
   // ─── Local cache (updated from remote) ───
-  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{},likes:{},comments:{},history:[],specialRules:{},aruco:{},version:0};
+  var cache={accounts:{},allusers:[],validated:{units:[],weapons:[],factions:[]},submissions:[],userData:{},likes:{},comments:{},history:[],specialRules:{},aruco:{},baseUnits:{},version:0};
   var remoteReady=false;
   var syncStatus='En attente...';
   var pushPending=false;
@@ -818,12 +827,15 @@ window.CB=(function(){
         if(!cache.comments)cache.comments={};
         if(!cache.specialRules)cache.specialRules={};
         if(!cache.aruco)cache.aruco={};
+        if(!cache.baseUnits||typeof cache.baseUnits!=='object'||Array.isArray(cache.baseUnits))cache.baseUnits={};
         if(!cache.history)cache.history=[];
         if(typeof cache.version!=='number')cache.version=0;
         remoteReady=true;
         setStatus('Sync OK v'+cache.version+' ('+new Date().toLocaleTimeString()+')');
         _lastSyncVersion = cache.version || 0;
         startPolling(); // démarre le polling auto toutes les 45s
+        if(window.loadUserContent)setTimeout(window.loadUserContent,0);
+        if(window.renderSyncStatus)setTimeout(window.renderSyncStatus,0);
         if(cb)cb();
       })
       .catch(function(err){
@@ -831,6 +843,9 @@ window.CB=(function(){
         setStatus('ERREUR: '+err.message+' (mode local)');
         remoteReady=false;
         try{var local=localStorage.getItem('cb_cache');if(local)cache=JSON.parse(local);}catch(e){}
+        if(!cache.baseUnits||typeof cache.baseUnits!=='object'||Array.isArray(cache.baseUnits))cache.baseUnits={};
+        if(window.loadUserContent)setTimeout(window.loadUserContent,0);
+        if(window.renderSyncStatus)setTimeout(window.renderSyncStatus,0);
         if(cb)cb();
       });
   }
@@ -844,6 +859,7 @@ window.CB=(function(){
       submissions:[],
       userData:{},
       aruco:{},
+      baseUnits:{},
       version:Math.max(local.version||0,remote.version||0)
     };
     // Accounts: union (remote wins on conflict)
@@ -863,6 +879,12 @@ window.CB=(function(){
     Object.keys(local.aruco||{}).forEach(function(id){arucoIds[id]=local.aruco[id];});
     Object.keys(remote.aruco||{}).forEach(function(id){arucoIds[id]=remote.aruco[id];});
     merged.aruco=arucoIds;
+    merged.likes=Object.assign({},local.likes||{},remote.likes||{});
+    merged.comments=Object.assign({},local.comments||{},remote.comments||{});
+    merged.history=(remote.history||local.history||[]).slice(0,500);
+    merged.specialRules=Object.assign({},local.specialRules||{},remote.specialRules||{});
+    Object.keys(local.baseUnits||{}).forEach(function(id){merged.baseUnits[id]=local.baseUnits[id];});
+    Object.keys(remote.baseUnits||{}).forEach(function(id){merged.baseUnits[id]=remote.baseUnits[id];});
     // Submissions: concat (append all from both)
     var subSeen={};
     (local.submissions||[]).forEach(function(s){var k=s.user+'|'+s.type+'|'+(s.data.name||s.data.n)+'|'+s.date;if(!subSeen[k]){subSeen[k]=1;merged.submissions.push(s);}});
@@ -943,6 +965,8 @@ window.CB=(function(){
             var prevComments = JSON.stringify(cache.comments || {});
             cache = mergeData(cache, remote);
             try { localStorage.setItem('cb_cache', JSON.stringify(cache)); } catch(e) {}
+            if (window.loadUserContent) window.loadUserContent(); // refresh shared base units for guests and accounts
+            if (window.renderSyncStatus) window.renderSyncStatus();
             setStatus('Sync v' + cache.version + ' (' + new Date().toLocaleTimeString() + ')');
             // Detect new likes/comments
             var newLikes = JSON.stringify(cache.likes || {});
@@ -1157,6 +1181,9 @@ window.CB=(function(){
     logHistory:logHistory,
     getSpecialRules:function(){return cache.specialRules||{}; },
     getAruco:function(){return cache.aruco||{};},
+    getBaseUnits:function(){return cache.baseUnits||{};},
+    saveBaseUnits:function(db){cache.baseUnits=db||{};pushRemote();},
+    getRemoteStatus:function(){return {ready:remoteReady,status:syncStatus,version:cache.version||0};},
     saveAruco:function(db){cache.aruco=db||{};pushRemote();},
     setSpecialRule:function(unitName,rule){
       cache.specialRules=cache.specialRules||{};
@@ -1429,7 +1456,7 @@ window.CB=(function(){
   window.CB_insertPreset = function(name, desc) {
     var ta = document.getElementById('sp-active-ta');
     if (!ta) {
-      alert('Ouvrez d'abord une figurine à modifier en cliquant sur ✏ Éditer');
+      alert('Ouvrez d\'abord une figurine à modifier en cliquant sur ✏ Éditer');
       return;
     }
     ta.value = name + ' : ' + desc;
@@ -1462,17 +1489,17 @@ window.CB=(function(){
               '<span class="sp-faction-tag" style="background:'+facData.color+'22;color:'+facData.color+'">'+u.faction+'</span> ' +
               u.name +
             '</div>' +
-            '<button class="sp-edit-btn" onclick="CB_toggleSpEdit(this,''+u.name.replace(/'/g,"\'")+'')" title="Éditer la règle spéciale">✏ Éditer</button>' +
-            (hasRule ? '<button onclick="CB_delSpecial(''+u.name.replace(/'/g,"\'")+'')" class="sp-del-btn" title="Supprimer la règle">✕</button>' : '') +
+            '<button class="sp-edit-btn" data-unit="'+encodeURIComponent(u.name)+'" onclick="CB_toggleSpEdit(this, decodeURIComponent(this.dataset.unit))" title="Éditer la règle spéciale">✏ Éditer</button>' +
+            (hasRule ? '<button class="sp-del-btn" data-unit="'+encodeURIComponent(u.name)+'" onclick="CB_delSpecial(decodeURIComponent(this.dataset.unit))" title="Supprimer la règle">✕</button>' : '') +
           '</div>' +
           (hasRule
             ? '<div class="sp-current">⚡ '+rule+'</div>'
             : '<div class="sp-none">— aucune règle spéciale —</div>') +
           '<div class="sp-edit-area" id="edit_'+safeId+'">' +
-            '<textarea id="ta_'+safeId+'" rows="2" placeholder="Ex: Jet-pack : au premier tour, déployez cette unité n'importe où…">'+( hasRule ? rule : '')+'</textarea>' +
+            '<textarea id="ta_'+safeId+'" rows="2" placeholder="Ex: Jet-pack : au premier tour, déployez cette unité n’importe où…">'+( hasRule ? rule : '')+'</textarea>' +
             '<div style="display:flex;gap:4px;flex-direction:column">' +
-              '<button class="sp-save-btn" onclick="CB_saveSpecial(''+u.name.replace(/'/g,"\'")+'',' +'''+safeId+'')">💾 Sauver</button>' +
-              '<button class="sp-del-btn" onclick="CB_delSpecial(''+u.name.replace(/'/g,"\'")+'')" title="Effacer la règle">✕</button>' +
+              '<button class="sp-save-btn" onclick="CB_saveSpecial(\''+u.name.replace(/'/g,'')+'\',\''+safeId+'\')">💾 Sauver</button>' +
+              '<button class="sp-del-btn" data-unit="'+encodeURIComponent(u.name)+'" onclick="CB_delSpecial(decodeURIComponent(this.dataset.unit))" title="Effacer la règle">✕</button>' +
             '</div>' +
           '</div>' +
         '</div>'
@@ -1617,9 +1644,19 @@ window.CB=(function(){
 
   // ═══ ADMIN PANEL ═══
   window.switchAdminTab=function(tab,btn){
-    ['admin-config','admin-pending','admin-creations','admin-balance','admin-users','admin-sync','admin-history','admin-specials','admin-aruco'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
-    var t=document.getElementById('admin-'+tab);if(t)t.style.display='block';
-    if(tab==='pending')renderAP();if(tab==='creations')renderAC();if(tab==='users')renderAU();if(tab==='config')renderACfg();if(tab==='history')renderAH();if(tab==='specials')renderSP();if(tab==='aruco')renderArUcoAdmin();
+    ['admin-config','admin-pending','admin-creations','admin-balance','admin-users','admin-sync','admin-history','admin-specials','admin-aruco','admin-baseunits'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+    var target=document.getElementById('admin-'+tab);if(target)target.style.display='block';
+    try {
+      if(tab==='pending'&&typeof renderAP==='function')renderAP();
+      if(tab==='creations'&&typeof renderAC==='function')renderAC();
+      if(tab==='users'&&typeof renderAU==='function')renderAU();
+      if(tab==='config'&&typeof renderACfg==='function')renderACfg();
+      if(tab==='history'&&typeof renderAH==='function')renderAH();
+      if(tab==='specials'&&typeof renderSP==='function')renderSP();
+      if(tab==='aruco'&&typeof renderArUcoAdmin==='function')renderArUcoAdmin();
+      if(tab==='baseunits'&&typeof renderBaseUnitsAdmin==='function')renderBaseUnitsAdmin();
+      if(tab==='sync')renderSyncStatus();
+    } catch(err){console.error('Admin tab render error:',tab,err);if(target){var msg=document.createElement('p');msg.style.color='#f85149';msg.textContent='Erreur d’affichage : '+err.message;target.appendChild(msg);}}
     if(typeof I18N!=='undefined'&&I18N.setLang)I18N.setLang(I18N.getLang());
     if(btn){var tabs=btn.closest('.admin-tabs');if(tabs)tabs.querySelectorAll('.btn-admtab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
   };
@@ -1793,7 +1830,7 @@ window.CB=(function(){
 
   // ═══ EXPORT / IMPORT ═══
   window.CB_exportAll=function(){
-    var data={accounts:JSON.parse(localStorage.getItem('cb_accounts')||'{}'),allusers:CB.getAllUsers(),validated:CB.getValidated(),submissions:CB.getSubmissions(),aruco:(cache.aruco||{})};
+    var data={accounts:JSON.parse(localStorage.getItem('cb_accounts')||'{}'),allusers:CB.getAllUsers(),validated:CB.getValidated(),submissions:CB.getSubmissions(),aruco:(cache.aruco||{}),baseUnits:CB.getBaseUnits()};
     CB.getAllUsers().forEach(function(l){data['data_'+l]=CB.getUserData(l);});
     var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='crossblocks_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
@@ -1816,6 +1853,7 @@ window.CB=(function(){
         ['units','weapons','factions'].forEach(function(t){(iv[t]||[]).forEach(function(item){var arr=ev[t]=ev[t]||[];if(!arr.some(function(x){return(x.name||x.n)===(item.name||item.n);}))arr.push(item);});});
         CB.saveValidated(ev);
         if(data.aruco){cache.aruco=cache.aruco||{};Object.keys(data.aruco).forEach(function(id){cache.aruco[id]=data.aruco[id];});pushRemote();}
+        if(data.baseUnits&&typeof data.baseUnits==='object'){var bu=CB.getBaseUnits();Object.keys(data.baseUnits).forEach(function(id){bu[id]=data.baseUnits[id];});CB.saveBaseUnits(bu);}
         // Merge submissions
         var es=CB.getSubmissions();(data.submissions||[]).forEach(function(s){es.push(s);});CB.saveSubmissions(es);
         // Merge user data
@@ -2188,7 +2226,7 @@ window.CB=(function(){
         if(panel&&u&&u.isAdmin){
           clearInterval(iv);
           panel.style.display='flex';
-          var btn=document.querySelector(".admin-tabs button[onclick*="switchAdminTab('aruco'"]");
+          var btn=document.querySelector(".admin-tabs button[onclick*=\"aruco\"]");
           if(window.switchAdminTab)switchAdminTab('aruco',btn);
         }else if(tries>30)clearInterval(iv);
       },200);
@@ -2198,5 +2236,54 @@ window.CB=(function(){
   else openArucoFromQuery();
 })();
 </script>
+<script>
+(function(){
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  window.renderSyncStatus=function(){
+    var boxes=[document.getElementById('sync-controls'),document.getElementById('sync-controls-sync')].filter(Boolean);if(!boxes.length)return;
+    var st=window.CB&&CB.getRemoteStatus?CB.getRemoteStatus():{ready:false,status:'Initialisation…',version:0};
+    var html='<div style="color:'+(st.ready?'#3fb950':'#f85149')+';font-size:11px;margin:6px 0">'+(st.ready?'● Synchronisation distante active':'● Synchronisation distante indisponible')+' — '+esc(st.status)+' — version '+esc(st.version)+'</div><button class="btn" onclick="CB.refresh();setTimeout(renderSyncStatus,1200)">↻ Reconnecter / synchroniser</button>';boxes.forEach(function(box){box.innerHTML=html;});
+  };
+  window.renderBaseUnitsAdmin=function(){
+    var el=document.getElementById('admin-baseunits-editor');if(!el||!window.CB)return;
+    var units=CB.getBaseUnits(), ids=Object.keys(units).sort(function(a,b){return Number(a)-Number(b);});
+    var rows=ids.map(function(id){var u=units[id]||{};return '<tr><td>'+esc(id)+'</td><td>'+esc(u.name)+'</td><td>'+esc(u.faction)+'</td><td>'+esc(u.pts)+'</td><td><button onclick="CB_editBaseUnit('+JSON.stringify(String(id))+')">Modifier</button> <button onclick="CB_deleteBaseUnit('+JSON.stringify(String(id))+')" style="color:#f85149">Supprimer</button></td></tr>';}).join('');
+    el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:7px">'+
+      '<label>Numéro permanent<input id="bu-id" type="number" min="1" step="1" placeholder="1" style="display:block;width:100%;box-sizing:border-box"></label>'+ 
+      '<label>Nom<input id="bu-name" placeholder="Capitaine Rex" style="display:block;width:100%;box-sizing:border-box"></label>'+ 
+      '<label>Faction<input id="bu-faction" placeholder="République" style="display:block;width:100%;box-sizing:border-box"></label>'+ 
+      '<label>Points<input id="bu-pts" type="number" min="0" value="200" style="display:block;width:100%;box-sizing:border-box"></label>'+ 
+      '<label>PV<input id="bu-hp" type="number" min="1" value="2" style="display:block;width:100%;box-sizing:border-box"></label>'+ 
+      '<label>Armure (ex. 15)<input id="bu-arm" type="number" min="0" max="20" value="15" style="display:block;width:100%;box-sizing:border-box"></label>'+ 
+      '<label>Mouvement<input id="bu-mm" type="number" value="0" style="display:block;width:100%;box-sizing:border-box"></label>'+ 
+      '<label>Actions<input id="bu-pa" type="number" min="0" value="5" style="display:block;width:100%;box-sizing:border-box"></label>'+ 
+      '<label>Armes (séparées par virgules)<input id="bu-weapons" placeholder="Fusil bleu, Pistolet bleu" style="display:block;width:100%;box-sizing:border-box"></label></div>'+ 
+      '<div style="margin:8px 0"><button class="btn btn-add" onclick="CB_saveBaseUnit()">💾 Enregistrer unité de base</button> <button class="btn" onclick="renderBaseUnitsAdmin()">Réinitialiser le formulaire</button></div>'+ 
+      '<p style="font-size:11px;color:var(--text2)">Ces données sont enregistrées dans la base distante. Les numéros ne changent pas lorsque d’autres unités sont ajoutées.</p>'+ 
+      '<table style="width:100%;font-size:11px;border-collapse:collapse"><tr><th>N°</th><th>Unité</th><th>Faction</th><th>Points</th><th>Actions</th></tr>'+rows+'</table>';
+  };
+  window.CB_saveBaseUnit=function(){
+    if(!CB.getUser()||!CB.getUser().isAdmin){alert('Action réservée à l’administrateur.');return;}
+    var id=Number(document.getElementById('bu-id').value),name=document.getElementById('bu-name').value.trim();
+    if(!Number.isInteger(id)||id<1||!name){alert('Indiquez un numéro entier positif et un nom.');return;}
+    var db=CB.getBaseUnits();db[String(id)]={baseId:id,name:name,n:name,faction:document.getElementById('bu-faction').value.trim(),pts:Number(document.getElementById('bu-pts').value)||0,hp:Number(document.getElementById('bu-hp').value)||1,arm:Number(document.getElementById('bu-arm').value)||0,mm:Number(document.getElementById('bu-mm').value)||0,pa:Number(document.getElementById('bu-pa').value)||0,weapons:document.getElementById('bu-weapons').value.split(',').map(function(x){return x.trim();}).filter(Boolean),creator:'CrossBlocks — unité de base',validated:true,baseUnit:true};
+    CB.saveBaseUnits(db);CB.logHistory('create','baseUnit',name,'numéro '+id);renderBaseUnitsAdmin();alert('Unité de base n°'+id+' enregistrée et synchronisée.');
+    if(window.loadUserContent)window.loadUserContent();
+  };
+  window.CB_editBaseUnit=function(id){var u=CB.getBaseUnits()[id];if(!u)return;[['bu-id',id],['bu-name',u.name||u.n],['bu-faction',u.faction],['bu-pts',u.pts],['bu-hp',u.hp],['bu-arm',u.arm],['bu-mm',u.mm],['bu-pa',u.pa],['bu-weapons',(u.weapons||[]).join(', ') ]].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.value=x[1]==null?'':x[1];});};
+  window.CB_deleteBaseUnit=function(id){if(!CB.getUser()||!CB.getUser().isAdmin)return alert('Action réservée à l’administrateur.');if(!confirm('Supprimer l’unité de base n°'+id+' ?'))return;var db=CB.getBaseUnits();delete db[id];CB.saveBaseUnits(db);CB.logHistory('delete','baseUnit',id);renderBaseUnitsAdmin();if(window.loadUserContent)window.loadUserContent();};
+  // Keep the public/base catalogue visible to guests as well as logged-in players.
+  var oldLoad=window.loadUserContent;
+  window.loadUserContent=function(){
+    if(oldLoad)oldLoad();
+    if(!window.CB)return;
+    var db=CB.getBaseUnits();Object.keys(db).sort(function(a,b){return Number(a)-Number(b);}).forEach(function(id){var u=db[id];if(u&&window.addU2G){} if(u){var g=document.getElementById('gallery-grid');if(g&&!g.querySelector('[data-baseid="'+id+'"]')){var clone=Object.assign({},u,{name:u.name||u.n,baseId:Number(id),creator:'Base CrossBlocks'});if(typeof window.CB_addBaseUnitToGallery==='function')window.CB_addBaseUnitToGallery(clone);else if(g){var card=document.createElement('div');card.className='gallery-card';card.dataset.uname=clone.name;card.dataset.baseid=id;card.dataset.faction=clone.faction||'';card.innerHTML='<div class="gc-name" style="color:#f0c040">#'+esc(id)+' — '+esc(clone.name)+'</div><div>'+esc(clone.faction||'')+'</div><div>'+esc(clone.pts)+' pts · PV '+esc(clone.hp)+' · Armure '+esc(clone.arm)+'</div><div style="font-size:10px">'+esc((clone.weapons||[]).join(', '))+'</div><span style="color:#3fb950;font-size:9px">Unité de base publique</span>';g.appendChild(card);}}}});
+  };
+  // Initial display and keep remote status refreshed when async fetch finishes.
+  window.addEventListener('load',function(){setTimeout(function(){renderSyncStatus();if(window.loadUserContent)window.loadUserContent();},1400);});
+  setInterval(function(){if(document.getElementById('admin-sync')&&document.getElementById('admin-sync').style.display!=='none')renderSyncStatus();},3000);
+})();
+</script>
+
 </body>
 </html>
