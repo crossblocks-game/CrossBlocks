@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const BIN_ID = '69d5251036566621a889f31c4c';
+  const BIN_ID = '69d5251036566621a889f31c';
   const ACCESS_KEY = '$2a$10$74Cd9Zz3V7836e.FaYcJK.ngSI/o6TQ87C8EzBy6mtrxCF0nZOeQC';
   const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
