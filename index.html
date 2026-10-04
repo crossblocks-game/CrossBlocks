@@ -785,7 +785,7 @@ window.I18N=(function(){
 window.CB=(function(){
   function _t(k,f){return(typeof t==='function'?t(k):null)||f;}
   // ─── JSONBin config (Access Key restricted to this bin only) ───
-  var BIN_ID='69d5251036566621a889f31c';
+  var BIN_ID='69d5251036566621a889f31c4c';
   var ACCESS_KEY='$2a$10$74Cd9Zz3V7836e.FaYcJK.ngSI/o6TQ87C8EzBy6mtrxCF0nZOeQC';
   var BIN_URL='https://api.jsonbin.io/v3/b/'+BIN_ID;
 
@@ -814,7 +814,7 @@ window.CB=(function(){
   // Fetch from JSONBin
   function fetchRemote(cb){
     setStatus('Chargement distant...');
-    fetch(BIN_URL+'/latest',{headers:{'X-Access-Key':ACCESS_KEY,'X-Bin-Meta':'false'}})
+    fetch(BIN_URL+'/latest?meta=false',{headers:{'X-Access-Key':ACCESS_KEY,'Accept':'application/json'}})
       .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
       .then(function(data){
         cache=data||cache;
@@ -917,7 +917,7 @@ window.CB=(function(){
       setStatus('Verification...');
       try{localStorage.setItem('cb_cache',JSON.stringify(cache));}catch(e){}
       // Fetch latest first to detect concurrent changes
-      fetch(BIN_URL+'/latest',{headers:{'X-Access-Key':ACCESS_KEY,'X-Bin-Meta':'false'}})
+      fetch(BIN_URL+'/latest?meta=false',{headers:{'X-Access-Key':ACCESS_KEY,'Accept':'application/json'}})
         .then(function(r){return r.json();})
         .then(function(remote){
           var remoteVer=(remote&&typeof remote.version==='number')?remote.version:0;
@@ -956,7 +956,7 @@ window.CB=(function(){
     _pollTimer = setInterval(function() {
       // Ne pas polluer si un push est en cours
       if (pushPending) return;
-      fetch(BIN_URL + '/latest', {headers: {'X-Access-Key': ACCESS_KEY, 'X-Bin-Meta': 'false'}})
+      fetch(BIN_URL + '/latest?meta=false', {headers: {'X-Access-Key': ACCESS_KEY, 'Accept': 'application/json'}})
         .then(function(r) { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
         .then(function(remote) {
           if (!remote || typeof remote.version !== 'number') return;
