@@ -68,6 +68,9 @@
   function getUnitByAruco(db, id) {
     const mapping = getMapping(db, id);
     if (!mapping) return null;
+    if (mapping.unit && typeof mapping.unit === 'object') {
+      return mapping.unit;
+    }
     return allUnits(db).find(u => unitName(u) === mapping.unitName) || null;
   }
 
