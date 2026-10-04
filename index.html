@@ -916,9 +916,28 @@ window.CB=(function(){
       pushPending=true;
       setStatus('Verification...');
       try{localStorage.setItem('cb_cache',JSON.stringify(cache));}catch(e){}
-      // Fetch latest first to detect concurrent changes
-      fetch(BIN_URL+'/latest?meta=false',{headers:{'X-Access-Key':ACCESS_KEY,'Accept':'application/json'}})
-        .then(function(r){return r.json();})
+      // Fetch latest first to detect concurrent changes.
+      fetch(BIN_URL+'/latest?meta=false',{
+        headers:{
+          'X-Access-Key':ACCESS_KEY,
+          'Accept':'application/json'
+        }
+      })
+        .then(async function(r){
+          var body='';
+          try{body=await r.text();}catch(e){}
+          if(!r.ok){
+            var msg='JSONBin HTTP '+r.status;
+            try{
+              var j=JSON.parse(body);
+              if(j&&j.message)msg+=' — '+j.message;
+            }catch(e){}
+            throw new Error(msg);
+          }
+          try{return body?JSON.parse(body):{};}catch(e){
+            throw new Error('Réponse JSONBin invalide.');
+          }
+        })
         .then(function(remote){
           var remoteVer=(remote&&typeof remote.version==='number')?remote.version:0;
           var localVer=cache.version||0;
@@ -927,13 +946,42 @@ window.CB=(function(){
             cache=mergeData(cache,remote);
           }
           cache.version=Math.max(remoteVer,localVer)+1;
+
+          var payload=JSON.stringify(cache);
+          var payloadBytes=new Blob([payload]).size;
+
+          // JSONBin Free limite les enregistrements à 100 KB.
+          if(payloadBytes>100000){
+            throw new Error(
+              'Données trop volumineuses ('+
+              Math.round(payloadBytes/1024)+
+              ' Ko). JSONBin Free limite un enregistrement à 100 Ko.'
+            );
+          }
+
           return fetch(BIN_URL,{
             method:'PUT',
-            headers:{'Content-Type':'application/json','X-Access-Key':ACCESS_KEY},
-            body:JSON.stringify(cache)
+            headers:{
+              'Content-Type':'application/json',
+              'Accept':'application/json',
+              'X-Access-Key':ACCESS_KEY
+            },
+            body:payload
           });
         })
-        .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+        .then(async function(r){
+          var body='';
+          try{body=await r.text();}catch(e){}
+          if(!r.ok){
+            var msg='JSONBin HTTP '+r.status;
+            try{
+              var j=JSON.parse(body);
+              if(j&&j.message)msg+=' — '+j.message;
+            }catch(e){}
+            throw new Error(msg);
+          }
+          return body;
+        })
         .then(function(){
           setStatus('Sauvegarde OK v'+cache.version+' ('+new Date().toLocaleTimeString()+')');
           pushPending=false;
