@@ -815,7 +815,21 @@ window.CB=(function(){
   function fetchRemote(cb){
     setStatus('Chargement distant...');
     fetch(BIN_URL+'/latest?meta=false',{headers:{'X-Access-Key':ACCESS_KEY,'Accept':'application/json'}})
-      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(async function(r){
+        var body='';
+        try{body=await r.text();}catch(e){}
+        if(!r.ok){
+          var msg='HTTP '+r.status;
+          try{
+            var j=JSON.parse(body);
+            if(j&&j.message)msg+=' — '+j.message;
+          }catch(e){}
+          throw new Error(msg);
+        }
+        try{return body?JSON.parse(body):{};}catch(e){
+          throw new Error('Réponse JSONBin invalide.');
+        }
+      })
       .then(function(data){
         cache=data||cache;
         if(!cache.accounts)cache.accounts={};
